@@ -74,23 +74,23 @@ Two connected web apps for South Texas Builders (STB):
   then check `select status_code, content::text, created from net._http_response order by id desc limit 3;`
   — want **200**, and the 4 phones should buzz.
 
-## ⚠️ CURRENT STATUS (Aug 3, 2026) — READ THIS FIRST
-1. **Outage + rollback:** A Jul 19 Netlify Drop deploy uploaded only 2 files and wiped
-   `firmar.html` from the live site → every signing link 404'd. Fixed on Aug 3 by
+## ⚠️ CURRENT STATUS (Aug 4, 2026) — READ THIS FIRST
+1. **Outage + rollback (RESOLVED):** A Jul 19 Netlify Drop deploy uploaded only 2 files
+   and wiped `firmar.html` from the live site → every signing link 404'd. Fixed Aug 3 by
    re-publishing the **Jul 10 3:17 PM** deploy from Netlify's Deploys page. Signing works.
-2. **Casualty of the rollback:** a teammate's update was lost and must be REBUILT in
-   `change-orders.html` — **payment plan limits:** single payment → first payment max
-   1 month out; quincenal (biweekly) → max 6 payments; monthly → max 3 months.
-   (Goal: no plan may stretch years out, e.g. 2040.)
-3. **Root cause:** this GitHub repo has NO code — only this handoff. The deploy zip was
-   the only copy and no zips were saved. **Next step: get the live site's files
-   (`index.html`, `change-orders.html`, `firmar.html`) committed into this repo.**
-   - Plan A: Rolando enables network access to `*.netlify.app` in the Claude Code
-     environment settings → Claude fetches the files directly from the live site.
-   - Plan B: Rolando saves the 3 pages via Ctrl+S ("Webpage, HTML Only") and uploads
-     them to the chat.
-   - Then: commit to repo (branch `claude/session-phmsv4`), re-implement the payment
-     limits, deliver ONE complete deploy zip for Netlify Drop.
+2. **Repo is now the real backup (DONE):** Rolando found `stbschedulingsite (21).zip`
+   in his Downloads (the exact Jul 10 deploy zip) and uploaded it. All site files are
+   now committed on branch `claude/session-phmsv4`: index.html, change-orders.html,
+   firmar.html, favicon.png/svg, logo, uploads/fotos/. **Rule stands: never deploy a
+   zip that wasn't built from this repo.** Do NOT include this HANDOFF file in deploy
+   zips (it would be publicly readable on the live site).
+3. **Payment plan limits (REBUILT, pending deploy):** the update lost in the rollback
+   was re-implemented in BOTH `firmar.html` (customer) and `change-orders.html`
+   (office): single payment → first payment max 1 month out (min today on customer
+   side); quincenal → max 6 pagos; mensual → max 3 pagos. Office side allows past
+   start dates so existing in-progress plans stay editable. JS syntax-checked; limit
+   logic unit-tested (all cases pass). **Next: Rolando drags the new deploy zip
+   (built from this repo) onto Netlify Drop, then team re-tests a contract link.**
 4. **Also planned (mastermind session):** a QC/Runner phone view inside `index.html` —
    role-tagged login sees only his tasks (Pre + Phases 1–6) in bold red; check-off syncs
    via existing Supabase save path; photo prompted on most tasks (optional, auto-
