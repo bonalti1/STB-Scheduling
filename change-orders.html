@@ -964,8 +964,24 @@ async function borrarProyecto(id, nombre) {
 }
 
 // ── Change orders ───────────────────────────────────────────
+// Límites de negocio: todo plan debe terminar en ~3 meses.
+// unico → primer pago máx. 1 mes desde hoy; quincenal → máx. 6; mensual → máx. 3.
+const MAX_PAGOS_PLAN = { quincenal: 6, mensual: 3 };
+
+function fechaMaxInicioISO() {
+  const f = new Date();
+  f.setMonth(f.getMonth() + 1);
+  return f.toISOString().slice(0, 10);
+}
+
 function toggleNumPagos() {
-  $('campoNumPagos').style.display = $('coPlanTipo').value === 'unico' ? 'none' : 'block';
+  const tipo = $('coPlanTipo').value;
+  $('campoNumPagos').style.display = tipo === 'unico' ? 'none' : 'block';
+  if (tipo !== 'unico') {
+    const lim = MAX_PAGOS_PLAN[tipo];
+    $('coNumPagos').max = lim;
+    if (parseInt($('coNumPagos').value) > lim) $('coNumPagos').value = lim;
+  }
 }
 
 function abrirModalCO(pid, coid) {
@@ -979,6 +995,7 @@ function abrirModalCO(pid, coid) {
   $('coPlanTipo').value = co ? co.plan.tipo : 'unico';
   $('coNumPagos').value = co && co.plan.numPagos ? co.plan.numPagos : 6;
   $('coFechaInicio').value = co ? co.plan.fechaInicio : hoyISO();
+  $('coFechaInicio').max = fechaMaxInicioISO();
   $('coInvoice').value = '';
   $('invoiceActual').innerHTML = co && co.invoiceFile
     ? '📎 Ya hay un invoice cargado. Sube otro solo si quieres reemplazarlo.' : '';
@@ -998,6 +1015,12 @@ async function guardarCO() {
   if (!desc) return toast('Escribe la descripción.', true);
   if (!(monto > 0)) return toast('Escribe un monto válido.', true);
   if (!fechaInicio) return toast('Elige la fecha del primer pago.', true);
+  if (plan.tipo !== 'unico') {
+    const lim = MAX_PAGOS_PLAN[plan.tipo];
+    if (!(plan.numPagos >= 2)) return toast('El plan debe tener al menos 2 pagos.', true);
+    if (plan.numPagos > lim) return toast('Máximo ' + lim + ' pagos ' + (plan.tipo === 'quincenal' ? 'quincenales' : 'mensuales') + ' — todo plan debe terminar en 3 meses.', true);
+  }
+  if (fechaInicio > fechaMaxInicioISO()) return toast('El primer pago debe ser dentro de 1 mes como máximo.', true);
 
   try {
     let invoiceUrl = null;

@@ -346,10 +346,11 @@ async function cargar() {
   if (CONTRATO.estado === 'firmado') {
     mostrarExito();
   } else {
-    $('fechaInicio').value = new Date().toISOString().slice(0, 10);
-    const sel = $('numPagos');
-    for (let i = 2; i <= 12; i++) sel.innerHTML += '<option value="' + i + '">' + i + '</option>';
-    sel.value = '6';
+    const hoyISO = new Date().toISOString().slice(0, 10);
+    $('fechaInicio').value = hoyISO;
+    $('fechaInicio').min = hoyISO;
+    $('fechaInicio').max = fechaMaxInicioISO();
+    llenarNumPagos();
     cambioPlan();
     prepararCanvas();
   }
@@ -364,12 +365,36 @@ function mostrarExito() {
 }
 
 // ── Plan de pago ────────────────────────────────────────────
+// Límites de negocio: todo plan debe terminar en ~3 meses.
+// unico → el primer (y único) pago máx. 1 mes desde hoy;
+// quincenal → máx. 6 quincenas; mensual → máx. 3 meses.
+const MAX_PAGOS = { quincenal: 6, mensual: 3 };
+
+function maxPagos(tipo) { return MAX_PAGOS[tipo] || 1; }
+
+function fechaMaxInicioISO() {
+  const f = new Date();
+  f.setMonth(f.getMonth() + 1);
+  return f.toISOString().slice(0, 10);
+}
+
+function llenarNumPagos() {
+  const tipo = tipoActual();
+  if (tipo === 'unico') return;
+  const sel = $('numPagos');
+  const previo = parseInt(sel.value) || maxPagos(tipo);
+  sel.innerHTML = '';
+  for (let i = 2; i <= maxPagos(tipo); i++) sel.innerHTML += '<option value="' + i + '">' + i + '</option>';
+  sel.value = String(Math.min(Math.max(previo, 2), maxPagos(tipo)));
+}
+
 function tipoActual() { return document.querySelector('input[name=plan]:checked').value; }
 
 function cambioPlan() {
   const tipo = tipoActual();
   document.querySelectorAll('.opcion').forEach(o => o.classList.toggle('activa', o.dataset.tipo === tipo));
   $('campoNumPagos').style.display = tipo === 'unico' ? 'none' : 'block';
+  llenarNumPagos();
 
   const num = tipo === 'unico' ? 1 : parseInt($('numPagos').value) || 2;
   const inicio = $('fechaInicio').value;
@@ -453,9 +478,18 @@ async function firmar() {
   btn.textContent = 'Enviando... / Sending...';
 
   const tipo = tipoActual();
-  const numPagos = tipo === 'unico' ? 1 : Math.min(24, Math.max(2, parseInt($('numPagos').value) || 2));
-  const planFinal = { tipo, numPagos, fechaInicio: $('fechaInicio').value };
+  const numPagos = tipo === 'unico' ? 1 : Math.min(maxPagos(tipo), Math.max(2, parseInt($('numPagos').value) || 2));
+  const fechaInicio = $('fechaInicio').value;
   const hoy = new Date().toISOString().slice(0, 10);
+  if (fechaInicio < hoy) {
+    btn.disabled = false; btn.textContent = '✍ Firmar y Aceptar / Sign & Accept';
+    return mostrarError('⚠ La fecha del primer pago no puede ser en el pasado. / The first payment date cannot be in the past.');
+  }
+  if (fechaInicio > fechaMaxInicioISO()) {
+    btn.disabled = false; btn.textContent = '✍ Firmar y Aceptar / Sign & Accept';
+    return mostrarError('⚠ El primer pago debe ser dentro de 1 mes como máximo. / The first payment must be within 1 month.');
+  }
+  const planFinal = { tipo, numPagos, fechaInicio };
 
   try {
     const archivoFirma = await subirFirma($('firmaCanvas').toDataURL('image/png'));
