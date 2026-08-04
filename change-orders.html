@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STB Cobros — Change Orders</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #13233d;
+    --navy2: #0e1a2e;
+    --red: #e8442e;
+    --green: #2e7d4f;
+    --green-soft: #e6f2ea;
+    --amber: #f5a623;
+    --amber-soft: #fdf3dd;
+    --amber-text: #9a6b00;
+    --red-soft: #fdeae7;
+    --gray: #667085;
+    --border: #e3e6eb;
+    --bg: #f6f5f2;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg);
+    background-image: linear-gradient(rgba(0,0,0,0.025) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(0,0,0,0.025) 1px, transparent 1px);
+    background-size: 40px 40px;
+    color: #1c2534;
+    min-height: 100vh;
+  }
+  h1,h2,h3,.oswald { font-family: 'Oswald', 'Inter', sans-serif; }
+
+  /* ── Gate (clave de acceso) ── */
+  #gate {
+    position: fixed; inset: 0; background: var(--navy); z-index: 500;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .gate-caja {
+    background: white; border-radius: 18px; padding: 38px 34px;
+    width: 100%; max-width: 380px; text-align: center;
+    box-shadow: 0 25px 70px rgba(0,0,0,0.45);
+  }
+  .gate-caja .logo { width: 130px; height: auto; margin: 0 auto 14px; display: block; }
+  .gate-caja h1 { font-size: 22px; text-transform: uppercase; letter-spacing: 1px; color: var(--navy); }
+  .gate-caja h1 span { color: var(--red); }
+  .gate-caja .sub { font-size: 12px; color: var(--gray); letter-spacing: 2px; text-transform: uppercase; margin: 4px 0 24px; }
+  .gate-caja input {
+    width: 100%; padding: 13px 16px; border: 1px solid var(--border); border-radius: 10px;
+    font-size: 16px; text-align: center; font-family: 'Inter'; letter-spacing: 1px;
+  }
+  .gate-caja button {
+    width: 100%; margin-top: 14px; padding: 13px; border: none; border-radius: 10px;
+    background: var(--red); color: white; font-family: 'Oswald'; font-size: 15px;
+    font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer;
+  }
+  .gate-caja button:hover { filter: brightness(1.1); }
+  .gate-caja .error { color: var(--red); font-size: 13px; font-weight: 600; margin-top: 12px; display: none; }
+  .gate-caja .estado-carga { color: var(--gray); font-size: 12px; margin-top: 12px; }
+
+  /* ── Header ── */
+  header {
+    background: var(--navy);
+    color: white;
+    padding: 18px 40px 22px;
+    position: sticky; top: 0; z-index: 50;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+  }
+  .header-top { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .logo-box {
+    background: white; border-radius: 8px; width: 56px; height: 56px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Oswald'; font-weight: 700; color: var(--navy); font-size: 15px;
+  }
+  .header-title h1 { font-size: 26px; letter-spacing: 1px; text-transform: uppercase; }
+  .header-title h1 span { color: var(--red); }
+  .header-title .sub { font-size: 11px; letter-spacing: 2px; color: #8fa0bb; text-transform: uppercase; margin-top: 2px; }
+  .header-title .sub b { color: white; }
+  .header-controls { display: flex; align-items: center; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+  .hc-box {
+    background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 10px; padding: 8px 14px; display: flex; align-items: center; gap: 10px;
+    font-size: 12px; letter-spacing: 1px; color: #8fa0bb; text-transform: uppercase; font-weight: 600;
+  }
+  .hc-box select {
+    background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 6px; padding: 5px 10px; font-family: 'Inter'; font-weight: 600; font-size: 13px;
+  }
+  .hc-box select option { color: #1c2534; }
+  .btn-red {
+    background: var(--red); color: white; border: none; border-radius: 8px;
+    font-family: 'Oswald'; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+    padding: 10px 20px; font-size: 13px; cursor: pointer;
+  }
+  .btn-red:hover { filter: brightness(1.1); }
+  .btn-ghost-w {
+    background: transparent; color: #cfd9e8; border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 8px; padding: 9px 16px; font-size: 12px; font-weight: 600; cursor: pointer;
+    font-family: 'Inter'; letter-spacing: 0.5px;
+  }
+  .btn-ghost-w:hover { background: rgba(255,255,255,0.08); }
+
+  /* ── Dashboard ── */
+  .container { max-width: 1350px; margin: 0 auto; padding: 24px 30px 60px; }
+  .dash { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 26px; }
+  .dash-card {
+    background: white; border-radius: 12px; padding: 16px 20px;
+    box-shadow: 0 1px 4px rgba(16,30,54,0.08); border-left: 5px solid var(--navy);
+  }
+  .dash-card .dt { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gray); font-weight: 700; }
+  .dash-card .dv { font-family: 'Oswald'; font-size: 28px; font-weight: 600; margin-top: 4px; }
+  .dash-card .dd { font-size: 11px; color: var(--gray); margin-top: 2px; }
+  .dash-card.c-green { border-left-color: var(--green); } .dash-card.c-green .dv { color: var(--green); }
+  .dash-card.c-red { border-left-color: var(--red); } .dash-card.c-red .dv { color: var(--red); }
+  .dash-card.c-amber { border-left-color: var(--amber); } .dash-card.c-amber .dv { color: var(--amber-text); }
+
+  /* ── Search bar ── */
+  .toolbar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+  .toolbar input[type=search] {
+    flex: 1; min-width: 220px; padding: 11px 16px; border-radius: 10px;
+    border: 1px solid var(--border); font-size: 14px; font-family: 'Inter'; background: white;
+  }
+  .toolbar select {
+    padding: 11px 14px; border-radius: 10px; border: 1px solid var(--border);
+    font-size: 13px; font-weight: 600; background: white; font-family: 'Inter';
+  }
+
+  /* ── Project cards ── */
+  .card {
+    background: white; border-radius: 14px; margin-bottom: 18px;
+    box-shadow: 0 1px 5px rgba(16,30,54,0.09); overflow: hidden;
+    border-left: 6px solid var(--green); position: relative;
+  }
+  .card.estado-atrasado { border-left-color: var(--red); }
+  .card.estado-proximo { border-left-color: var(--amber); }
+  .card.estado-pagado { border-left-color: var(--navy); }
+  .card-main { display: flex; gap: 18px; padding: 20px 24px; align-items: flex-start; flex-wrap: wrap; }
+  .card-foto {
+    width: 130px; height: 92px; border-radius: 10px; object-fit: cover;
+    border: 1px solid var(--border); background: #eef1f5; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 30px; color: #c4ccd8;
+    cursor: pointer;
+  }
+  .card-info { flex: 1; min-width: 260px; }
+  .card-title { font-family: 'Oswald'; font-size: 24px; font-weight: 600; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .chips { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; align-items: center; }
+  .chip {
+    font-size: 11.5px; font-weight: 600; padding: 5px 11px; border-radius: 8px;
+    border: 1px solid var(--border); background: #fafbfc; color: #37445c; cursor: default;
+  }
+  .chip.link { color: #1867d6; cursor: pointer; background: #eef4fd; border-color: #d4e3f7; }
+  .chip.btn { cursor: pointer; }
+  .chip.btn:hover { background: #eef1f5; }
+  .card-right { text-align: right; min-width: 130px; }
+  .pct { font-family: 'Oswald'; font-size: 30px; font-weight: 700; }
+  .estado-tag {
+    display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.8px;
+    text-transform: uppercase; padding: 5px 12px; border-radius: 8px; margin-top: 6px;
+  }
+  .tag-corriente { background: var(--green-soft); color: var(--green); }
+  .tag-proximo { background: var(--amber-soft); color: var(--amber-text); }
+  .tag-atrasado { background: var(--red-soft); color: var(--red); }
+  .tag-pagado { background: #e8edf5; color: var(--navy); }
+
+  .card-progress { padding: 0 24px 6px; display: flex; align-items: center; gap: 14px; }
+  .bar { flex: 1; height: 9px; background: #e8eaee; border-radius: 6px; overflow: hidden; }
+  .bar > div { height: 100%; background: var(--green); border-radius: 6px; transition: width .4s; }
+  .card.estado-atrasado .bar > div { background: var(--red); }
+  .card.estado-proximo .bar > div { background: var(--amber); }
+  .bar-label { font-family: 'Oswald'; font-weight: 600; font-size: 15px; min-width: 42px; }
+  .money-summary { padding: 6px 24px 14px; display: flex; gap: 22px; flex-wrap: wrap; font-size: 13px; }
+  .money-summary b { font-family: 'Oswald'; font-size: 15px; }
+  .ms-label { color: var(--gray); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+
+  .card-actions { padding: 0 24px 18px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn {
+    border-radius: 8px; padding: 9px 16px; font-size: 12.5px; font-weight: 600;
+    cursor: pointer; border: 1px solid var(--border); background: white; font-family: 'Inter';
+  }
+  .btn:hover { background: #f2f4f7; }
+  .btn.primary { background: var(--green); color: white; border-color: var(--green); }
+  .btn.primary:hover { filter: brightness(1.08); }
+  .btn.navy { background: var(--navy); color: white; border-color: var(--navy); }
+  .btn.danger-text { color: var(--red); }
+
+  /* ── Detalle (expandible) ── */
+  .detalle { display: none; border-top: 1px solid var(--border); background: #fafbfc; padding: 18px 24px; }
+  .card.abierto .detalle { display: block; }
+  .co-box { background: white; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 14px; overflow: hidden; }
+  .co-head { display: flex; align-items: center; gap: 12px; padding: 13px 18px; flex-wrap: wrap; }
+  .co-head h3 { font-size: 16px; font-weight: 600; flex: 1; min-width: 180px; }
+  .co-monto { font-family: 'Oswald'; font-size: 18px; font-weight: 700; }
+  .co-body { padding: 0 18px 14px; }
+  .cuotas-table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 6px; }
+  .cuotas-table th {
+    text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--gray); padding: 7px 8px; border-bottom: 2px solid var(--border); font-weight: 700;
+  }
+  .cuotas-table td { padding: 7px 8px; border-bottom: 1px solid #eef0f3; }
+  .mini-tag { font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 6px; text-transform: uppercase; letter-spacing: .5px; }
+  .pagos-list { margin-top: 10px; }
+  .pago-item {
+    display: flex; align-items: center; gap: 10px; padding: 7px 10px; font-size: 12.5px;
+    background: var(--green-soft); border-radius: 8px; margin-bottom: 6px; flex-wrap: wrap;
+  }
+  .pago-item .del { margin-left: auto; color: var(--red); cursor: pointer; font-weight: 700; padding: 0 6px; }
+  .co-actions { display: flex; gap: 8px; padding: 0 18px 14px; flex-wrap: wrap; }
+
+  /* ── Modales ── */
+  .overlay {
+    display: none; position: fixed; inset: 0; background: rgba(10,18,32,0.55);
+    z-index: 100; align-items: flex-start; justify-content: center; padding: 40px 16px; overflow-y: auto;
+  }
+  .overlay.abierto { display: flex; }
+  .modal {
+    background: white; border-radius: 16px; width: 100%; max-width: 520px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden;
+  }
+  .modal-head {
+    background: var(--navy); color: white; padding: 16px 22px;
+    font-family: 'Oswald'; font-size: 17px; letter-spacing: 1px; text-transform: uppercase;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .modal-head .x { cursor: pointer; font-size: 20px; color: #8fa0bb; }
+  .modal-body { padding: 20px 22px; }
+  .campo { margin-bottom: 14px; }
+  .campo label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--gray); margin-bottom: 5px; }
+  .campo input, .campo select, .campo textarea {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
+    font-size: 14px; font-family: 'Inter';
+  }
+  .campo textarea { resize: vertical; min-height: 70px; }
+  .fila { display: flex; gap: 12px; } .fila .campo { flex: 1; }
+  .modal-foot { padding: 0 22px 20px; display: flex; gap: 10px; justify-content: flex-end; }
+  .hint { font-size: 11.5px; color: var(--gray); margin-top: 4px; }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--navy); color: white; padding: 12px 22px; border-radius: 10px;
+    font-size: 13.5px; font-weight: 600; box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    z-index: 200; display: none;
+  }
+  .toast.error { background: var(--red); }
+  .vacio { text-align: center; padding: 60px 20px; color: var(--gray); }
+  .vacio .big { font-size: 42px; margin-bottom: 10px; }
+  @media (max-width: 700px) {
+    header { padding: 14px 16px 18px; }
+    .container { padding: 16px 12px 50px; }
+    .card-main { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Gate: clave de acceso (se quita al validar) ── -->
+<div id="gate">
+  <div class="gate-caja">
+    <img class="logo" src="south-texas-builders-logo.png" alt="South Texas Builders">
+    <h1 class="oswald">Change Orders <span>Cobros</span></h1>
+    <div class="sub">South Texas Builders</div>
+    <form onsubmit="entrarGate(event)">
+      <input id="gateClave" type="password" placeholder="Clave de acceso / Access code" autofocus
+             autocomplete="current-password" autocapitalize="none" autocorrect="off">
+      <button type="submit">Entrar</button>
+    </form>
+    <div class="error" id="gateError">Clave incorrecta. Intenta de nuevo.</div>
+    <div class="estado-carga" id="gateEstado">Conectando con la nube...</div>
+  </div>
+</div>
+
+<header>
+  <div class="header-top">
+    <div class="logo-box"><img src="south-texas-builders-logo.png" alt="STB" style="width:48px;height:auto"></div>
+    <div class="header-title">
+      <h1>CHANGE ORDERS <span>COBROS</span></h1>
+      <div class="sub">South Texas Builders · Registro de pagos</div>
+    </div>
+    <div style="flex:1"></div>
+    <button class="btn-red" onclick="abrirModalProyecto()">+ Nuevo Proyecto</button>
+  </div>
+  <div class="header-controls">
+    <div class="hc-box">Registrando como
+      <select id="usuarioActual" onchange="guardarUsuarioLocal()"></select>
+    </div>
+    <button class="btn-ghost-w" onclick="abrirConfig()">⚙ Configuración</button>
+    <button class="btn-ghost-w" onclick="recargar().then(function(){toast('✓ Actualizado')}).catch(function(){toast('Sin conexión',true)})">↻ Actualizar</button>
+    <div class="hc-box" id="fechaHoy"></div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="dash" id="dash"></div>
+
+  <div class="toolbar">
+    <input type="search" id="buscar" placeholder="🔍 Buscar familia, número o dirección..." oninput="render()">
+    <select id="filtroEstado" onchange="render()">
+      <option value="">Todos los estados</option>
+      <option value="atrasado">🔴 Atrasados</option>
+      <option value="proximo">🟡 Pago próximo</option>
+      <option value="corriente">🟢 Al corriente</option>
+      <option value="pagado">✅ Pagados</option>
+    </select>
+  </div>
+
+  <div id="lista"></div>
+</div>
+
+<!-- ── Modal: Proyecto ── -->
+<div class="overlay" id="ovProyecto">
+  <div class="modal">
+    <div class="modal-head"><span id="tituloProyecto">Nuevo Proyecto</span><span class="x" onclick="cerrar('ovProyecto')">✕</span></div>
+    <div class="modal-body">
+      <input type="hidden" id="pId">
+      <div class="fila">
+        <div class="campo"><label>Familia *</label><input id="pFamilia" placeholder="Ej. Pulido"></div>
+        <div class="campo" style="max-width:120px"><label>Número</label><input id="pNumero" placeholder="Ej. 104"></div>
+      </div>
+      <div class="campo"><label>Correo electrónico</label><input id="pCorreo" type="email" placeholder="cliente@correo.com"></div>
+      <div class="campo"><label>Dirección</label><input id="pDireccion" placeholder="Dirección de la casa"></div>
+      <div class="campo"><label>Foto de la casa (opcional)</label><input id="pFoto" type="file" accept="image/*"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="cerrar('ovProyecto')">Cancelar</button>
+      <button class="btn primary" onclick="guardarProyecto()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Change Order ── -->
+<div class="overlay" id="ovCO">
+  <div class="modal">
+    <div class="modal-head"><span id="tituloCO">Nueva Change Order</span><span class="x" onclick="cerrar('ovCO')">✕</span></div>
+    <div class="modal-body">
+      <input type="hidden" id="coPid"><input type="hidden" id="coId">
+      <div class="campo"><label>Descripción *</label><input id="coDesc" placeholder="Ej. Isla extra de cocina"></div>
+      <div class="fila">
+        <div class="campo"><label>Monto total (USD) *</label><input id="coMonto" type="number" step="0.01" min="0" placeholder="0.00"></div>
+        <div class="campo"><label>Fecha de firma (opcional)</label><input id="coFirma" type="date"></div>
+      </div>
+      <div class="fila">
+        <div class="campo"><label>Plan de pago *</label>
+          <select id="coPlanTipo" onchange="toggleNumPagos()">
+            <option value="unico">Una sola exhibición</option>
+            <option value="mensual">Mensual</option>
+            <option value="quincenal">Quincenal</option>
+          </select>
+        </div>
+        <div class="campo" id="campoNumPagos" style="display:none"><label># de pagos</label><input id="coNumPagos" type="number" min="2" value="6"></div>
+      </div>
+      <div class="campo"><label>Fecha del primer pago *</label><input id="coFechaInicio" type="date"></div>
+      <div class="campo"><label>Invoice (PDF o imagen)</label><input id="coInvoice" type="file" accept=".pdf,image/*">
+        <div class="hint" id="invoiceActual"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="cerrar('ovCO')">Cancelar</button>
+      <button class="btn primary" onclick="guardarCO()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Contrato para firma ── -->
+<div class="overlay" id="ovContrato">
+  <div class="modal">
+    <div class="modal-head"><span id="tituloContrato">Contrato para Firma</span><span class="x" onclick="cerrar('ovContrato')">✕</span></div>
+    <div class="modal-body">
+      <input type="hidden" id="ctPid">
+      <div class="hint" style="margin-bottom:12px;font-size:13px">
+        Crea el contrato y mándale el link al cliente. Él verá el acuerdo, <b>elegirá cómo pagar</b> y <b>firmará con el dedo</b> desde su celular.
+      </div>
+      <div class="campo"><label>¿Qué se va a firmar?</label>
+        <select id="ctCO" onchange="cambioCOContrato()"></select>
+        <div class="hint" id="ctCOHint"></div>
+      </div>
+      <div class="campo"><label>Descripción del trabajo (item description) *</label>
+        <textarea id="ctDesc" placeholder="Ej. Upgrade of kitchen island — quartz countertop instead of granite"></textarea>
+      </div>
+      <div class="campo"><label>Monto total (USD) *</label><input id="ctMonto" type="number" step="0.01" min="0" placeholder="0.00"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="cerrar('ovContrato')">Cancelar</button>
+      <button class="btn primary" onclick="guardarContrato()">Crear Contrato</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Link del contrato ── -->
+<div class="overlay" id="ovLink">
+  <div class="modal">
+    <div class="modal-head"><span>✅ Contrato Creado</span><span class="x" onclick="cerrar('ovLink')">✕</span></div>
+    <div class="modal-body">
+      <div class="hint" style="margin-bottom:12px;font-size:13px">
+        Mándale este link al cliente por WhatsApp o correo, o abre el link en tu teléfono y dáselo para que firme ahí mismo:
+      </div>
+      <div class="campo"><input id="linkContrato" readonly onclick="this.select()"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn primary" onclick="copiarLinkInput()">📋 Copiar link</button>
+        <button class="btn" onclick="abrirWhatsApp()">💬 Mandar por WhatsApp</button>
+        <button class="btn" onclick="window.open($('linkContrato').value)">👁 Ver como cliente</button>
+      </div>
+      <div class="hint" style="margin-top:12px">El link funciona desde cualquier lugar — el cliente lo puede abrir en su casa.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Pago ── -->
+<div class="overlay" id="ovPago">
+  <div class="modal">
+    <div class="modal-head"><span>Registrar Pago</span><span class="x" onclick="cerrar('ovPago')">✕</span></div>
+    <div class="modal-body">
+      <input type="hidden" id="pgPid"><input type="hidden" id="pgCoid">
+      <div class="hint" id="pgContexto" style="margin-bottom:12px;font-size:13px"></div>
+      <div class="fila">
+        <div class="campo"><label>Monto recibido (USD) *</label><input id="pgMonto" type="number" step="0.01" min="0" placeholder="0.00"></div>
+        <div class="campo"><label>Fecha del pago *</label><input id="pgFecha" type="date"></div>
+      </div>
+      <div class="campo"><label>Método de pago *</label>
+        <select id="pgMetodo">
+          <option>Cheque</option>
+          <option>Transferencia</option>
+          <option>Zelle</option>
+          <option>Efectivo</option>
+          <option>Otro</option>
+        </select>
+      </div>
+      <div class="campo"><label>Evidencia del pago (imagen, opcional)</label><input id="pgEvidencia" type="file" accept="image/*"></div>
+      <div class="campo"><label>Nota (opcional)</label><input id="pgNota" placeholder="Ej. cheque #1042"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="cerrar('ovPago')">Cancelar</button>
+      <button class="btn primary" onclick="guardarPago()">✓ Registrar Pago</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Configuración ── -->
+<div class="overlay" id="ovConfig">
+  <div class="modal">
+    <div class="modal-head"><span>Configuración</span><span class="x" onclick="cerrar('ovConfig')">✕</span></div>
+    <div class="modal-body">
+      <div class="campo"><label>Nombre de la empresa</label><input id="cfEmpresa"></div>
+      <div class="campo"><label>Formas de pago (aparece en el PDF que se manda al cliente)</label>
+        <textarea id="cfDatosPago" placeholder="Ej.&#10;Zelle: pagos@stb.com&#10;Cheque a nombre de: South Texas Builders&#10;Transferencia: Banco X, cuenta ..."></textarea>
+      </div>
+      <div class="campo"><label>Usuarios del sistema (separados por coma)</label>
+        <input id="cfUsuarios" placeholder="Jacqueline, Cristo, ...">
+        <div class="hint">Cada quien elige su nombre arriba antes de registrar pagos.</div>
+      </div>
+      <div class="campo"><label>Clave de acceso (para entrar al tool)</label>
+        <input id="cfClave" placeholder="Change Orders">
+        <div class="hint">Compártela solo con tu equipo y tu jefe. Si la cambias, todos tendrán que volver a entrar con la nueva.</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="cerrar('ovConfig')">Cancelar</button>
+      <button class="btn primary" onclick="guardarConfig()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   STB Cobros — Change Orders (versión en la nube)
+   Misma base de datos Supabase que la app de Scheduling, pero
+   en su PROPIA fila: no toca el tablero de las casas.
+   ============================================================ */
+var SUPABASE_URL = 'https://ttpkyepzzpxctajrhwvx.supabase.co';
+var SUPABASE_KEY = 'sb_publishable_bnhfaLTxNe2ApJ94myqtIg_uHjo3_B1';
+var SUPABASE_TABLE = 'stb_app_state';
+var ROW_ID = 'stb_change_orders_v1';
+var BUCKET = 'stb-project-renders';        // bucket ya existente; archivos van bajo cobros/
+var CLAVE_DEFAULT = 'Change Orders';       // clave exacta pedida por Rolando
+
+let DATA = { usuarios: [], config: {}, proyectos: [] };
+let LAST_UPDATED_AT = null;                // token de sincronización (compare-and-set)
+const $ = id => document.getElementById(id);
+const money = n => '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const hoyISO = () => new Date().toISOString().slice(0, 10);
+
+// Datos iniciales: lo que ya existía en la versión anterior del tool (PC de Jacqueline)
+const SEED = {"usuarios":["Jacqueline","Cristo"],"config":{"empresa":"South Texas Builders","datosPago":"","clave":"Change Orders"},"proyectos":[{"id":"p_1783273236621_2uo76","familia":"Hernandez","numero":"110","correo":"","direccion":"25647 E BROWN TRACT RD, SAN BENITO, TX 78586","foto":"uploads/fotos/1783625186657_Hernandez.jpg","creadoPor":"Jacqueline","creado":"2026-07-05T17:40:36.621Z","changeOrders":[{"id":"co_1783273352853_do4pd","descripcion":"Diferencia de 21 camiones de tierra","monto":3360,"fechaFirma":"","invoiceFile":"","plan":{"tipo":"unico","numPagos":6,"fechaInicio":"2026-07-10"},"cuotas":[{"num":1,"fecha":"2026-07-10","monto":3360}],"pagos":[],"creadoPor":"Jacqueline","creado":"2026-07-05T17:42:32.853Z"},{"id":"co_1783273503701_z1jkd","descripcion":"Survey extra por movimiento de casa","monto":811,"fechaFirma":"","invoiceFile":"","plan":{"tipo":"unico","numPagos":6,"fechaInicio":"2026-07-10"},"cuotas":[{"num":1,"fecha":"2026-07-10","monto":811}],"pagos":[],"creadoPor":"Jacqueline","creado":"2026-07-05T17:45:03.701Z"}],"contratos":[{"id":"ct_1783631684417_emvkf","token":"937541ed7b0fa91def59e61e77de346b","descripcion":"Diferencia de 21 camiones de tierra","monto":3360,"estado":"pendiente","firma":null,"coId":"co_1783273352853_do4pd","creadoPor":"Jacqueline","creado":"2026-07-09T21:14:44.417Z"}]}]};
+
+// ── Nube: leer / guardar con protección contra pisarse entre dispositivos ──
+async function leerNube() {
+  const url = SUPABASE_URL + '/rest/v1/' + SUPABASE_TABLE + '?id=eq.' + encodeURIComponent(ROW_ID) + '&select=data,updated_at';
+  const res = await fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY } });
+  if (!res.ok) throw new Error('No se pudo leer de la nube (' + res.status + ')');
+  const rows = await res.json();
+  if (!rows || !rows[0]) return null;
+  let obj = null;
+  try { obj = JSON.parse(rows[0].data && rows[0].data.value || ''); } catch (e) {}
+  if (!obj || typeof obj !== 'object') return null;
+  if (!Array.isArray(obj.proyectos)) obj.proyectos = [];
+  if (!Array.isArray(obj.usuarios)) obj.usuarios = [];
+  if (!obj.config || typeof obj.config !== 'object') obj.config = {};
+  return { obj, updated_at: rows[0].updated_at };
+}
+
+async function crearFila(obj) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/' + SUPABASE_TABLE, {
+    method: 'POST',
+    headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+    body: JSON.stringify({ id: ROW_ID, data: { value: JSON.stringify(obj) }, updated_at: new Date().toISOString() })
+  });
+  if (res.status === 409) return null;               // otro dispositivo la creó primero
+  if (!res.ok) throw new Error('No se pudo crear el registro en la nube (' + res.status + ')');
+  const rows = await res.json().catch(() => []);
+  return rows[0] ? rows[0].updated_at : new Date().toISOString();
+}
+
+/* Guardado seguro: SIEMPRE lee lo más reciente de la nube, le aplica el cambio
+   (mutator) y escribe con compare-and-set. Si otro dispositivo guardó en medio,
+   reintenta sobre la copia nueva — nunca se pierde lo del otro. */
+async function guardar(mutator) {
+  for (let intento = 0; intento < 6; intento++) {
+    let fila = await leerNube();
+    if (!fila) {
+      const obj = JSON.parse(JSON.stringify(SEED));
+      mutator(obj);
+      const token = await crearFila(obj);
+      if (token === null) continue;                  // carrera: reintentar como update
+      DATA = obj; LAST_UPDATED_AT = token; render();
+      return;
+    }
+    const obj = fila.obj;
+    mutator(obj);                                    // puede lanzar Error para abortar (ej. "ya firmado")
+    const cond = SUPABASE_URL + '/rest/v1/' + SUPABASE_TABLE +
+      '?id=eq.' + encodeURIComponent(ROW_ID) + '&updated_at=eq.' + encodeURIComponent(fila.updated_at);
+    const res = await fetch(cond, {
+      method: 'PATCH',
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+      body: JSON.stringify({ data: { value: JSON.stringify(obj) }, updated_at: new Date().toISOString() })
+    });
+    if (!res.ok) throw new Error('No se pudo guardar en la nube (' + res.status + ')');
+    const rows = await res.json().catch(() => []);
+    if (rows && rows.length) {                       // guardado confirmado
+      DATA = obj; LAST_UPDATED_AT = rows[0].updated_at; render();
+      return;
+    }
+    // lista vacía = alguien guardó entre nuestra lectura y escritura → reintentar
+  }
+  throw new Error('La nube está muy ocupada — intenta de nuevo.');
+}
+
+async function recargar() {
+  let fila = await leerNube();
+  if (!fila) {
+    // Primera vez: sembrar la fila con los datos que ya existían
+    const obj = JSON.parse(JSON.stringify(SEED));
+    const token = await crearFila(obj);
+    fila = token === null ? await leerNube() : { obj, updated_at: token };
+  }
+  if (fila) { DATA = fila.obj; LAST_UPDATED_AT = fila.updated_at; }
+  render();
+}
+
+// ── Archivos: suben a Supabase Storage; aquí solo se guarda el link ──
+function nombreLimpio(s) { return String(s || 'archivo').replace(/[^a-zA-Z0-9._-]/g, '-'); }
+
+async function subirArchivo(ruta, cuerpo, tipo) {
+  const res = await fetch(SUPABASE_URL + '/storage/v1/object/' + BUCKET + '/' + ruta, {
+    method: 'POST',
+    headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': tipo, 'x-upsert': 'true' },
+    body: cuerpo
+  });
+  if (!res.ok) { let t = ''; try { t = await res.text(); } catch (e) {} throw new Error('No se pudo subir el archivo. ' + t); }
+  return SUPABASE_URL + '/storage/v1/object/public/' + BUCKET + '/' + ruta;
+}
+
+// Comprime imágenes para que la página siga rápida (máx 1600px, JPG)
+function comprimirImagen(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 1600;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) { const k = Math.min(MAX / w, MAX / h); w = Math.round(w * k); h = Math.round(h * k); }
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        c.toBlob(b => b ? resolve(b) : reject(new Error('No se pudo procesar la imagen.')), 'image/jpeg', 0.85);
+      };
+      img.onerror = () => reject(new Error('No se pudo leer la imagen.'));
+      img.src = reader.result;
+    };
+    reader.onerror = () => reject(new Error('No se pudo leer la imagen.'));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function subirImagen(input, carpeta) {
+  const f = input.files && input.files[0];
+  if (!f) return null;
+  const blob = await comprimirImagen(f);
+  const ruta = 'cobros/' + carpeta + '/' + Date.now() + '_' + nombreLimpio(f.name.replace(/\.[^.]+$/, '')) + '.jpg';
+  return subirArchivo(ruta, blob, 'image/jpeg');
+}
+
+// Los archivos viejos se guardaron con ruta relativa (van dentro del sitio); los nuevos son links completos
+function archivoUrl(ruta) { return /^https?:\/\//.test(ruta) ? ruta : '/' + ruta; }
+function verArchivo(ruta) { window.open(archivoUrl(ruta)); }
+
+// ── Clave de acceso (gate) ──────────────────────────────────
+function claveActual() { return (DATA.config && DATA.config.clave) || CLAVE_DEFAULT; }
+
+function revisarGate() {
+  let guardada = '';
+  try { guardada = localStorage.getItem('stbCobrosAcceso') || ''; } catch (e) {}
+  if (guardada && guardada === claveActual()) { $('gate').style.display = 'none'; return; }
+  $('gate').style.display = 'flex';
+  $('gateEstado').style.display = 'none';
+}
+
+function entrarGate(e) {
+  e.preventDefault();
+  const v = $('gateClave').value;
+  if (v === claveActual()) {
+    try { localStorage.setItem('stbCobrosAcceso', v); } catch (e2) {}
+    $('gate').style.display = 'none';
+  } else {
+    $('gateError').style.display = 'block';
+    $('gateClave').select();
+  }
+}
+
+// ── Cálculos de estado ──────────────────────────────────────
+function generarCuotas(monto, plan) {
+  const cuotas = [];
+  const num = plan.tipo === 'unico' ? 1 : Math.max(1, parseInt(plan.numPagos) || 1);
+  const base = Math.floor((monto / num) * 100) / 100;
+  let acumulado = 0;
+  const inicio = new Date(plan.fechaInicio + 'T00:00:00');
+  for (let i = 0; i < num; i++) {
+    const fecha = new Date(inicio);
+    if (plan.tipo === 'mensual') fecha.setMonth(fecha.getMonth() + i);
+    else if (plan.tipo === 'quincenal') fecha.setDate(fecha.getDate() + i * 15);
+    const montoCuota = (i === num - 1) ? Math.round((monto - acumulado) * 100) / 100 : base;
+    acumulado += montoCuota;
+    cuotas.push({ num: i + 1, fecha: fecha.toISOString().slice(0, 10), monto: montoCuota });
+  }
+  return cuotas;
+}
+
+function nuevoId(prefijo) { return prefijo + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7); }
+
+function nuevoToken() {
+  const a = new Uint8Array(16);
+  (window.crypto || window.msCrypto).getRandomValues(a);
+  return Array.from(a, b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function calcCO(co) {
+  const pagado = co.pagos.reduce((s, p) => s + p.monto, 0);
+  const hoy = hoyISO();
+  const en7 = new Date(); en7.setDate(en7.getDate() + 7);
+  const hoy7 = en7.toISOString().slice(0, 10);
+  const esperadoHoy = co.cuotas.filter(c => c.fecha <= hoy).reduce((s, c) => s + c.monto, 0);
+
+  let estado;
+  if (pagado >= co.monto - 0.005) estado = 'pagado';
+  else if (pagado < esperadoHoy - 0.005) estado = 'atrasado';
+  else if (co.cuotas.some(c => c.fecha > hoy && c.fecha <= hoy7)) estado = 'proximo';
+  else estado = 'corriente';
+
+  return { pagado, saldo: Math.max(0, co.monto - pagado), atrasadoMonto: Math.max(0, esperadoHoy - pagado), estado };
+}
+
+function calcProyecto(p) {
+  let total = 0, pagado = 0, atrasado = 0;
+  let estados = [];
+  p.changeOrders.forEach(co => {
+    const c = calcCO(co);
+    total += co.monto; pagado += c.pagado; atrasado += c.atrasadoMonto;
+    estados.push(c.estado);
+  });
+  let estado = 'pagado';
+  if (!p.changeOrders.length) estado = 'corriente';
+  else if (estados.includes('atrasado')) estado = 'atrasado';
+  else if (estados.includes('proximo')) estado = 'proximo';
+  else if (estados.includes('corriente')) estado = 'corriente';
+  const pct = total > 0 ? Math.round(pagado / total * 100) : 0;
+  return { total, pagado, saldo: Math.max(0, total - pagado), atrasado, pct, estado };
+}
+
+function estadoCuotasCliente(co) {
+  let restante = co.pagos.reduce((s, p) => s + p.monto, 0);
+  const hoy = hoyISO();
+  return co.cuotas.map(c => {
+    let estado;
+    if (restante >= c.monto - 0.005) { estado = 'pagada'; restante -= c.monto; }
+    else if (restante > 0.005) { estado = 'parcial'; restante = 0; }
+    else estado = c.fecha < hoy ? 'atrasada' : 'pendiente';
+    return { ...c, estado };
+  });
+}
+
+const TAGS = {
+  atrasado: ['tag-atrasado', '🔴 Atrasado'],
+  proximo: ['tag-proximo', '🟡 Pago próximo'],
+  corriente: ['tag-corriente', '🟢 Al corriente'],
+  pagado: ['tag-pagado', '✅ Pagado']
+};
+const MINI = {
+  pagada: ['background:#e6f2ea;color:#2e7d4f', 'Pagada'],
+  parcial: ['background:#fdf3dd;color:#9a6b00', 'Parcial'],
+  atrasada: ['background:#fdeae7;color:#e8442e', 'Atrasada'],
+  pendiente: ['background:#eef1f5;color:#667085', 'Pendiente']
+};
+
+function fechaBonita(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+// ── Render ──────────────────────────────────────────────────
+const abiertos = new Set();
+
+function render() {
+  renderDash();
+  renderUsuarios();
+  const q = $('buscar').value.toLowerCase();
+  const filtro = $('filtroEstado').value;
+  const lista = $('lista');
+  lista.innerHTML = '';
+
+  let proyectos = DATA.proyectos.map(p => ({ p, calc: calcProyecto(p) }));
+  if (q) proyectos = proyectos.filter(({ p }) =>
+    (p.familia + ' ' + p.numero + ' ' + (p.direccion || '')).toLowerCase().includes(q));
+  if (filtro) proyectos = proyectos.filter(({ calc }) => calc.estado === filtro);
+
+  // Atrasados primero
+  const orden = { atrasado: 0, proximo: 1, corriente: 2, pagado: 3 };
+  proyectos.sort((a, b) => orden[a.calc.estado] - orden[b.calc.estado] || a.p.familia.localeCompare(b.p.familia));
+
+  if (!proyectos.length) {
+    lista.innerHTML = '<div class="vacio"><div class="big">🏠</div>' +
+      (DATA.proyectos.length ? 'No hay proyectos que coincidan con la búsqueda.' :
+      'Aún no hay proyectos.<br>Presiona <b>+ Nuevo Proyecto</b> para empezar.') + '</div>';
+    return;
+  }
+
+  proyectos.forEach(({ p, calc }) => {
+    const [tagClass, tagTxt] = TAGS[calc.estado];
+    const card = document.createElement('div');
+    card.className = 'card estado-' + calc.estado + (abiertos.has(p.id) ? ' abierto' : '');
+    card.innerHTML = `
+      <div class="card-main">
+        ${p.foto
+          ? `<img class="card-foto" src="${archivoUrl(p.foto)}" onclick="verArchivo('${p.foto}')">`
+          : `<div class="card-foto" title="Edita el proyecto para agregar foto">🏠</div>`}
+        <div class="card-info">
+          <div class="card-title">${esc(p.familia)}${p.numero ? ' (' + esc(p.numero) + ')' : ''}</div>
+          <div class="chips">
+            ${p.correo ? `<span class="chip">✉ ${esc(p.correo)}</span>` : ''}
+            ${p.direccion ? `<span class="chip link" onclick="window.open('https://maps.google.com/?q='+encodeURIComponent('${esc(p.direccion)}'))">📍 ${esc(p.direccion)}</span>` : ''}
+            <span class="chip btn" onclick="abrirModalProyecto('${p.id}')">Editar</span>
+            <span class="chip">${p.changeOrders.length} change order${p.changeOrders.length === 1 ? '' : 's'}</span>
+            ${(p.contratos || []).some(c => c.estado === 'pendiente')
+              ? `<span class="chip" style="background:var(--amber-soft);color:var(--amber-text);border-color:#f0dcae">⏳ ${(p.contratos || []).filter(c => c.estado === 'pendiente').length} por firmar</span>` : ''}
+          </div>
+        </div>
+        <div class="card-right">
+          <div class="pct">${calc.pct}%</div>
+          <div class="estado-tag ${tagClass}">${tagTxt}</div>
+        </div>
+      </div>
+      <div class="card-progress"><div class="bar"><div style="width:${calc.pct}%"></div></div><div class="bar-label">${calc.pct}%</div></div>
+      <div class="money-summary">
+        <div><div class="ms-label">Total</div><b>${money(calc.total)}</b></div>
+        <div><div class="ms-label">Pagado</div><b style="color:var(--green)">${money(calc.pagado)}</b></div>
+        <div><div class="ms-label">Deben</div><b style="color:${calc.saldo > 0.005 ? 'var(--red)' : 'var(--green)'}">${money(calc.saldo)}</b></div>
+        ${calc.atrasado > 0.005 ? `<div><div class="ms-label">Atrasado</div><b style="color:var(--red)">${money(calc.atrasado)}</b></div>` : ''}
+      </div>
+      <div class="card-actions">
+        <button class="btn navy" onclick="toggleDetalle('${p.id}')">${abiertos.has(p.id) ? '▲ Ocultar detalles' : '▼ Más detalles'}</button>
+        <button class="btn" onclick="abrirModalCO('${p.id}')">+ Change Order</button>
+        <button class="btn" onclick="abrirModalContrato('${p.id}')">✍ Contrato para Firma</button>
+        <button class="btn" onclick="abrirEstadoCuenta('${p.id}')">📄 Estado de Cuenta PDF</button>
+        <button class="btn danger-text" onclick="borrarProyecto('${p.id}', '${esc(p.familia)}')">Eliminar</button>
+      </div>
+      <div class="detalle">${renderDetalle(p)}</div>`;
+    lista.appendChild(card);
+  });
+}
+
+function renderContratos(p) {
+  const contratos = p.contratos || [];
+  if (!contratos.length) return '';
+  return `<div style="margin-bottom:14px">
+    <div class="ms-label" style="margin-bottom:8px">✍ Contratos para firma</div>
+    ${contratos.map(ct => `
+    <div class="pago-item" style="background:${ct.estado === 'firmado' ? 'var(--green-soft)' : 'var(--amber-soft)'}">
+      <b>${money(ct.monto)}</b> · ${esc(ct.descripcion)}
+      ${ct.estado === 'firmado'
+        ? ` · <span style="color:var(--green);font-weight:700">✅ Firmado por ${esc(ct.firma.nombre)} el ${fechaBonita(ct.firma.fecha)}</span>`
+        : ` · <span style="color:var(--amber-text);font-weight:700">⏳ Pendiente de firma</span>
+            <span class="chip link" style="padding:2px 8px" onclick="copiarLinkContrato('${ct.token}')">🔗 Copiar link</span>`}
+      <span class="chip link" style="padding:2px 8px" onclick="abrirContratoPdf('${ct.token}')">📄 PDF</span>
+      <span class="del" title="Eliminar contrato" onclick="borrarContrato('${p.id}','${ct.id}','${ct.estado}')">✕</span>
+    </div>`).join('')}
+  </div>`;
+}
+
+function renderDetalle(p) {
+  const contratosHTML = renderContratos(p);
+  if (!p.changeOrders.length) return contratosHTML + '<div class="hint">Sin change orders. Presiona <b>+ Change Order</b> para agregar la primera, o <b>✍ Contrato para Firma</b> para que el cliente firme y elija su plan.</div>';
+  return contratosHTML + p.changeOrders.map(co => {
+    const c = calcCO(co);
+    const cuotas = estadoCuotasCliente(co);
+    const planTxt = co.plan.tipo === 'unico' ? 'Una exhibición' :
+      co.cuotas.length + (co.plan.tipo === 'mensual' ? ' pagos mensuales' : ' pagos quincenales');
+    return `
+    <div class="co-box">
+      <div class="co-head">
+        <h3>${esc(co.descripcion)}</h3>
+        <span class="mini-tag" style="${MINI[c.estado === 'pagado' ? 'pagada' : c.estado === 'atrasado' ? 'atrasada' : 'pendiente'][0]}">${TAGS[c.estado][1]}</span>
+        <span class="co-monto">${money(co.monto)}</span>
+      </div>
+      <div class="co-body">
+        <div class="hint" style="margin-bottom:6px">
+          ${planTxt} · Pagado: <b style="color:var(--green)">${money(c.pagado)}</b> · Saldo: <b style="color:${c.saldo > 0.005 ? 'var(--red)' : 'var(--green)'}">${money(c.saldo)}</b>
+          ${co.fechaFirma ? ' · Firmado: ' + fechaBonita(co.fechaFirma) : ''}
+        </div>
+        <table class="cuotas-table">
+          <tr><th>#</th><th>Fecha</th><th>Monto</th><th>Estado</th></tr>
+          ${cuotas.map(q => `<tr>
+            <td>${q.num}</td><td>${fechaBonita(q.fecha)}</td><td>${money(q.monto)}</td>
+            <td><span class="mini-tag" style="${MINI[q.estado][0]}">${MINI[q.estado][1]}</span></td>
+          </tr>`).join('')}
+        </table>
+        ${co.pagos.length ? `<div class="pagos-list">
+          ${co.pagos.slice().sort((a, b) => a.fecha.localeCompare(b.fecha)).map(pg => `
+          <div class="pago-item">
+            <b>${money(pg.monto)}</b> · ${fechaBonita(pg.fecha)} · ${esc(pg.metodo)}
+            ${pg.nota ? ' · ' + esc(pg.nota) : ''}
+            ${pg.registradoPor ? ` · <span style="color:var(--gray)">reg. por ${esc(pg.registradoPor)}</span>` : ''}
+            ${pg.evidencia ? ` <span class="chip link" style="padding:2px 8px" onclick="verArchivo('${pg.evidencia}')">📷 evidencia</span>` : ''}
+            <span class="del" title="Borrar pago" onclick="borrarPago('${p.id}','${co.id}','${pg.id}')">✕</span>
+          </div>`).join('')}
+        </div>` : ''}
+      </div>
+      <div class="co-actions">
+        <button class="btn primary" onclick="abrirModalPago('${p.id}','${co.id}')">💵 Registrar Pago</button>
+        ${(() => {
+          if (co.fechaFirma) return '';
+          const ctPend = (p.contratos || []).find(ct => ct.coId === co.id && ct.estado === 'pendiente');
+          return ctPend
+            ? `<button class="btn" onclick="copiarLinkContrato('${ctPend.token}')">🔗 Copiar link de firma</button>`
+            : `<button class="btn" onclick="abrirModalContrato('${p.id}','${co.id}')">✍ Mandar a Firma</button>`;
+        })()}
+        ${co.invoiceFile ? `<button class="btn" onclick="verArchivo('${co.invoiceFile}')">📎 Ver Invoice</button>` : ''}
+        <button class="btn" onclick="abrirModalCO('${p.id}','${co.id}')">Editar</button>
+        <button class="btn danger-text" onclick="borrarCO('${p.id}','${co.id}','${esc(co.descripcion)}')">Eliminar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderDash() {
+  let porCobrar = 0, atrasado = 0, semana = 0, mesCobrado = 0, numAtrasados = 0;
+  const hoy = hoyISO();
+  const en7 = new Date(); en7.setDate(en7.getDate() + 7);
+  const hoy7 = en7.toISOString().slice(0, 10);
+  const mes = hoy.slice(0, 7);
+
+  DATA.proyectos.forEach(p => {
+    const c = calcProyecto(p);
+    porCobrar += c.saldo;
+    atrasado += c.atrasado;
+    if (c.estado === 'atrasado') numAtrasados++;
+    p.changeOrders.forEach(co => {
+      estadoCuotasCliente(co).forEach(q => {
+        if ((q.estado === 'pendiente' || q.estado === 'parcial') && q.fecha > hoy && q.fecha <= hoy7) semana += q.monto;
+      });
+      co.pagos.forEach(pg => { if (pg.fecha.slice(0, 7) === mes) mesCobrado += pg.monto; });
+    });
+  });
+
+  $('dash').innerHTML = `
+    <div class="dash-card"><div class="dt">Total por cobrar</div><div class="dv">${money(porCobrar)}</div><div class="dd">${DATA.proyectos.length} proyecto${DATA.proyectos.length === 1 ? '' : 's'}</div></div>
+    <div class="dash-card c-red"><div class="dt">Pagos atrasados</div><div class="dv">${money(atrasado)}</div><div class="dd">${numAtrasados} proyecto${numAtrasados === 1 ? '' : 's'} atrasado${numAtrasados === 1 ? '' : 's'}</div></div>
+    <div class="dash-card c-amber"><div class="dt">Vence en 7 días</div><div class="dv">${money(semana)}</div><div class="dd">próximos pagos</div></div>
+    <div class="dash-card c-green"><div class="dt">Cobrado este mes</div><div class="dv">${money(mesCobrado)}</div><div class="dd">${new Date().toLocaleDateString('es-MX', { month: 'long', year: 'numeric' })}</div></div>`;
+}
+
+function renderUsuarios() {
+  const sel = $('usuarioActual');
+  const guardado = localStorage.getItem('stbUsuario') || '';
+  sel.innerHTML = DATA.usuarios.map(u => `<option ${u === guardado ? 'selected' : ''}>${esc(u)}</option>`).join('');
+}
+
+function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+function usuario() { return $('usuarioActual').value || ''; }
+function guardarUsuarioLocal() { localStorage.setItem('stbUsuario', usuario()); }
+function toggleDetalle(id) { abiertos.has(id) ? abiertos.delete(id) : abiertos.add(id); render(); }
+
+function toast(msg, esError) {
+  const t = $('toast');
+  t.textContent = msg; t.className = 'toast' + (esError ? ' error' : '');
+  t.style.display = 'block';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.style.display = 'none', 3000);
+}
+function abrir(id) { $(id).classList.add('abierto'); }
+function cerrar(id) { $(id).classList.remove('abierto'); }
+
+// ── Proyectos ───────────────────────────────────────────────
+function abrirModalProyecto(id) {
+  const p = id ? DATA.proyectos.find(x => x.id === id) : null;
+  $('tituloProyecto').textContent = p ? 'Editar Proyecto' : 'Nuevo Proyecto';
+  $('pId').value = p ? p.id : '';
+  $('pFamilia').value = p ? p.familia : '';
+  $('pNumero').value = p ? p.numero : '';
+  $('pCorreo').value = p ? p.correo : '';
+  $('pDireccion').value = p ? p.direccion : '';
+  $('pFoto').value = '';
+  abrir('ovProyecto');
+}
+
+async function guardarProyecto() {
+  const familia = $('pFamilia').value.trim();
+  if (!familia) return toast('Escribe el nombre de la familia.', true);
+  try {
+    const id = $('pId').value;
+    const numero = $('pNumero').value.trim();
+    const correo = $('pCorreo').value.trim();
+    const direccion = $('pDireccion').value.trim();
+    const quien = usuario();
+    const fotoUrl = await subirImagen($('pFoto'), 'fotos');
+    await guardar(obj => {
+      if (id) {
+        const p = obj.proyectos.find(x => x.id === id);
+        if (!p) throw new Error('Proyecto no encontrado.');
+        p.familia = familia; p.numero = numero; p.correo = correo; p.direccion = direccion;
+        if (fotoUrl) p.foto = fotoUrl;
+      } else {
+        obj.proyectos.push({
+          id: nuevoId('p'), familia, numero, correo, direccion,
+          foto: fotoUrl || '', creadoPor: quien, creado: new Date().toISOString(),
+          changeOrders: [], contratos: []
+        });
+      }
+    });
+    cerrar('ovProyecto');
+    toast('✓ Proyecto guardado');
+  } catch (e) { toast(e.message, true); }
+}
+
+async function borrarProyecto(id, nombre) {
+  if (!confirm('¿Eliminar el proyecto "' + nombre + '" con todas sus change orders y pagos?\n\nEsta acción no se puede deshacer.')) return;
+  try {
+    await guardar(obj => {
+      const antes = obj.proyectos.length;
+      obj.proyectos = obj.proyectos.filter(p => p.id !== id);
+      if (obj.proyectos.length === antes) throw new Error('No encontrado.');
+    });
+    toast('Proyecto eliminado');
+  } catch (e) { toast(e.message, true); }
+}
+
+// ── Change orders ───────────────────────────────────────────
+function toggleNumPagos() {
+  $('campoNumPagos').style.display = $('coPlanTipo').value === 'unico' ? 'none' : 'block';
+}
+
+function abrirModalCO(pid, coid) {
+  const p = DATA.proyectos.find(x => x.id === pid);
+  const co = coid ? p.changeOrders.find(x => x.id === coid) : null;
+  $('tituloCO').textContent = (co ? 'Editar' : 'Nueva') + ' Change Order — ' + p.familia;
+  $('coPid').value = pid; $('coId').value = co ? co.id : '';
+  $('coDesc').value = co ? co.descripcion : '';
+  $('coMonto').value = co ? co.monto : '';
+  $('coFirma').value = co ? (co.fechaFirma || '') : '';
+  $('coPlanTipo').value = co ? co.plan.tipo : 'unico';
+  $('coNumPagos').value = co && co.plan.numPagos ? co.plan.numPagos : 6;
+  $('coFechaInicio').value = co ? co.plan.fechaInicio : hoyISO();
+  $('coInvoice').value = '';
+  $('invoiceActual').innerHTML = co && co.invoiceFile
+    ? '📎 Ya hay un invoice cargado. Sube otro solo si quieres reemplazarlo.' : '';
+  toggleNumPagos();
+  abrir('ovCO');
+}
+
+async function guardarCO() {
+  const pid = $('coPid').value;
+  const coid = $('coId').value;
+  const desc = $('coDesc').value.trim();
+  const monto = Math.round(parseFloat($('coMonto').value) * 100) / 100;
+  const fechaInicio = $('coFechaInicio').value;
+  const fechaFirma = $('coFirma').value;
+  const plan = { tipo: $('coPlanTipo').value, numPagos: parseInt($('coNumPagos').value) || 1, fechaInicio };
+  const quien = usuario();
+  if (!desc) return toast('Escribe la descripción.', true);
+  if (!(monto > 0)) return toast('Escribe un monto válido.', true);
+  if (!fechaInicio) return toast('Elige la fecha del primer pago.', true);
+
+  try {
+    let invoiceUrl = null;
+    const f = $('coInvoice').files[0];
+    if (f) {
+      const esPdf = (f.type || '').indexOf('pdf') >= 0 || /\.pdf$/i.test(f.name || '');
+      if (esPdf) {
+        const ruta = 'cobros/invoices/' + Date.now() + '_' + nombreLimpio(f.name);
+        invoiceUrl = await subirArchivo(ruta, f, 'application/pdf');
+      } else {
+        invoiceUrl = await subirImagen($('coInvoice'), 'invoices');
+      }
+    }
+    await guardar(obj => {
+      const p = obj.proyectos.find(x => x.id === pid);
+      if (!p) throw new Error('Proyecto no encontrado.');
+      if (coid) {
+        const co = p.changeOrders.find(x => x.id === coid);
+        if (!co) throw new Error('Change order no encontrada.');
+        co.descripcion = desc;
+        co.fechaFirma = fechaFirma || '';
+        if (invoiceUrl) co.invoiceFile = invoiceUrl;
+        if (co.monto !== monto || JSON.stringify(co.plan) !== JSON.stringify(plan)) {
+          co.monto = monto; co.plan = plan; co.cuotas = generarCuotas(monto, plan);
+        }
+      } else {
+        p.changeOrders.push({
+          id: nuevoId('co'), descripcion: desc, monto,
+          fechaFirma: fechaFirma || '', invoiceFile: invoiceUrl || '',
+          plan, cuotas: generarCuotas(monto, plan), pagos: [],
+          creadoPor: quien, creado: new Date().toISOString()
+        });
+      }
+    });
+    cerrar('ovCO'); abiertos.add(pid); render();
+    toast('✓ Change order guardada');
+  } catch (e) { toast(e.message, true); }
+}
+
+async function borrarCO(pid, coid, nombre) {
+  if (!confirm('¿Eliminar la change order "' + nombre + '" y sus pagos?')) return;
+  try {
+    await guardar(obj => {
+      const p = obj.proyectos.find(x => x.id === pid);
+      if (!p) throw new Error('Proyecto no encontrado.');
+      const antes = p.changeOrders.length;
+      p.changeOrders = p.changeOrders.filter(c => c.id !== coid);
+      if (p.changeOrders.length === antes) throw new Error('No encontrada.');
+    });
+    toast('Change order eliminada');
+  } catch (e) { toast(e.message, true); }
+}
+
+// ── Contratos para firma ────────────────────────────────────
+function abrirModalContrato(pid, coid) {
+  const p = DATA.proyectos.find(x => x.id === pid);
+  $('tituloContrato').textContent = 'Contrato para Firma — ' + p.familia;
+  $('ctPid').value = pid;
+
+  const sinFirmar = p.changeOrders.filter(co => !co.fechaFirma);
+  $('ctCO').innerHTML = sinFirmar.map(co =>
+    `<option value="${co.id}">${esc(co.descripcion)} — ${money(co.monto)}</option>`).join('') +
+    '<option value="">✎ Otro concepto (escribir nuevo)</option>';
+  $('ctCO').value = coid || (sinFirmar.length ? sinFirmar[0].id : '');
+  cambioCOContrato();
+  abrir('ovContrato');
+}
+
+function cambioCOContrato() {
+  const p = DATA.proyectos.find(x => x.id === $('ctPid').value);
+  const co = p.changeOrders.find(x => x.id === $('ctCO').value);
+  if (co) {
+    $('ctDesc').value = co.descripcion;
+    $('ctMonto').value = co.monto;
+    $('ctCOHint').textContent = 'Cuando el cliente firme, el plan de pago que él elija se aplicará a esta change order (no se crea una repetida).';
+  } else {
+    $('ctDesc').value = '';
+    $('ctMonto').value = '';
+    $('ctCOHint').textContent = 'Al firmar, se creará una change order nueva con el plan que elija el cliente.';
+  }
+}
+
+async function guardarContrato() {
+  const pid = $('ctPid').value;
+  const descripcion = $('ctDesc').value.trim();
+  const monto = Math.round(parseFloat($('ctMonto').value) * 100) / 100;
+  const coId = $('ctCO').value || '';
+  const quien = usuario();
+  if (!descripcion) return toast('Escribe la descripción del trabajo.', true);
+  if (!(monto > 0)) return toast('Escribe un monto válido.', true);
+  const token = nuevoToken();
+  try {
+    await guardar(obj => {
+      const p = obj.proyectos.find(x => x.id === pid);
+      if (!p) throw new Error('Proyecto no encontrado.');
+      if (coId && !p.changeOrders.some(c => c.id === coId)) throw new Error('Change order no encontrada.');
+      if (!Array.isArray(p.contratos)) p.contratos = [];
+      p.contratos.push({
+        id: nuevoId('ct'), token, descripcion, monto,
+        estado: 'pendiente', firma: null, coId,
+        creadoPor: quien, creado: new Date().toISOString()
+      });
+    });
+    cerrar('ovContrato'); abiertos.add(pid); render();
+    mostrarLinkContrato(token);
+  } catch (e) { toast(e.message, true); }
+}
+
+function linkDeContrato(token) { return location.origin + '/firmar.html?t=' + token; }
+
+function mostrarLinkContrato(token) {
+  $('linkContrato').value = linkDeContrato(token);
+  abrir('ovLink');
+}
+
+function copiarTexto(txt) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(txt);
+  }
+  const ta = document.createElement('textarea');
+  ta.value = txt; document.body.appendChild(ta);
+  ta.select(); document.execCommand('copy');
+  document.body.removeChild(ta);
+  return Promise.resolve();
+}
+
+function copiarLinkContrato(token) {
+  copiarTexto(linkDeContrato(token)).then(() => toast('✓ Link copiado. Mándaselo al cliente.'));
+}
+
+function copiarLinkInput() {
+  copiarTexto($('linkContrato').value).then(() => toast('✓ Link copiado'));
+}
+
+function abrirWhatsApp() {
+  const msg = 'Hola, le compartimos su contrato de change order para revisar y firmar: ' + $('linkContrato').value;
+  window.open('https://wa.me/?text=' + encodeURIComponent(msg));
+}
+
+async function borrarContrato(pid, cid, estado) {
+  const aviso = estado === 'firmado'
+    ? '¿Eliminar este contrato firmado?\n\nLa change order que se creó al firmarlo NO se borra, solo el registro del contrato.'
+    : '¿Eliminar este contrato pendiente? El link que mandaste dejará de funcionar.';
+  if (!confirm(aviso)) return;
+  try {
+    await guardar(obj => {
+      const p = obj.proyectos.find(x => x.id === pid);
+      if (!p) throw new Error('Proyecto no encontrado.');
+      const antes = (p.contratos || []).length;
+      p.contratos = (p.contratos || []).filter(c => c.id !== cid);
+      if (p.contratos.length === antes) throw new Error('Contrato no encontrado.');
+    });
+    abiertos.add(pid);
+    toast('Contrato eliminado');
+  } catch (e) { toast(e.message, true); }
+}
+
+// ── Pagos ───────────────────────────────────────────────────
+function abrirModalPago(pid, coid) {
+  const p = DATA.proyectos.find(x => x.id === pid);
+  const co = p.changeOrders.find(x => x.id === coid);
+  const c = calcCO(co);
+  $('pgPid').value = pid; $('pgCoid').value = coid;
+  $('pgContexto').innerHTML = `<b>${esc(p.familia)}</b> — ${esc(co.descripcion)}<br>Saldo pendiente: <b style="color:var(--red)">${money(c.saldo)}</b>`;
+  $('pgMonto').value = ''; $('pgFecha').value = hoyISO();
+  $('pgEvidencia').value = ''; $('pgNota').value = '';
+  abrir('ovPago');
+}
+
+async function guardarPago() {
+  const monto = Math.round(parseFloat($('pgMonto').value) * 100) / 100;
+  if (!(monto > 0)) return toast('Escribe el monto recibido.', true);
+  if (!$('pgFecha').value) return toast('Elige la fecha del pago.', true);
+  if (!usuario()) return toast('Elige tu nombre arriba en "Registrando como".', true);
+  const pid = $('pgPid').value, coid = $('pgCoid').value;
+  const fecha = $('pgFecha').value, metodo = $('pgMetodo').value;
+  const nota = $('pgNota').value.trim(), quien = usuario();
+  try {
+    const evidenciaUrl = await subirImagen($('pgEvidencia'), 'evidencias');
+    await guardar(obj => {
+      const p = obj.proyectos.find(x => x.id === pid);
+      const co = p && p.changeOrders.find(c => c.id === coid);
+      if (!co) throw new Error('Change order no encontrada.');
+      co.pagos.push({
+        id: nuevoId('pg'), fecha, monto, metodo,
+        evidencia: evidenciaUrl || '', nota,
+        registradoPor: quien, timestamp: new Date().toISOString()
+      });
+    });
+    cerrar('ovPago'); abiertos.add(pid); render();
+    toast('✓ Pago registrado');
+  } catch (e) { toast(e.message, true); }
+}
+
+async function borrarPago(pid, coid, pgid) {
+  if (!confirm('¿Borrar este pago del registro?')) return;
+  try {
+    await guardar(obj => {
+      const p = obj.proyectos.find(x => x.id === pid);
+      const co = p && p.changeOrders.find(c => c.id === coid);
+      if (!co) throw new Error('No encontrado.');
+      const antes = co.pagos.length;
+      co.pagos = co.pagos.filter(x => x.id !== pgid);
+      if (co.pagos.length === antes) throw new Error('Pago no encontrado.');
+    });
+    toast('Pago borrado');
+  } catch (e) { toast(e.message, true); }
+}
+
+// ── Configuración ───────────────────────────────────────────
+function abrirConfig() {
+  $('cfEmpresa').value = DATA.config.empresa || '';
+  $('cfDatosPago').value = DATA.config.datosPago || '';
+  $('cfUsuarios').value = DATA.usuarios.join(', ');
+  $('cfClave').value = DATA.config.clave || CLAVE_DEFAULT;
+  abrir('ovConfig');
+}
+
+async function guardarConfig() {
+  const empresa = $('cfEmpresa').value.trim();
+  const datosPago = $('cfDatosPago').value.trim();
+  const clave = $('cfClave').value.trim() || CLAVE_DEFAULT;
+  const usuarios = $('cfUsuarios').value.split(',').map(s => s.trim()).filter(Boolean);
+  try {
+    await guardar(obj => {
+      obj.config = Object.assign(obj.config || {}, { empresa, datosPago, clave });
+      if (usuarios.length) obj.usuarios = usuarios;
+    });
+    try { localStorage.setItem('stbCobrosAcceso', clave); } catch (e2) {}
+    cerrar('ovConfig');
+    toast('✓ Configuración guardada');
+  } catch (e) { toast(e.message, true); }
+}
+
+// ── PDFs: se generan aquí mismo y se imprimen/guardan como PDF ──
+function ventanaImprimir(titulo, htmlCuerpo) {
+  const w = window.open('', '_blank');
+  if (!w) { toast('Tu navegador bloqueó la ventana. Permite pop-ups.', true); return; }
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>' + titulo + '</title>' +
+    '<style>' + ESTILO_PDF + '</style></head><body>' + htmlCuerpo +
+    '<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script>' +
+    '</body></html>');
+  w.document.close();
+}
+
+const ESTILO_PDF = `
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body { font-family: Helvetica, Arial, sans-serif; color:#333; }
+  .hoja { max-width: 800px; margin: 0 auto; }
+  .head { background:#13233d; color:white; padding:22px 40px; display:flex; justify-content:space-between; align-items:center; }
+  .head .t1 { font-size:22px; font-weight:bold; text-transform:uppercase; }
+  .head .t2 { color:#e8442e; font-size:14px; font-weight:bold; margin-top:4px; }
+  .head .t3 { color:#aebdd4; font-size:10px; margin-top:6px; }
+  .head img { background:white; border-radius:10px; padding:8px; width:100px; height:auto; }
+  .cuerpo { padding: 24px 40px 40px; }
+  .cliente { font-size:16px; font-weight:bold; color:#13233d; }
+  .sub { color:#666; font-size:11px; margin-top:2px; }
+  .cajas { display:flex; gap:10px; margin:16px 0; }
+  .caja { flex:1; background:#f2f2f2; padding:10px 12px; }
+  .caja .ct { font-size:8px; font-weight:bold; color:#666; letter-spacing:1px; }
+  .caja .cv { font-size:17px; font-weight:bold; margin-top:4px; }
+  .co-titulo { background:#13233d; color:white; font-size:11px; font-weight:bold; padding:7px 10px; display:flex; justify-content:space-between; margin-top:14px; }
+  .plan { color:#666; font-size:9px; margin:6px 0; }
+  table { width:100%; border-collapse:collapse; font-size:9px; }
+  th { background:#e4e8ee; color:#13233d; text-align:left; padding:5px 6px; font-size:8px; letter-spacing:1px; }
+  td { padding:5px 6px; border-bottom:1px solid #eee; }
+  tr:nth-child(odd) td { background:#f7f8fa; }
+  .est-pagada { color:#2e7d4f; font-weight:bold; } .est-parcial { color:#c98a00; font-weight:bold; }
+  .est-atrasada { color:#e8442e; font-weight:bold; } .est-pendiente { color:#666; font-weight:bold; }
+  .pagos-t { color:#2e7d4f; font-size:9.5px; font-weight:bold; margin-top:8px; }
+  .pago-l { font-size:9px; margin:3px 0 0 10px; }
+  .fp { margin-top:18px; }
+  .fp .fp-t { background:#e4e8ee; color:#13233d; font-size:10px; font-weight:bold; padding:6px 10px; }
+  .fp .fp-b { font-size:9.5px; padding:8px 10px; white-space:pre-wrap; }
+  .nota { color:#666; font-size:8.5px; font-style:italic; margin-top:16px; }
+  .agree { font-size:11px; margin:14px 0 4px; }
+  .agree-es { color:#666; font-size:10px; font-style:italic; }
+  .desc { background:#f2f2f2; padding:14px; font-size:12px; margin:12px 0; white-space:pre-wrap; }
+  .total { background:#13233d; color:white; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; }
+  .total .tl { color:#aebdd4; font-size:9px; font-weight:bold; letter-spacing:2px; }
+  .total .tv { font-size:20px; font-weight:bold; }
+  .plan-t { color:#13233d; font-size:11px; font-weight:bold; margin:16px 0 4px; }
+  .firmas { display:flex; gap:40px; margin-top:40px; }
+  .firma-col { flex:1; }
+  .firma-img { height:62px; display:flex; align-items:flex-end; }
+  .firma-img img { max-height:60px; max-width:100%; }
+  .firma-linea { border-top:1px solid #999; padding-top:5px; font-size:9px; color:#666; }
+  .legal { font-size:9.5px; margin-top:22px; }
+  @media print { .hoja { max-width:none; } }
+`;
+
+function abrirEstadoCuenta(pid) {
+  const p = DATA.proyectos.find(x => x.id === pid);
+  if (!p) return;
+  const empresa = (DATA.config.empresa || 'South Texas Builders').toUpperCase();
+  const totalMonto = p.changeOrders.reduce((s, c) => s + c.monto, 0);
+  const totalPagado = p.changeOrders.reduce((s, c) => s + c.pagos.reduce((x, g) => x + g.monto, 0), 0);
+  const saldo = Math.max(0, totalMonto - totalPagado);
+  const ET = { pagada: 'Pagada / Paid', parcial: 'Parcial / Partial', atrasada: 'Atrasada / Overdue', pendiente: 'Pendiente / Upcoming' };
+
+  let cos = p.changeOrders.map((co, idx) => {
+    const cuotas = estadoCuotasCliente(co);
+    const pagadoCO = co.pagos.reduce((s, g) => s + g.monto, 0);
+    const saldoCO = Math.max(0, co.monto - pagadoCO);
+    const planTxt = co.plan.tipo === 'unico' ? 'Una sola exhibición / Single payment'
+      : co.cuotas.length + (co.plan.tipo === 'mensual' ? ' pagos mensuales / monthly payments' : ' pagos quincenales / biweekly payments');
+    return `
+      <div class="co-titulo"><span>CHANGE ORDER #${idx + 1} — ${esc(co.descripcion)}</span><span>${money(co.monto)}</span></div>
+      <div class="plan">Plan: ${planTxt} &nbsp;·&nbsp; Pagado / Paid: ${money(pagadoCO)} &nbsp;·&nbsp; Saldo / Balance: ${money(saldoCO)}</div>
+      <table><tr><th>#</th><th>FECHA / DUE DATE</th><th>MONTO / AMOUNT</th><th>ESTADO / STATUS</th></tr>
+      ${cuotas.map(q => `<tr><td>${q.num}</td><td>${fechaBonita(q.fecha)}</td><td>${money(q.monto)}</td><td class="est-${q.estado}">${ET[q.estado]}</td></tr>`).join('')}
+      </table>
+      ${co.pagos.length ? `<div class="pagos-t">PAGOS RECIBIDOS / PAYMENTS RECEIVED</div>` +
+        co.pagos.slice().sort((a, b) => a.fecha.localeCompare(b.fecha)).map(g =>
+          `<div class="pago-l">• ${fechaBonita(g.fecha)} — ${money(g.monto)} — ${esc(g.metodo)}</div>`).join('') : ''}`;
+  }).join('');
+  if (!p.changeOrders.length) cos = '<div class="plan" style="font-size:11px">Sin change orders registradas. / No change orders on file.</div>';
+
+  ventanaImprimir('EstadoDeCuenta_' + p.familia.replace(/[^a-zA-Z0-9]/g, ''), `
+    <div class="hoja">
+      <div class="head">
+        <div>
+          <div class="t1">${esc(empresa)}</div>
+          <div class="t2">ESTADO DE CUENTA / ACCOUNT STATEMENT</div>
+          <div class="t3">Change Orders · Fecha / Date: ${fechaBonita(hoyISO())}</div>
+        </div>
+        <img src="${location.origin}/south-texas-builders-logo.png" alt="">
+      </div>
+      <div class="cuerpo">
+        <div class="cliente">${esc(p.familia)}${p.numero ? ' (' + esc(p.numero) + ')' : ''}</div>
+        ${p.direccion ? `<div class="sub">${esc(p.direccion)}</div>` : ''}
+        ${p.correo ? `<div class="sub">${esc(p.correo)}</div>` : ''}
+        <div class="cajas">
+          <div class="caja"><div class="ct">TOTAL CHANGE ORDERS</div><div class="cv" style="color:#13233d">${money(totalMonto)}</div></div>
+          <div class="caja"><div class="ct">PAGADO / PAID</div><div class="cv" style="color:#2e7d4f">${money(totalPagado)}</div></div>
+          <div class="caja"><div class="ct">SALDO / BALANCE</div><div class="cv" style="color:${saldo > 0.005 ? '#e8442e' : '#2e7d4f'}">${money(saldo)}</div></div>
+        </div>
+        ${cos}
+        ${DATA.config.datosPago ? `<div class="fp"><div class="fp-t">FORMAS DE PAGO / PAYMENT METHODS</div><div class="fp-b">${esc(DATA.config.datosPago)}</div></div>` : ''}
+        <div class="nota">Este documento es un resumen informativo de sus change orders. Si tiene alguna pregunta, contáctenos.<br>
+        This document is an informational summary of your change orders. If you have any questions, please contact us.</div>
+      </div>
+    </div>`);
+}
+
+function abrirContratoPdf(token) {
+  let proyecto = null, contrato = null;
+  DATA.proyectos.forEach(p => {
+    const ct = (p.contratos || []).find(c => c.token === token);
+    if (ct) { proyecto = p; contrato = ct; }
+  });
+  if (!contrato) { toast('Contrato no encontrado.', true); return; }
+  const empresa = (DATA.config.empresa || 'South Texas Builders').toUpperCase();
+  const firmado = contrato.estado === 'firmado' && contrato.firma;
+
+  let planHTML = '';
+  if (firmado) {
+    const plan = contrato.firma.plan;
+    const planTxt = plan.tipo === 'unico' ? 'Una sola exhibición / Single payment'
+      : plan.numPagos + (plan.tipo === 'mensual' ? ' pagos mensuales / monthly payments' : ' pagos quincenales / biweekly payments');
+    const cuotas = generarCuotas(contrato.monto, plan);
+    planHTML = `
+      <div class="plan-t">FORMA DE PAGO ELEGIDA / SELECTED PAYMENT PLAN</div>
+      <div style="font-size:11px">${planTxt} · Primer pago / First payment: ${fechaBonita(plan.fechaInicio)}</div>
+      <table style="margin-top:8px"><tr><th>#</th><th>FECHA / DUE DATE</th><th>MONTO / AMOUNT</th></tr>
+      ${cuotas.map(c => `<tr><td>${c.num}</td><td>${fechaBonita(c.fecha)}</td><td>${money(c.monto)}</td></tr>`).join('')}
+      </table>`;
+  }
+
+  ventanaImprimir('Contrato_' + proyecto.familia.replace(/[^a-zA-Z0-9]/g, ''), `
+    <div class="hoja">
+      <div class="head">
+        <div>
+          <div class="t1">${esc(empresa)}</div>
+          <div class="t2">CHANGE ORDER AGREEMENT / CONTRATO</div>
+          <div class="t3">Fecha / Date: ${fechaBonita(firmado ? contrato.firma.fecha : hoyISO())}</div>
+        </div>
+        <img src="${location.origin}/south-texas-builders-logo.png" alt="">
+      </div>
+      <div class="cuerpo">
+        <div class="cliente">Proyecto / Project: ${esc(proyecto.familia)}${proyecto.numero ? ' (' + esc(proyecto.numero) + ')' : ''}</div>
+        ${proyecto.direccion ? `<div class="sub">Dirección / Address: ${esc(proyecto.direccion)}</div>` : ''}
+        <div class="agree">Agreement of the price difference for the following item description:</div>
+        <div class="agree-es">Acuerdo de la diferencia de precio por el siguiente concepto:</div>
+        <div class="desc">${esc(contrato.descripcion)}</div>
+        <div class="total"><span class="tl">TOTAL</span><span class="tv">${money(contrato.monto)}</span></div>
+        ${planHTML}
+        <div class="legal">Al firmar este documento, el cliente acepta el concepto, el monto total y la forma de pago aquí descritos.<br>
+        By signing this document, the client agrees to the item description, total amount and payment plan described herein.</div>
+        <div class="firmas">
+          <div class="firma-col">
+            <div class="firma-img">${firmado && contrato.firma.archivo ? `<img src="${archivoUrl(contrato.firma.archivo)}">` : ''}</div>
+            <div class="firma-linea">Cliente / Client${firmado ? ': ' + esc(contrato.firma.nombre) + ' · ' + fechaBonita(contrato.firma.fecha) : ''}</div>
+          </div>
+          <div class="firma-col">
+            <div class="firma-img"></div>
+            <div class="firma-linea">${esc(DATA.config.empresa || 'South Texas Builders')}</div>
+          </div>
+        </div>
+      </div>
+    </div>`);
+}
+
+// ── Inicio ──────────────────────────────────────────────────
+$('fechaHoy').textContent = new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
+document.querySelectorAll('.overlay').forEach(ov => {
+  ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('abierto'); });
+});
+recargar()
+  .then(() => revisarGate())
+  .catch(() => {
+    $('gateEstado').textContent = '⚠ No se pudo conectar con la nube. Revisa tu internet y recarga la página.';
+    toast('No se pudo conectar con la nube.', true);
+  });
+</script>
+</body>
+</html>

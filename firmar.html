@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Contrato — South Texas Builders</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #13233d;
+    --red: #e8442e;
+    --green: #2e7d4f;
+    --gray: #667085;
+    --border: #e3e6eb;
+    --bg: #f6f5f2;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: #1c2534; min-height: 100vh; }
+  h1,h2,h3 { font-family: 'Oswald', sans-serif; }
+
+  header {
+    background: var(--navy); color: white; padding: 18px 20px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .logo-box {
+    background: white; border-radius: 8px; width: 48px; height: 48px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Oswald'; font-weight: 700; color: var(--navy); font-size: 14px;
+  }
+  header h1 { font-size: 19px; letter-spacing: 1px; text-transform: uppercase; }
+  header h1 span { color: var(--red); }
+  header .sub { font-size: 10px; letter-spacing: 2px; color: #8fa0bb; text-transform: uppercase; margin-top: 2px; }
+
+  .wrap { max-width: 620px; margin: 0 auto; padding: 20px 16px 60px; }
+  .card {
+    background: white; border-radius: 14px; box-shadow: 0 1px 5px rgba(16,30,54,0.09);
+    padding: 22px 20px; margin-bottom: 16px;
+  }
+  .titulo-doc {
+    font-family: 'Oswald'; font-size: 20px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--navy); border-bottom: 3px solid var(--red); padding-bottom: 8px; margin-bottom: 14px;
+  }
+  .dato { margin-bottom: 8px; font-size: 14px; }
+  .dato .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gray); font-weight: 700; display: block; }
+  .agreement {
+    background: #f2f4f7; border-left: 4px solid var(--navy); border-radius: 0 10px 10px 0;
+    padding: 14px 16px; margin: 16px 0; font-size: 13.5px; line-height: 1.5;
+  }
+  .agreement .es { color: var(--gray); font-style: italic; font-size: 12.5px; margin-top: 6px; }
+  .desc-box {
+    background: #fafbfc; border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 16px; font-size: 15px; margin-bottom: 14px; white-space: pre-wrap;
+  }
+  .total-box {
+    background: var(--navy); color: white; border-radius: 12px; padding: 14px 18px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .total-box .lbl { font-size: 11px; letter-spacing: 2px; font-weight: 700; color: #8fa0bb; }
+  .total-box .val { font-family: 'Oswald'; font-size: 28px; font-weight: 700; }
+
+  .seccion-titulo { font-family: 'Oswald'; font-size: 15px; text-transform: uppercase; letter-spacing: 1px; color: var(--navy); margin-bottom: 4px; }
+  .seccion-sub { font-size: 12px; color: var(--gray); font-style: italic; margin-bottom: 12px; }
+
+  .opciones { display: grid; gap: 10px; }
+  .opcion {
+    border: 2px solid var(--border); border-radius: 12px; padding: 13px 15px;
+    display: flex; align-items: center; gap: 12px; cursor: pointer; background: white;
+  }
+  .opcion.activa { border-color: var(--green); background: #f2faf5; }
+  .opcion input { width: 20px; height: 20px; accent-color: var(--green); flex-shrink: 0; }
+  .opcion .t { font-weight: 600; font-size: 14.5px; }
+  .opcion .s { font-size: 12px; color: var(--gray); }
+
+  .campo { margin-top: 14px; }
+  .campo label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--gray); margin-bottom: 5px; }
+  .campo input, .campo select {
+    width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px;
+    font-size: 16px; font-family: 'Inter'; background: white;
+  }
+  .fila { display: flex; gap: 12px; } .fila .campo { flex: 1; }
+
+  .preview { margin-top: 14px; font-size: 13px; }
+  .preview table { width: 100%; border-collapse: collapse; }
+  .preview td, .preview th { padding: 7px 8px; border-bottom: 1px solid #eef0f3; text-align: left; }
+  .preview th { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--gray); }
+
+  .firma-canvas {
+    width: 100%; height: 170px; border: 2px dashed #b9c2d0; border-radius: 12px;
+    background: white; touch-action: none; display: block;
+  }
+  .firma-hint { text-align: center; font-size: 12px; color: var(--gray); margin-top: 6px; }
+  .btn-limpiar {
+    background: white; border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 16px; font-size: 12.5px; font-weight: 600; cursor: pointer; margin-top: 8px; font-family: 'Inter';
+  }
+  .btn-firmar {
+    width: 100%; background: var(--green); color: white; border: none; border-radius: 12px;
+    font-family: 'Oswald'; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+    padding: 16px; font-size: 17px; cursor: pointer; margin-top: 18px;
+  }
+  .btn-firmar:disabled { opacity: 0.6; }
+  .btn-pdf {
+    display: inline-block; background: var(--navy); color: white; border-radius: 10px;
+    padding: 13px 24px; font-weight: 600; font-size: 14px; text-decoration: none; margin-top: 16px;
+    border: none; font-family: 'Inter'; cursor: pointer;
+  }
+  .exito { text-align: center; padding: 40px 20px; }
+  .exito .icono { font-size: 60px; }
+  .exito h2 { color: var(--green); font-size: 24px; margin: 12px 0 6px; }
+  .exito p { color: var(--gray); font-size: 14px; }
+  .error-msg {
+    background: #fdeae7; color: var(--red); border-radius: 10px; padding: 12px 16px;
+    font-size: 13.5px; font-weight: 600; margin-top: 12px; display: none;
+  }
+  .cargando { text-align: center; padding: 60px 20px; color: var(--gray); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-box"><img src="south-texas-builders-logo.png" alt="STB" style="width:40px;height:auto"></div>
+  <div>
+    <h1 id="hEmpresa">SOUTH TEXAS <span>BUILDERS</span></h1>
+    <div class="sub">Change Order Agreement · Contrato</div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="cargando" id="cargando">Cargando contrato... / Loading agreement...</div>
+
+  <div id="contenido" style="display:none">
+    <div class="card">
+      <div class="titulo-doc">Change Order Agreement</div>
+      <div class="dato"><span class="lbl">Proyecto / Project</span><b id="dFamilia"></b></div>
+      <div class="dato" id="dDireccionWrap"><span class="lbl">Dirección / Address</span><span id="dDireccion"></span></div>
+
+      <div class="agreement">
+        <div>Agreement of the price difference for the following item description:</div>
+        <div class="es">Acuerdo de la diferencia de precio por el siguiente concepto:</div>
+      </div>
+
+      <div class="desc-box" id="dDescripcion"></div>
+
+      <div class="total-box">
+        <span class="lbl">TOTAL</span>
+        <span class="val" id="dMonto"></span>
+      </div>
+    </div>
+
+    <div class="card" id="seccionFirma">
+      <div class="seccion-titulo">¿Cómo desea pagar?</div>
+      <div class="seccion-sub">How would you like to pay?</div>
+
+      <div class="opciones">
+        <label class="opcion activa" data-tipo="unico">
+          <input type="radio" name="plan" value="unico" checked onchange="cambioPlan()">
+          <div><div class="t">Un solo pago</div><div class="s">Single payment</div></div>
+        </label>
+        <label class="opcion" data-tipo="quincenal">
+          <input type="radio" name="plan" value="quincenal" onchange="cambioPlan()">
+          <div><div class="t">Pagos quincenales</div><div class="s">Biweekly payments (every 15 days)</div></div>
+        </label>
+        <label class="opcion" data-tipo="mensual">
+          <input type="radio" name="plan" value="mensual" onchange="cambioPlan()">
+          <div><div class="t">Pagos mensuales</div><div class="s">Monthly payments</div></div>
+        </label>
+      </div>
+
+      <div class="fila">
+        <div class="campo" id="campoNumPagos" style="display:none">
+          <label>¿En cuántos pagos? / How many payments?</label>
+          <select id="numPagos" onchange="cambioPlan()"></select>
+        </div>
+        <div class="campo">
+          <label>Fecha del primer pago / First payment date</label>
+          <input type="date" id="fechaInicio" onchange="cambioPlan()">
+        </div>
+      </div>
+
+      <div class="preview" id="previewCuotas"></div>
+
+      <div class="campo">
+        <label>Nombre completo / Full name *</label>
+        <input id="nombreCliente" placeholder="Escriba su nombre / Type your name" autocomplete="name">
+      </div>
+
+      <div class="campo">
+        <label>Firma / Signature *</label>
+        <canvas class="firma-canvas" id="firmaCanvas"></canvas>
+        <div class="firma-hint">✍ Firme aquí con su dedo o mouse / Sign here with your finger or mouse</div>
+        <button class="btn-limpiar" onclick="limpiarFirma()">↺ Borrar firma / Clear</button>
+      </div>
+
+      <div class="error-msg" id="errorMsg"></div>
+
+      <button class="btn-firmar" id="btnFirmar" onclick="firmar()">✍ Firmar y Aceptar / Sign &amp; Accept</button>
+    </div>
+
+    <div class="card exito" id="seccionExito" style="display:none">
+      <div class="icono">✅</div>
+      <h2>¡Contrato firmado!</h2>
+      <p>Gracias. Su contrato ha quedado registrado.<br>Thank you. Your agreement has been recorded.</p>
+      <p id="firmadoPor" style="margin-top:10px"></p>
+      <button class="btn-pdf" onclick="abrirContratoPdf()">📄 Descargar contrato PDF / Download PDF</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* Página pública de firma — el link con token secreto es lo que se comparte con el cliente.
+   Lee y guarda directo en la misma nube (Supabase) que usa el tool de Change Orders. */
+var SUPABASE_URL = 'https://ttpkyepzzpxctajrhwvx.supabase.co';
+var SUPABASE_KEY = 'sb_publishable_bnhfaLTxNe2ApJ94myqtIg_uHjo3_B1';
+var SUPABASE_TABLE = 'stb_app_state';
+var ROW_ID = 'stb_change_orders_v1';
+var BUCKET = 'stb-project-renders';
+
+const $ = id => document.getElementById(id);
+const money = n => '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const token = new URLSearchParams(location.search).get('t') || location.pathname.split('/').pop();
+let CONTRATO = null;      // vista pública del contrato
+let EMPRESA_CFG = {};
+
+function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+
+function fechaBonita(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+// ── Nube ────────────────────────────────────────────────────
+async function leerNube() {
+  const url = SUPABASE_URL + '/rest/v1/' + SUPABASE_TABLE + '?id=eq.' + encodeURIComponent(ROW_ID) + '&select=data,updated_at';
+  const res = await fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY } });
+  if (!res.ok) throw new Error('No se pudo leer (' + res.status + ')');
+  const rows = await res.json();
+  if (!rows || !rows[0]) return null;
+  let obj = null;
+  try { obj = JSON.parse(rows[0].data && rows[0].data.value || ''); } catch (e) {}
+  if (!obj || !Array.isArray(obj.proyectos)) return null;
+  return { obj, updated_at: rows[0].updated_at };
+}
+
+function buscarContrato(obj) {
+  for (const p of obj.proyectos) {
+    const ct = (p.contratos || []).find(c => c.token === token);
+    if (ct) return { proyecto: p, contrato: ct };
+  }
+  return null;
+}
+
+/* Guardado con compare-and-set: aplica el cambio sobre la copia MÁS RECIENTE
+   de la nube y reintenta si alguien guardó en medio. */
+async function guardarNube(mutator) {
+  for (let intento = 0; intento < 6; intento++) {
+    const fila = await leerNube();
+    if (!fila) throw new Error('Contrato no encontrado.');
+    mutator(fila.obj);
+    const cond = SUPABASE_URL + '/rest/v1/' + SUPABASE_TABLE +
+      '?id=eq.' + encodeURIComponent(ROW_ID) + '&updated_at=eq.' + encodeURIComponent(fila.updated_at);
+    const res = await fetch(cond, {
+      method: 'PATCH',
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+      body: JSON.stringify({ data: { value: JSON.stringify(fila.obj) }, updated_at: new Date().toISOString() })
+    });
+    if (!res.ok) throw new Error('No se pudo guardar (' + res.status + ')');
+    const rows = await res.json().catch(() => []);
+    if (rows && rows.length) return;
+  }
+  throw new Error('El sistema está ocupado — intente de nuevo. / System busy — please try again.');
+}
+
+async function subirFirma(dataUrl) {
+  const base64 = dataUrl.replace(/^data:image\/\w+;base64,/, '');
+  const bytes = atob(base64);
+  const arr = new Uint8Array(bytes.length);
+  for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+  const ruta = 'cobros/firmas/' + Date.now() + '_' + token.slice(0, 10) + '.png';
+  const res = await fetch(SUPABASE_URL + '/storage/v1/object/' + BUCKET + '/' + ruta, {
+    method: 'POST',
+    headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'image/png', 'x-upsert': 'true' },
+    body: arr
+  });
+  if (!res.ok) throw new Error('No se pudo guardar la firma. / Could not save the signature.');
+  return SUPABASE_URL + '/storage/v1/object/public/' + BUCKET + '/' + ruta;
+}
+
+function generarCuotas(monto, plan) {
+  const cuotas = [];
+  const num = plan.tipo === 'unico' ? 1 : Math.max(1, parseInt(plan.numPagos) || 1);
+  const base = Math.floor((monto / num) * 100) / 100;
+  let acumulado = 0;
+  const inicio = new Date(plan.fechaInicio + 'T00:00:00');
+  for (let i = 0; i < num; i++) {
+    const fecha = new Date(inicio);
+    if (plan.tipo === 'mensual') fecha.setMonth(fecha.getMonth() + i);
+    else if (plan.tipo === 'quincenal') fecha.setDate(fecha.getDate() + i * 15);
+    const montoCuota = (i === num - 1) ? Math.round((monto - acumulado) * 100) / 100 : base;
+    acumulado += montoCuota;
+    cuotas.push({ num: i + 1, fecha: fecha.toISOString().slice(0, 10), monto: montoCuota });
+  }
+  return cuotas;
+}
+
+function nuevoId(prefijo) { return prefijo + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7); }
+
+// ── Cargar contrato ─────────────────────────────────────────
+async function cargar() {
+  let hit = null;
+  try {
+    const fila = await leerNube();
+    if (fila) { hit = buscarContrato(fila.obj); if (hit) EMPRESA_CFG = fila.obj.config || {}; }
+  } catch (e) {
+    $('cargando').innerHTML = '⚠️ No se pudo conectar. Revise su internet y recargue.<br>Could not connect. Check your internet and reload.';
+    return;
+  }
+  if (!hit) {
+    $('cargando').innerHTML = '⚠️ Este link no es válido o el contrato fue eliminado.<br>This link is not valid or the agreement was removed.';
+    return;
+  }
+
+  const { proyecto, contrato } = hit;
+  CONTRATO = {
+    empresa: EMPRESA_CFG.empresa || 'South Texas Builders',
+    familia: proyecto.familia,
+    numero: proyecto.numero || '',
+    direccion: proyecto.direccion || '',
+    descripcion: contrato.descripcion,
+    monto: contrato.monto,
+    estado: contrato.estado,
+    firma: contrato.firma ? { nombre: contrato.firma.nombre, fecha: contrato.firma.fecha, plan: contrato.firma.plan, archivo: contrato.firma.archivo } : null
+  };
+
+  const partes = CONTRATO.empresa.toUpperCase().split(' ');
+  $('hEmpresa').innerHTML = esc(partes.slice(0, -1).join(' ')) + ' <span>' + esc(partes.slice(-1)[0] || '') + '</span>';
+  $('dFamilia').textContent = CONTRATO.familia + (CONTRATO.numero ? ' (' + CONTRATO.numero + ')' : '');
+  if (CONTRATO.direccion) $('dDireccion').textContent = CONTRATO.direccion;
+  else $('dDireccionWrap').style.display = 'none';
+  $('dDescripcion').textContent = CONTRATO.descripcion;
+  $('dMonto').textContent = money(CONTRATO.monto);
+
+  $('cargando').style.display = 'none';
+  $('contenido').style.display = 'block';
+
+  if (CONTRATO.estado === 'firmado') {
+    mostrarExito();
+  } else {
+    $('fechaInicio').value = new Date().toISOString().slice(0, 10);
+    const sel = $('numPagos');
+    for (let i = 2; i <= 12; i++) sel.innerHTML += '<option value="' + i + '">' + i + '</option>';
+    sel.value = '6';
+    cambioPlan();
+    prepararCanvas();
+  }
+}
+
+function mostrarExito() {
+  $('seccionFirma').style.display = 'none';
+  $('seccionExito').style.display = 'block';
+  if (CONTRATO.firma) {
+    $('firmadoPor').innerHTML = 'Firmado por / Signed by: <b>' + esc(CONTRATO.firma.nombre) + '</b> · ' + fechaBonita(CONTRATO.firma.fecha);
+  }
+}
+
+// ── Plan de pago ────────────────────────────────────────────
+function tipoActual() { return document.querySelector('input[name=plan]:checked').value; }
+
+function cambioPlan() {
+  const tipo = tipoActual();
+  document.querySelectorAll('.opcion').forEach(o => o.classList.toggle('activa', o.dataset.tipo === tipo));
+  $('campoNumPagos').style.display = tipo === 'unico' ? 'none' : 'block';
+
+  const num = tipo === 'unico' ? 1 : parseInt($('numPagos').value) || 2;
+  const inicio = $('fechaInicio').value;
+  if (!inicio) { $('previewCuotas').innerHTML = ''; return; }
+
+  const base = Math.floor((CONTRATO.monto / num) * 100) / 100;
+  let acumulado = 0, filas = '';
+  for (let i = 0; i < num; i++) {
+    const f = new Date(inicio + 'T00:00:00');
+    if (tipo === 'mensual') f.setMonth(f.getMonth() + i);
+    else if (tipo === 'quincenal') f.setDate(f.getDate() + i * 15);
+    const monto = (i === num - 1) ? Math.round((CONTRATO.monto - acumulado) * 100) / 100 : base;
+    acumulado += monto;
+    filas += '<tr><td>' + (i + 1) + '</td><td>' + fechaBonita(f.toISOString().slice(0, 10)) + '</td><td><b>' + money(monto) + '</b></td></tr>';
+  }
+  $('previewCuotas').innerHTML =
+    '<table><tr><th>#</th><th>Fecha / Date</th><th>Monto / Amount</th></tr>' + filas + '</table>';
+}
+
+// ── Firma en canvas ─────────────────────────────────────────
+let ctx, dibujando = false, hayFirma = false;
+
+function prepararCanvas() {
+  const canvas = $('firmaCanvas');
+  const escala = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * escala;
+  canvas.height = rect.height * escala;
+  ctx = canvas.getContext('2d');
+  ctx.scale(escala, escala);
+  ctx.lineWidth = 2.5;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#13233d';
+
+  const pos = e => {
+    const r = canvas.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  };
+  canvas.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    canvas.setPointerCapture(e.pointerId);
+    dibujando = true; hayFirma = true;
+    const p = pos(e);
+    ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + 0.1, p.y + 0.1); ctx.stroke();
+  });
+  canvas.addEventListener('pointermove', e => {
+    if (!dibujando) return;
+    e.preventDefault();
+    const p = pos(e);
+    ctx.lineTo(p.x, p.y); ctx.stroke();
+  });
+  const fin = () => { dibujando = false; };
+  canvas.addEventListener('pointerup', fin);
+  canvas.addEventListener('pointercancel', fin);
+}
+
+function limpiarFirma() {
+  const canvas = $('firmaCanvas');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  hayFirma = false;
+}
+
+function mostrarError(msg) {
+  const el = $('errorMsg');
+  el.textContent = msg;
+  el.style.display = 'block';
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// ── Enviar firma ────────────────────────────────────────────
+async function firmar() {
+  $('errorMsg').style.display = 'none';
+  const nombre = $('nombreCliente').value.trim();
+  if (!nombre) return mostrarError('⚠ Escriba su nombre completo. / Please type your full name.');
+  if (!hayFirma) return mostrarError('⚠ Falta su firma en el recuadro. / Please sign in the box.');
+  if (!$('fechaInicio').value) return mostrarError('⚠ Elija la fecha del primer pago. / Choose the first payment date.');
+
+  const btn = $('btnFirmar');
+  btn.disabled = true;
+  btn.textContent = 'Enviando... / Sending...';
+
+  const tipo = tipoActual();
+  const numPagos = tipo === 'unico' ? 1 : Math.min(24, Math.max(2, parseInt($('numPagos').value) || 2));
+  const planFinal = { tipo, numPagos, fechaInicio: $('fechaInicio').value };
+  const hoy = new Date().toISOString().slice(0, 10);
+
+  try {
+    const archivoFirma = await subirFirma($('firmaCanvas').toDataURL('image/png'));
+    await guardarNube(obj => {
+      const hit = buscarContrato(obj);
+      if (!hit) throw new Error('Contrato no encontrado. / Agreement not found.');
+      const { proyecto, contrato } = hit;
+      if (contrato.estado === 'firmado') throw new Error('Este contrato ya fue firmado. / This agreement has already been signed.');
+
+      contrato.estado = 'firmado';
+      contrato.firma = { nombre, fecha: hoy, archivo: archivoFirma, plan: planFinal, timestamp: new Date().toISOString() };
+
+      const coExistente = contrato.coId && proyecto.changeOrders.find(c => c.id === contrato.coId);
+      if (coExistente) {
+        coExistente.descripcion = contrato.descripcion;
+        coExistente.monto = contrato.monto;
+        coExistente.fechaFirma = hoy;
+        coExistente.contratoId = contrato.id;
+        coExistente.plan = planFinal;
+        coExistente.cuotas = generarCuotas(contrato.monto, planFinal);
+      } else {
+        const co = {
+          id: nuevoId('co'),
+          descripcion: contrato.descripcion,
+          monto: contrato.monto,
+          fechaFirma: hoy,
+          invoiceFile: '',
+          contratoId: contrato.id,
+          plan: planFinal,
+          cuotas: generarCuotas(contrato.monto, planFinal),
+          pagos: [],
+          creadoPor: 'Firmado por cliente: ' + nombre,
+          creado: new Date().toISOString()
+        };
+        proyecto.changeOrders.push(co);
+        contrato.coId = co.id;
+      }
+    });
+    CONTRATO.estado = 'firmado';
+    CONTRATO.firma = { nombre, fecha: hoy, plan: planFinal, archivo: archivoFirma };
+    mostrarExito();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (e) {
+    mostrarError('⚠ ' + e.message);
+    btn.disabled = false;
+    btn.textContent = '✍ Firmar y Aceptar / Sign & Accept';
+  }
+}
+
+// ── PDF del contrato (se abre listo para imprimir/guardar) ──
+function archivoUrl(ruta) { return /^https?:\/\//.test(ruta) ? ruta : '/' + ruta; }
+
+function abrirContratoPdf() {
+  if (!CONTRATO) return;
+  const firmado = CONTRATO.estado === 'firmado' && CONTRATO.firma;
+  const empresa = (CONTRATO.empresa || 'South Texas Builders').toUpperCase();
+
+  let planHTML = '';
+  if (firmado && CONTRATO.firma.plan) {
+    const plan = CONTRATO.firma.plan;
+    const planTxt = plan.tipo === 'unico' ? 'Una sola exhibición / Single payment'
+      : plan.numPagos + (plan.tipo === 'mensual' ? ' pagos mensuales / monthly payments' : ' pagos quincenales / biweekly payments');
+    const cuotas = generarCuotas(CONTRATO.monto, plan);
+    planHTML = `
+      <div class="plan-t">FORMA DE PAGO ELEGIDA / SELECTED PAYMENT PLAN</div>
+      <div style="font-size:11px">${planTxt} · Primer pago / First payment: ${fechaBonita(plan.fechaInicio)}</div>
+      <table style="margin-top:8px"><tr><th>#</th><th>FECHA / DUE DATE</th><th>MONTO / AMOUNT</th></tr>
+      ${cuotas.map(c => `<tr><td>${c.num}</td><td>${fechaBonita(c.fecha)}</td><td>${money(c.monto)}</td></tr>`).join('')}
+      </table>`;
+  }
+
+  const html = `
+    <div class="hoja">
+      <div class="head">
+        <div>
+          <div class="t1">${esc(empresa)}</div>
+          <div class="t2">CHANGE ORDER AGREEMENT / CONTRATO</div>
+          <div class="t3">Fecha / Date: ${fechaBonita(firmado ? CONTRATO.firma.fecha : new Date().toISOString().slice(0, 10))}</div>
+        </div>
+        <img src="${location.origin}/south-texas-builders-logo.png" alt="">
+      </div>
+      <div class="cuerpo">
+        <div class="cliente">Proyecto / Project: ${esc(CONTRATO.familia)}${CONTRATO.numero ? ' (' + esc(CONTRATO.numero) + ')' : ''}</div>
+        ${CONTRATO.direccion ? `<div class="sub">Dirección / Address: ${esc(CONTRATO.direccion)}</div>` : ''}
+        <div class="agree">Agreement of the price difference for the following item description:</div>
+        <div class="agree-es">Acuerdo de la diferencia de precio por el siguiente concepto:</div>
+        <div class="desc">${esc(CONTRATO.descripcion)}</div>
+        <div class="total"><span class="tl">TOTAL</span><span class="tv">${money(CONTRATO.monto)}</span></div>
+        ${planHTML}
+        <div class="legal">Al firmar este documento, el cliente acepta el concepto, el monto total y la forma de pago aquí descritos.<br>
+        By signing this document, the client agrees to the item description, total amount and payment plan described herein.</div>
+        <div class="firmas">
+          <div class="firma-col">
+            <div class="firma-img">${firmado && CONTRATO.firma.archivo ? `<img src="${archivoUrl(CONTRATO.firma.archivo)}">` : ''}</div>
+            <div class="firma-linea">Cliente / Client${firmado ? ': ' + esc(CONTRATO.firma.nombre) + ' · ' + fechaBonita(CONTRATO.firma.fecha) : ''}</div>
+          </div>
+          <div class="firma-col">
+            <div class="firma-img"></div>
+            <div class="firma-linea">${esc(CONTRATO.empresa || 'South Texas Builders')}</div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+  const estilo = `
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    body { font-family: Helvetica, Arial, sans-serif; color:#333; }
+    .hoja { max-width: 800px; margin: 0 auto; }
+    .head { background:#13233d; color:white; padding:22px 40px; display:flex; justify-content:space-between; align-items:center; }
+    .head .t1 { font-size:22px; font-weight:bold; text-transform:uppercase; }
+    .head .t2 { color:#e8442e; font-size:14px; font-weight:bold; margin-top:4px; }
+    .head .t3 { color:#aebdd4; font-size:10px; margin-top:6px; }
+    .head img { background:white; border-radius:10px; padding:8px; width:100px; height:auto; }
+    .cuerpo { padding: 24px 40px 40px; }
+    .cliente { font-size:16px; font-weight:bold; color:#13233d; }
+    .sub { color:#666; font-size:11px; margin-top:2px; }
+    .agree { font-size:11px; margin:14px 0 4px; }
+    .agree-es { color:#666; font-size:10px; font-style:italic; }
+    .desc { background:#f2f2f2; padding:14px; font-size:12px; margin:12px 0; white-space:pre-wrap; }
+    .total { background:#13233d; color:white; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; }
+    .total .tl { color:#aebdd4; font-size:9px; font-weight:bold; letter-spacing:2px; }
+    .total .tv { font-size:20px; font-weight:bold; }
+    .plan-t { color:#13233d; font-size:11px; font-weight:bold; margin:16px 0 4px; }
+    table { width:100%; border-collapse:collapse; font-size:9px; }
+    th { background:#e4e8ee; color:#13233d; text-align:left; padding:5px 6px; font-size:8px; letter-spacing:1px; }
+    td { padding:5px 6px; border-bottom:1px solid #eee; }
+    .firmas { display:flex; gap:40px; margin-top:40px; }
+    .firma-col { flex:1; }
+    .firma-img { height:62px; display:flex; align-items:flex-end; }
+    .firma-img img { max-height:60px; max-width:100%; }
+    .firma-linea { border-top:1px solid #999; padding-top:5px; font-size:9px; color:#666; }
+    .legal { font-size:9.5px; margin-top:22px; }`;
+
+  const w = window.open('', '_blank');
+  if (!w) { mostrarError('⚠ Permita las ventanas emergentes para descargar el PDF. / Please allow pop-ups.'); return; }
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Contrato_' +
+    CONTRATO.familia.replace(/[^a-zA-Z0-9]/g, '') + '</title><style>' + estilo + '</style></head><body>' + html +
+    '<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>');
+  w.document.close();
+}
+
+cargar();
+</script>
+</body>
+</html>
