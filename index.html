@@ -3735,6 +3735,15 @@ function projectSnapshotChecklistHtml(p){
     '</li>';
   }).join('')+'</ol>';
 }
+function projectSnapshotNextUpHtml(p){
+  var phase=p.phase||'Pre Phase';
+  var next=nextPhaseName(phase);
+  if(!next) return '';
+  var tasks=visiblePhaseTasks(p,next).filter(function(txt){ return !phaseItemState(p,next,txt).done; }).slice(0,4);
+  if(!tasks.length) return '';
+  return '<h3 class="next-up-h">Next Up — '+escFull(next)+'</h3>'+
+    '<ul class="next-up">'+tasks.map(function(txt){ return '<li>'+escFull(txt)+'</li>'; }).join('')+'</ul>';
+}
 function buildProjectSnapshotHtml(){
   var reportDay=(board&&board.dayDate)||isoToday();
   var projects=((board&&board.projects)||[]).slice();
@@ -3752,7 +3761,9 @@ function buildProjectSnapshotHtml(){
         (p.renderImage?'<img src="'+escFull(p.renderImage)+'" alt="Render for '+escFull(p.name)+'">':'<div class="no-render">No render uploaded</div>')+
       '</div>'+
       '<div class="snap-main">'+
-        '<div class="snap-head"><div><h2>'+escFull(p.name+code)+'</h2><p>'+escFull(projectSquareFeet(p))+'</p></div><strong>'+escFull(phase)+'</strong></div>'+
+        '<div class="snap-head"><div><h2>'+escFull(p.name+code)+'</h2>'+
+          (p.address?'<p class="addr">📍 '+escFull(p.address)+'</p>':'')+
+          '<p>'+escFull(projectSquareFeet(p))+'</p></div><strong>'+escFull(phase)+'</strong></div>'+
         '<div class="barline"><span style="width:'+prog.pct+'%"></span></div>'+
         '<div class="facts">'+
           '<div><b>'+prog.pct+'%</b><span>Overall Complete</span></div>'+
@@ -3761,6 +3772,7 @@ function buildProjectSnapshotHtml(){
         '</div>'+
         '<h3>Current Phase Checklist</h3>'+
         projectSnapshotChecklistHtml(p)+
+        projectSnapshotNextUpHtml(p)+
       '</div>'+
     '</article>';
   }).join('');
@@ -3779,9 +3791,13 @@ function buildProjectSnapshotHtml(){
     'h3{margin:0 0 6px;color:#16294D;font-size:12px;text-transform:uppercase;letter-spacing:.08em;} .phase-list{margin:0;padding-left:0;list-style:none;} .phase-list li{position:relative;border:1px solid #ECEAE3;border-radius:7px;padding:7px 82px 7px 9px;margin:5px 0;font-size:12px;line-height:1.22;} .task-name{font-weight:bold;color:#1B2233;} .status-pill{position:absolute;right:7px;top:6px;border-radius:999px;padding:3px 7px;font-size:8px;text-transform:uppercase;font-weight:bold;letter-spacing:.05em;background:#F1F2F4;color:#717A8C;} .task-meta{font-size:10px;color:#717A8C;margin-top:2px;}'+
     'li.done .status-pill{background:#E8F7EE;color:#2E9166;} li.today .status-pill{background:#F1F2F4;color:#16294D;} li.scheduled .status-pill{background:#FFF0D5;color:#8a6404;} li.alert .status-pill{background:#FDEAE7;color:#E23B2A;} li.alert .task-name{color:#E23B2A;}'+
     '.empty-inline{border:1px dashed #C8CDD6;border-radius:8px;padding:12px;color:#717A8C;font-weight:bold;text-align:center;}'+
+    '.doc-logo{height:44px;width:auto;}'+
+    '.addr{margin:3px 0 0 !important;color:#1B2233 !important;font-size:12px !important;font-weight:bold;text-transform:none !important;letter-spacing:0 !important;}'+
+    '.next-up-h{margin-top:10px;color:#8a6404;}'+
+    '.next-up{margin:0;padding:0;list-style:none;} .next-up li{border:1px dashed #E8A21C;background:#FFFBF0;border-radius:7px;padding:6px 9px;margin:4px 0;font-size:11px;color:#1B2233;}'+
     '@media print{.snapshot{page-break-inside:avoid;}}'+
     '</style></head><body>'+
-    '<div class="doc-head"><div><h1>STB Project Snapshot Report</h1><div class="date">'+escFull(fmtDateLong(reportDay))+'</div></div><div class="date">Scheduling Department</div></div>'+
+    '<div class="doc-head"><div style="display:flex;align-items:center;gap:12px"><img class="doc-logo" src="'+escFull(new URL('south-texas-builders-logo.png',location.href).href)+'" alt=""><div><h1>STB Project Snapshot Report</h1><div class="date">'+escFull(fmtDateLong(reportDay))+'</div></div></div><div class="date">Scheduling Department</div></div>'+
     '<div class="summary"><div class="sum"><b>'+activeCount+'</b><span>Active Projects</span></div><div class="sum"><b>'+avg+'%</b><span>Average Complete</span></div><div class="sum"><b>'+projects.reduce(function(n,p){ return n+delayStats(p).open; },0)+'</b><span>Open Delays</span></div></div>'+
     (projectHtml||'<div class="empty-inline">No active projects to report.</div>')+
     '</body></html>';
@@ -3802,7 +3818,19 @@ function printProjectSnapshotPdf(){
   w.document.write(buildProjectSnapshotHtml());
   w.document.close();
   w.focus();
-  setTimeout(function(){ w.print(); },350);
+  /* Renders load from cloud storage — wait for every image (8s cap) so they
+     don't print as blank boxes. */
+  var imgs=Array.prototype.slice.call(w.document.images);
+  var pending=imgs.filter(function(im){ return !im.complete; }).length;
+  var fired=false;
+  function go(){ if(fired) return; fired=true; w.print(); }
+  if(!pending){ setTimeout(go,250); return; }
+  imgs.forEach(function(im){
+    if(im.complete) return;
+    im.addEventListener('load',function(){ if(--pending<=0) setTimeout(go,150); });
+    im.addEventListener('error',function(){ if(--pending<=0) setTimeout(go,150); });
+  });
+  setTimeout(go,8000);
 }
 document.getElementById('openExport').addEventListener('click',function(){
   refreshReport();
