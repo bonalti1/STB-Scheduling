@@ -1148,7 +1148,7 @@ var SUBCONTRACTORS = {
 var BOARD_AREA = (function(){ try{ return localStorage.getItem('stb_board_area_v1')==='alice' ? 'alice' : 'main'; }catch(e){ return 'main'; } })();
 var AREA_SUFFIX = BOARD_AREA==='alice' ? '_alice' : '';
 var AREA_LABEL  = BOARD_AREA==='alice' ? ' — Alice' : '';
-var BOARD_KEY = 'stb_board_v1'+AREA_SUFFIX;
+var BOARD_KEY = BOARD_AREA==='alice' ? 'stb_board_alice_v1' : 'stb_board_v1';
 var ARCH_KEY  = 'stb_archive_v1'+AREA_SUFFIX;
 var COMP_KEY  = 'stb_completed_v1';
 var SUBS_KEY  = 'stb_subcontractors_v1';
@@ -2295,7 +2295,8 @@ function persistAutoBackup(){
 async function init(){
   var raw=await Store.get(BOARD_KEY);
   if(raw){ try{ board=JSON.parse(raw); }catch(e){ board=null; } }
-  if(!board || !board.projects){ board=seedBoard(); await persistBoard(); }
+  /* A brand-new Alice board starts EMPTY — the demo seed is only for the original main board. */
+  if(!board || !board.projects){ board=(BOARD_AREA==='alice')?{dayDate:isoToday(),projects:[]}:seedBoard(); await persistBoard(); }
   board.dayDate=isoToday();
   board.dailyLog=board.dailyLog||{};
   board.dailyReports=board.dailyReports||{};
@@ -4373,11 +4374,10 @@ document.getElementById('historyBody').addEventListener('click',function(e){
     var done=completed[idx];
     if(!done) return;
     var doneArea=done.area==='alice'?'alice':'main';
-    if(doneArea!==BOARD_AREA){
-      toast('This house belongs to the '+(doneArea==='alice'?'ALICE':'MAIN')+' board — switch boards first, then restore it.');
-      return;
-    }
-    if(!confirm('Move “'+done.project.name+'” back to the active board?')) return;
+    var msg = doneArea===BOARD_AREA
+      ? 'Move “'+done.project.name+'” back to the active board?'
+      : 'This house was completed from the '+(doneArea==='alice'?'ALICE':'MAIN')+' board.\n\nRestore it onto the '+(BOARD_AREA==='alice'?'ALICE':'MAIN')+' board instead? This MOVES the house to '+(BOARD_AREA==='alice'?'Alice':'Main')+' with all its history.';
+    if(!confirm(msg)) return;
     var proj=JSON.parse(JSON.stringify(done.project));
     if(board.projects.some(function(x){ return x.id===proj.id; })) proj.id=uid();
     board.projects.push(proj);
