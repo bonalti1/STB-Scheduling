@@ -580,6 +580,8 @@
     font-size:1.05rem;cursor:pointer;color:var(--ink);line-height:1;
   }
   .sheet-body{padding:14px 16px;overflow-y:auto;}
+  .area-badge{display:inline-block;margin-left:10px;background:#E86B24;color:#fff;font-size:12px;font-weight:800;letter-spacing:.08em;padding:3px 10px;border-radius:999px;vertical-align:middle;}
+  .hist-area{display:inline-block;margin-left:8px;background:#E86B24;color:#fff;font-size:10px;font-weight:800;letter-spacing:.07em;padding:2px 7px;border-radius:999px;vertical-align:middle;}
   .report-box{
     width:100%;min-height:330px;border:1px solid var(--line);border-radius:11px;
     padding:13px;font-family:'Barlow',monospace;font-size:.86rem;line-height:1.55;
@@ -747,7 +749,7 @@
     <button class="tbtn primary" id="addProject"><span class="ic">＋</span> Add Project</button>
     <button class="tbtn go" id="openExport"><span class="ic">📤</span> Export Report</button>
     <button class="tbtn" id="openAI"><span class="ic">🧠</span> Operations AI</button>
-    <button class="tbtn" id="openDailyHistory"><span class="ic">📅</span> Daily History</button>
+    <button class="tbtn go" id="areaToggle"><span class="ic" id="areaToggleIc">🏘</span> <span id="areaToggleLbl">Alice Projects</span></button>
     <button class="tbtn" id="openSubs"><span class="ic">👷</span> Subcontractors</button>
     <button class="tbtn" id="openLessons"><span class="ic">📘</span> Lessons Learned</button>
     <button class="tbtn" id="openHistory"><span class="ic">🗂</span> Completed Houses</button>
@@ -1140,12 +1142,18 @@ var SUBCONTRACTORS = {
     {trade:'Final Clean',name:'Final Clean Crew',phone:'Add phone',charge:'Add charge'}
   ]
 };
-var BOARD_KEY = 'stb_board_v1';
-var ARCH_KEY  = 'stb_archive_v1';
+/* Two build areas share this app: Main (original) and Alice. The active area
+   picks which cloud row the board reads/writes — data never mixes. Completed
+   houses, subs, lessons and renders stay shared across areas. */
+var BOARD_AREA = (function(){ try{ return localStorage.getItem('stb_board_area_v1')==='alice' ? 'alice' : 'main'; }catch(e){ return 'main'; } })();
+var AREA_SUFFIX = BOARD_AREA==='alice' ? '_alice' : '';
+var AREA_LABEL  = BOARD_AREA==='alice' ? ' — Alice' : '';
+var BOARD_KEY = 'stb_board_v1'+AREA_SUFFIX;
+var ARCH_KEY  = 'stb_archive_v1'+AREA_SUFFIX;
 var COMP_KEY  = 'stb_completed_v1';
 var SUBS_KEY  = 'stb_subcontractors_v1';
 var LESSONS_KEY = 'stb_lessons_v1';
-var AUTO_BACKUP_KEY = 'stb_auto_backups_v1';
+var AUTO_BACKUP_KEY = 'stb_auto_backups_v1'+AREA_SUFFIX;
 var RENDER_MANIFEST_KEY = 'stb_render_manifest_v1';
 var USER_NAME_KEY = 'stb_user_name_v1';
 var CLEAN_START_VERSION = 1;
@@ -2869,6 +2877,7 @@ document.getElementById('projectList').addEventListener('click',function(e){
       if(!completed.some(function(c){ return c.project && c.project.id===pid; })){
         completed.unshift({
           completedAt:new Date().toISOString(),
+          area:BOARD_AREA,
           project:JSON.parse(JSON.stringify(p))
         });
       }
@@ -3625,7 +3634,7 @@ function timingSummary(p){
 function buildReport(){
   var reportDay=(board&&board.dayDate)||isoToday();
   var projects=((board&&board.projects)||[]);
-  var lines=['\u2600\uFE0F STB Daily \u2014 '+fmtDateLong(reportDay)];
+  var lines=['\u2600\uFE0F STB Daily'+AREA_LABEL+' \u2014 '+fmtDateLong(reportDay)];
   if(!projects.length){ lines.push(''); lines.push('No houses on the board.'); return lines.join('\n'); }
   projects.forEach(function(p){
     var b=reportBuckets(p);
@@ -3679,7 +3688,7 @@ function buildReportHtml(){
       '</div>'+
     '</article>';
   }).join('');
-  return '<!doctype html><html><head><meta charset="utf-8"><title>STB Daily Update</title>'+
+  return '<!doctype html><html><head><meta charset="utf-8"><title>STB Daily Update'+escFull(AREA_LABEL)+'</title>'+
     '<style>'+
     '@page{size:letter;margin:.5in;}*{-webkit-print-color-adjust:exact;print-color-adjust:exact;}'+
     'body{font-family:Arial,sans-serif;color:#1B2233;margin:0;background:#fff;}'+
@@ -3701,7 +3710,7 @@ function buildReportHtml(){
     '.ln.alert b{color:#E23B2A;}'+
     '.nowork{display:inline-block;background:#FDE7E3;color:#C02A1B;border:1px solid #E23B2A;border-radius:6px;padding:4px 10px;font-weight:800;font-size:13px;margin:5px 0;}'+
     '.empty{border:1px dashed #C8CDD6;border-radius:8px;padding:18px;color:#717A8C;font-weight:bold;text-align:center;}'+
-    '</style></head><body><div class="doc-head"><h1>☀️ STB Daily Update</h1><div class="date">'+escFull(fmtDateLong(reportDay))+'</div></div>'+
+    '</style></head><body><div class="doc-head"><h1>☀️ STB Daily Update'+escFull(AREA_LABEL)+'</h1><div class="date">'+escFull(fmtDateLong(reportDay))+'</div></div>'+
     (cards||'<div class="empty">No houses on the board.</div>')+
     '</body></html>';
 }
@@ -3776,7 +3785,7 @@ function buildProjectSnapshotHtml(){
       '</div>'+
     '</article>';
   }).join('');
-  return '<!doctype html><html><head><meta charset="utf-8"><title>STB Project Snapshot Report</title>'+
+  return '<!doctype html><html><head><meta charset="utf-8"><title>STB Project Snapshot Report'+escFull(AREA_LABEL)+'</title>'+
     '<style>'+
     '@page{size:letter;margin:.35in;}*{box-sizing:border-box;}body{font-family:Arial,sans-serif;color:#1B2233;margin:0;background:#fff;}'+
     '.doc-head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:4px solid #16294D;padding-bottom:10px;margin-bottom:14px;}'+
@@ -3797,7 +3806,7 @@ function buildProjectSnapshotHtml(){
     '.next-up{margin:0;padding:0;list-style:none;} .next-up li{border:1px dashed #E8A21C;background:#FFFBF0;border-radius:7px;padding:6px 9px;margin:4px 0;font-size:11px;color:#1B2233;}'+
     '@media print{.snapshot{page-break-inside:avoid;}}'+
     '</style></head><body>'+
-    '<div class="doc-head"><div style="display:flex;align-items:center;gap:12px"><img class="doc-logo" src="'+escFull(new URL('south-texas-builders-logo.png',location.href).href)+'" alt=""><div><h1>STB Project Snapshot Report</h1><div class="date">'+escFull(fmtDateLong(reportDay))+'</div></div></div><div class="date">Scheduling Department</div></div>'+
+    '<div class="doc-head"><div style="display:flex;align-items:center;gap:12px"><img class="doc-logo" src="'+escFull(new URL('south-texas-builders-logo.png',location.href).href)+'" alt=""><div><h1>STB Project Snapshot Report'+escFull(AREA_LABEL)+'</h1><div class="date">'+escFull(fmtDateLong(reportDay))+'</div></div></div><div class="date">Scheduling Department</div></div>'+
     '<div class="summary"><div class="sum"><b>'+activeCount+'</b><span>Active Projects</span></div><div class="sum"><b>'+avg+'%</b><span>Average Complete</span></div><div class="sum"><b>'+projects.reduce(function(n,p){ return n+delayStats(p).open; },0)+'</b><span>Open Delays</span></div></div>'+
     (projectHtml||'<div class="empty-inline">No active projects to report.</div>')+
     '</body></html>';
@@ -3952,11 +3961,24 @@ document.querySelectorAll('[data-aiq]').forEach(function(btn){
   });
 });
 
-/* ============ Daily History ============ */
-document.getElementById('openDailyHistory').addEventListener('click',function(){
-  renderDailyHistory();
-  document.getElementById('dailyHistoryOvl').classList.add('show');
-});
+/* ============ Area toggle (Main ⇄ Alice) ============ */
+(function(){
+  var btn=document.getElementById('areaToggle');
+  if(BOARD_AREA==='alice'){
+    document.getElementById('areaToggleLbl').textContent='Main Projects';
+    document.getElementById('areaToggleIc').textContent='🏠';
+    document.title='STB Scheduling — Alice';
+    var h=document.querySelector('header h1');
+    if(h){ var b=document.createElement('span'); b.className='area-badge'; b.textContent='ALICE'; h.appendChild(b); }
+  }
+  btn.addEventListener('click',function(){
+    var toAlice=BOARD_AREA!=='alice';
+    if(!confirm(toAlice?'Switch to the ALICE projects board?':'Switch back to the MAIN projects board?')) return;
+    try{ localStorage.setItem('stb_board_area_v1', toAlice?'alice':'main'); }catch(e){}
+    location.reload();
+  });
+})();
+/* ============ Daily History (feature retired — kept for data compatibility) ============ */
 function renderDailyHistory(){
   var body=document.getElementById('dailyHistoryBody');
   var log=(board&&board.dailyLog)||{};
@@ -4295,7 +4317,7 @@ document.getElementById('openHistory').addEventListener('click',function(){
       var label=DOW[d.getDay()]+', '+MON[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
       return '<div class="hist-item">'+
         '<div class="hist-top" data-hidx="'+i+'">'+
-          '<span class="hist-date">'+esc(p.name)+(p.code?' ('+esc(p.code)+')':'')+'</span>'+
+          '<span class="hist-date">'+esc(p.name)+(p.code?' ('+esc(p.code)+')':'')+(done.area==='alice'?'<span class="hist-area">ALICE</span>':'')+'</span>'+
           '<span class="hist-sub">Completed '+label+'</span>'+
           '<span class="chev">\u25BC</span>'+
         '</div>'+
@@ -4311,7 +4333,7 @@ function reportForCompleted(done){
   var p=done.project;
   var d=new Date(done.completedAt);
   var label=DOW[d.getDay()]+', '+MON[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
-  var lines=['\u2705 COMPLETED PROJECT', '\uD83D\uDCCD '+p.name+(p.code?' ('+p.code+')':''), '\uD83D\uDCC5 Completed '+label, ''];
+  var lines=['\u2705 COMPLETED PROJECT', '\uD83D\uDCCD '+p.name+(p.code?' ('+p.code+')':'')+(done.area==='alice'?' \u00B7 ALICE':''), '\uD83D\uDCC5 Completed '+label, ''];
   var schedule=projectScheduleMetrics(p);
   if(schedule.actualStartAt || schedule.actualFinishAt){
     lines.push('\u23F1 SCHEDULE PERFORMANCE');
@@ -4350,6 +4372,11 @@ document.getElementById('historyBody').addEventListener('click',function(e){
     var idx=+rb.dataset.restore;
     var done=completed[idx];
     if(!done) return;
+    var doneArea=done.area==='alice'?'alice':'main';
+    if(doneArea!==BOARD_AREA){
+      toast('This house belongs to the '+(doneArea==='alice'?'ALICE':'MAIN')+' board — switch boards first, then restore it.');
+      return;
+    }
     if(!confirm('Move “'+done.project.name+'” back to the active board?')) return;
     var proj=JSON.parse(JSON.stringify(done.project));
     if(board.projects.some(function(x){ return x.id===proj.id; })) proj.id=uid();
