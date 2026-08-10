@@ -4380,15 +4380,27 @@ document.getElementById('historyBody').addEventListener('click',function(e){
     if(!confirm(msg)) return;
     var proj=JSON.parse(JSON.stringify(done.project));
     if(board.projects.some(function(x){ return x.id===proj.id; })) proj.id=uid();
+    /* Board first, Completed second: the house is only removed from Completed
+       AFTER the board save confirms — if anything fails it stays safe in
+       Completed Houses instead of vanishing between the two lists. */
     board.projects.push(proj);
-    completed.splice(idx,1);
-    // clear the "removed" marker so it stays on the board
     if(Array.isArray(board.removedProjectIds)){
       board.removedProjectIds=board.removedProjectIds.filter(function(x){ return x!==done.project.id && x!==proj.id; });
     }
-    persistCompleted(); persistBoard(); render();
-    document.getElementById('openHistory').click();   // refresh the list
-    toast('Moved back to the board');
+    toast('Moving house…');
+    Promise.resolve(persistBoard()).then(function(){
+      completed.splice(idx,1);
+      return Promise.resolve(persistCompleted());
+    }).then(function(){
+      render();
+      document.getElementById('openHistory').click();   // refresh the list
+      toast('Moved back to the board');
+    }).catch(function(err){
+      // Board save failed — undo the local add; the house is still in Completed Houses.
+      board.projects=board.projects.filter(function(x){ return x.id!==proj.id; });
+      render();
+      toast('Move failed — the house is still in Completed Houses. Check your connection and try again.');
+    });
     return;
   }
   var top=e.target.closest('[data-hidx]');
