@@ -1043,9 +1043,7 @@ var PHASE_TASKS = {
     'Schedule Nail Pattern'
   ],
   'Phase 3':[
-    'Paint Selection Meeting With Client (Cristo)',
-    'Tile Selection Meeting With Client (Cristo)',
-    'Cabinet Selection Meeting With Client (Cristo)',
+    'Have selections already been done by the client? If so, add them to the Selections PDF',
     'Electrical Rough-In',
     'Plumbing Top Out',
     'A/C Duct Work (Rough HVAC)',
@@ -1660,7 +1658,7 @@ function isPriorityPhaseTask(txt){
 }
 function isSelectionPhaseTask(txt){
   var key=String(txt||'').toLowerCase();
-  return key.indexOf('selection meeting')>=0 || key==='light fixture selection (cristo)' || key==='plumbing fixture selection (cristo)';
+  return key.indexOf('selection meeting')>=0 || key.indexOf('add them to the selections pdf')>=0 || key==='light fixture selection (cristo)' || key==='plumbing fixture selection (cristo)';
 }
 function isLegacyDelayTask(txt){
   return String(txt||'').trim().toLowerCase()==='delay';
@@ -3783,7 +3781,7 @@ function projectSnapshotChecklistHtml(p){
     var meta=[];
     if(st.sub) meta.push(st.sub);
     if(st.note) meta.push('Note: '+st.note);
-    return '<li class="'+escFull(snapshotStatusClass(st))+(isPriorityPhaseTask(txt)?' priority':'')+'">'+
+    return '<li class="'+escFull(snapshotStatusClass(st))+(isPriorityPhaseTask(txt)?' priority':'')+(isSelectionPhaseTask(txt)?' selection':'')+'">'+
       '<span class="task-name">'+escFull(txt)+'</span>'+
       '<span class="status-pill">'+escFull(snapshotStatusLabel(st))+'</span>'+
       (meta.length?'<div class="task-meta">'+escFull(meta.join(' · '))+'</div>':'')+
@@ -3844,7 +3842,7 @@ function buildProjectSnapshotHtml(){
     '.barline{height:8px;border-radius:999px;background:#ECEAE3;margin:10px 0 8px;overflow:hidden;} .barline span{display:block;height:100%;background:#2E9166;}'+
     '.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:10px;} .facts div{border:1px solid #E3E1D7;border-radius:7px;padding:7px;background:#FBFBF8;} .facts b{display:block;color:#16294D;font-size:16px;} .facts span{font-size:9px;color:#717A8C;text-transform:uppercase;font-weight:bold;letter-spacing:.05em;}'+
     'h3{margin:0 0 6px;color:#16294D;font-size:12px;text-transform:uppercase;letter-spacing:.08em;} .phase-list{margin:0;padding-left:0;list-style:none;} .phase-list li{position:relative;border:1px solid #ECEAE3;border-radius:7px;padding:7px 82px 7px 9px;margin:5px 0;font-size:12px;line-height:1.22;} .task-name{font-weight:bold;color:#1B2233;} .status-pill{position:absolute;right:7px;top:6px;border-radius:999px;padding:3px 7px;font-size:8px;text-transform:uppercase;font-weight:bold;letter-spacing:.05em;background:#F1F2F4;color:#717A8C;} .task-meta{font-size:10px;color:#717A8C;margin-top:2px;}'+
-    'li.done .status-pill{background:#E8F7EE;color:#2E9166;} li.today .status-pill{background:#F1F2F4;color:#16294D;} li.scheduled .status-pill{background:#FFF0D5;color:#8a6404;} li.alert .status-pill{background:#FDEAE7;color:#E23B2A;} li.alert .task-name{color:#E23B2A;} li.priority .task-name{color:#E23B2A;}'+
+    'li.done .status-pill{background:#E8F7EE;color:#2E9166;} li.today .status-pill{background:#F1F2F4;color:#16294D;} li.scheduled .status-pill{background:#FFF0D5;color:#8a6404;} li.alert .status-pill{background:#FDEAE7;color:#E23B2A;} li.alert .task-name{color:#E23B2A;} li.priority .task-name{color:#E23B2A;} li.selection .task-name{color:#A76600;}'+
     '.empty-inline{border:1px dashed #C8CDD6;border-radius:8px;padding:12px;color:#717A8C;font-weight:bold;text-align:center;}'+
     '.doc-logo{height:44px;width:auto;}'+
     '.addr{margin:3px 0 0 !important;color:#1B2233 !important;font-size:12px !important;font-weight:bold;text-transform:none !important;letter-spacing:0 !important;}'+
