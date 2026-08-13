@@ -1020,7 +1020,7 @@ var PHASE_TASKS = {
     'QC Visit Before Inspection',
     'Schedule Concrete Inspection',
     'Check If Windstorm metals Needed',
-    'Windstorm Inspection',
+    'Windstorm Inspection (By RGV Structure)',
     'Pour Concrete'
   ],
   'Phase 2':[
@@ -1657,7 +1657,7 @@ function toast(msg){
 function attr(s){ return esc(s).replace(/"/g,'&quot;'); }
 function isPriorityPhaseTask(txt){
   var key=String(txt||'').toLowerCase();
-  return key==='schedule pre form survey' || key==='plumbing rough before roof shingles' || key==='verify windstorm page has shear wall' || key==='electrical rough in / island' || key==='check if windstorm metals needed';
+  return key==='schedule pre form survey' || key==='plumbing rough before roof shingles' || key==='verify windstorm page has shear wall' || key==='electrical rough in / island' || key==='check if windstorm metals needed' || key==='windstorm inspection (by rgv structure)';
 }
 function isSelectionPhaseTask(txt){
   var key=String(txt||'').toLowerCase();
