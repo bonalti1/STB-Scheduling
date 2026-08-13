@@ -1462,6 +1462,15 @@ function stbMergeCustomTasks(mine,base){
 function stbMergeProject(mineP,baseP){
   mineP.phaseTaskState=stbMergeTaskState(mineP.phaseTaskState||{}, baseP.phaseTaskState||{});
   mineP.customPhaseTasks=stbMergeCustomTasks(mineP.customPhaseTasks||{}, baseP.customPhaseTasks||{});
+  /* Union task-delete tombstones from both copies so a deletion made on one
+     device survives a save from a stale device (deletes win over re-adds). */
+  mineP.deletedPhaseTasks=mineP.deletedPhaseTasks||{};
+  var baseDel=baseP.deletedPhaseTasks||{};
+  Object.keys(baseDel).forEach(function(ph){
+    if(!baseDel[ph] || typeof baseDel[ph]!=='object') return;
+    mineP.deletedPhaseTasks[ph]=mineP.deletedPhaseTasks[ph]||{};
+    Object.keys(baseDel[ph]).forEach(function(k){ mineP.deletedPhaseTasks[ph][k]=true; });
+  });
   if(!mineP.renderImage && baseP.renderImage){ mineP.renderImage=baseP.renderImage; mineP.renderUpdatedAt=mineP.renderUpdatedAt||baseP.renderUpdatedAt||''; }
   if(!mineP.address && baseP.address){ mineP.address=baseP.address; }   // keep a saved address a stale copy is missing
   if(!mineP.blueprintUrl && baseP.blueprintUrl){ mineP.blueprintUrl=baseP.blueprintUrl; mineP.blueprintName=mineP.blueprintName||baseP.blueprintName; }
@@ -2005,11 +2014,10 @@ function visiblePhaseTasks(p,phase){
 function deletePhaseTask(p,phase,text){
   var key=text.toLowerCase();
   var custom=phaseCustomTasks(p,phase);
-  var before=custom.length;
   p.customPhaseTasks[phase]=custom.filter(function(it){ return it.text.toLowerCase()!==key; });
-  if(before===p.customPhaseTasks[phase].length){
-    phaseDeletedTasks(p,phase)[key]=true;
-  }
+  /* ALWAYS tombstone — custom tasks too. Without this, the sync merge unions
+     the cloud copy's custom tasks back in and deleted tasks resurrect. */
+  phaseDeletedTasks(p,phase)[key]=true;
   if(p.phaseTaskState && p.phaseTaskState[phase]){ delete p.phaseTaskState[phase][key]; }
   if(phase===p.phase){
     p.phaseTasks=(p.phaseTasks||[]).filter(function(it){ return it.text.toLowerCase()!==key; });
@@ -2897,6 +2905,7 @@ document.getElementById('projectList').addEventListener('click',function(e){
     var taskText=(inpAdd.value||'').trim();
     if(taskText){
       phaseCustomTasks(p,phAdd).push({id:uid(),text:taskText});
+      delete phaseDeletedTasks(p,phAdd)[taskText.toLowerCase()];   // re-adding a deleted name revives it
       setPhaseItemState(p,phAdd,taskText,{done:false,status:'',sub:''});
       saveBoardNow(); render();
     }
