@@ -1021,6 +1021,7 @@ var PHASE_TASKS = {
     'Schedule Concrete Inspection',
     'Check If Windstorm metals Needed',
     'Windstorm Inspection (By RGV Structure)',
+    'Make sure foundation has done the sunken showers if needed',
     'Pour Concrete'
   ],
   'Phase 2':[
@@ -1029,6 +1030,7 @@ var PHASE_TASKS = {
     'Lay Out Framing',
     'Quality Control Visit',
     'Exterior & Interior Wall framing',
+    'All showers need to have proper niches built by framer',
     'Roof Framing / Sheathing & Fascia',
     'Order Exterior Doors',
     'Deliver Windows',
@@ -1045,6 +1047,7 @@ var PHASE_TASKS = {
   'Phase 3':[
     'Have selections already been done by the client? If so, add them to the Selections PDF',
     'Bora Care Framing Treatment',
+    'Make sure the garage door is ordered if needed',
     'Electrical Rough-In',
     'Plumbing Top Out',
     'A/C Duct Work (Rough HVAC)',
@@ -1652,7 +1655,7 @@ function toast(msg){
 function attr(s){ return esc(s).replace(/"/g,'&quot;'); }
 function isPriorityPhaseTask(txt){
   var key=String(txt||'').toLowerCase();
-  return key==='schedule pre form survey' || key==='plumbing rough before roof shingles' || key==='verify windstorm page has shear wall' || key==='electrical rough in / island' || key==='check if windstorm metals needed' || key==='windstorm inspection (by rgv structure)';
+  return key==='schedule pre form survey' || key==='plumbing rough before roof shingles' || key==='verify windstorm page has shear wall' || key==='electrical rough in / island' || key==='check if windstorm metals needed' || key==='windstorm inspection (by rgv structure)' || key==='make sure foundation has done the sunken showers if needed' || key==='all showers need to have proper niches built by framer';
 }
 function isSelectionPhaseTask(txt){
   var key=String(txt||'').toLowerCase();
