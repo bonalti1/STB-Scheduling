@@ -1474,6 +1474,8 @@ function stbMergeProject(mineP,baseP){
   if(!mineP.renderImage && baseP.renderImage){ mineP.renderImage=baseP.renderImage; mineP.renderUpdatedAt=mineP.renderUpdatedAt||baseP.renderUpdatedAt||''; }
   if(!mineP.address && baseP.address){ mineP.address=baseP.address; }   // keep a saved address a stale copy is missing
   if(!mineP.blueprintUrl && baseP.blueprintUrl){ mineP.blueprintUrl=baseP.blueprintUrl; mineP.blueprintName=mineP.blueprintName||baseP.blueprintName; }
+  if(!mineP.windstormUrl && baseP.windstormUrl){ mineP.windstormUrl=baseP.windstormUrl; mineP.windstormName=mineP.windstormName||baseP.windstormName; }
+  if(!mineP.selectionsUrl && baseP.selectionsUrl){ mineP.selectionsUrl=baseP.selectionsUrl; mineP.selectionsName=mineP.selectionsName||baseP.selectionsName; }
   return mineP;
 }
 function stbMergeBoards(mine,base){
@@ -1777,9 +1779,9 @@ function handleRenderUpload(p,file,input){
 }
 /* Blueprint PDF: stored in its own storage bucket; the board keeps ONLY the link,
    so the app stays just as fast (the PDF is fetched only when someone opens it). */
-async function uploadBlueprintPdf(p,file){
+async function uploadProjectPdf(p,file,kind){
   if(!SUPABASE_ENABLED || !window.fetch) throw new Error('Cloud storage is not connected.');
-  var path=slug(p.name)+'-'+(p.code?slug(p.code):p.id)+'/blueprint-'+Date.now()+'.pdf';
+  var path=slug(p.name)+'-'+(p.code?slug(p.code):p.id)+'/'+kind+'-'+Date.now()+'.pdf';
   var url=SUPABASE_URL+'/storage/v1/object/'+SUPABASE_BLUEPRINT_BUCKET+'/'+path;
   var res=await fetch(url,{
     method:'POST',
@@ -1788,9 +1790,31 @@ async function uploadBlueprintPdf(p,file){
   });
   if(!res.ok){
     var text=''; try{ text=await res.text(); }catch(e){}
-    throw new Error('Blueprint upload failed. The blueprint bucket may need setup. '+text);
+    throw new Error(kind.charAt(0).toUpperCase()+kind.slice(1)+' upload failed. The storage bucket may need setup. '+text);
   }
   return SUPABASE_URL+'/storage/v1/object/public/'+SUPABASE_BLUEPRINT_BUCKET+'/'+path;
+}
+function uploadBlueprintPdf(p,file){ return uploadProjectPdf(p,file,'blueprint'); }
+/* Per-house PDF slots that behave exactly like Blueprint (cloud file, board keeps only the link). */
+var DOC_KINDS={
+  windstorm:{url:'windstormUrl',name:'windstormName',at:'windstormUpdatedAt',label:'Windstorm',icon:'🌀'},
+  selections:{url:'selectionsUrl',name:'selectionsName',at:'selectionsUpdatedAt',label:'Selections',icon:'🎨'}
+};
+function handleDocUpload(p,file,input,kind){
+  var k=DOC_KINDS[kind];
+  if(!k || !file) return;
+  if(file.type && file.type.indexOf('pdf')<0 && !/\.pdf$/i.test(file.name||'')){
+    toast('Please choose a PDF file'); if(input) input.value=''; return;
+  }
+  toast('Uploading '+k.label+'...');
+  uploadProjectPdf(p,file,kind).then(function(url){
+    p[k.url]=url;
+    p[k.name]=file.name||k.label+'.pdf';
+    p[k.at]=new Date().toISOString();
+    queueSave(); render(); toast(k.label+' uploaded');
+  }).catch(function(err){
+    toast(err && err.message ? err.message : k.label+' upload failed');
+  }).finally(function(){ if(input) input.value=''; });
 }
 async function uploadNoteImage(p,file){
   if(!SUPABASE_ENABLED || !window.fetch) throw new Error('Cloud storage is not connected.');
@@ -2689,6 +2713,14 @@ function projectCard(p){
           ? '<a class="addr-chip" data-act="openblueprint" href="'+attr(p.blueprintUrl)+'" target="_blank" rel="noopener" title="Open blueprint PDF">📄 Blueprint</a>'+
             '<button class="sqft-edit" data-act="chooseblueprint">Replace</button>'
           : '<button class="sqft-edit" data-act="chooseblueprint">📄 Add blueprint</button>')+
+        Object.keys(DOC_KINDS).map(function(kind){
+          var k=DOC_KINDS[kind];
+          return '<input class="doc-file" type="file" accept="application/pdf,.pdf" data-act="uploaddoc" data-kind="'+kind+'" style="display:none;" />'+
+            (p[k.url]
+              ? '<a class="addr-chip" data-act="opendoc" href="'+attr(p[k.url])+'" target="_blank" rel="noopener" title="Open '+k.label+' PDF">'+k.icon+' '+k.label+'</a>'+
+                '<button class="sqft-edit" data-act="choosedoc" data-kind="'+kind+'">Replace</button>'
+              : '<button class="sqft-edit" data-act="choosedoc" data-kind="'+kind+'">'+k.icon+' Add '+k.label+'</button>');
+        }).join('')+
       '</div>'+
     '</div>'+
     '<span class="progress-mini">'+prog.pct+'%</span>'+
@@ -2859,10 +2891,15 @@ document.getElementById('projectList').addEventListener('click',function(e){
   }
   if(act==='doneinfo'){ toast(t.getAttribute('title')||'Completed'); return; }   // tap a done task to see when/who
   if(act==='openmap'){ return; }   // let the address link open Google Maps; don't toggle the card
-  if(act==='openblueprint'){ return; }   // let the blueprint link open the PDF; don't toggle the card
+  if(act==='openblueprint' || act==='opendoc'){ return; }   // let the link open the PDF; don't toggle the card
   if(act==='chooseblueprint'){
     var bi=card.querySelector('.blueprint-file');
     if(bi) bi.click();
+    return;
+  }
+  if(act==='choosedoc'){
+    var di=card.querySelector('.doc-file[data-kind="'+t.dataset.kind+'"]');
+    if(di) di.click();
     return;
   }
   if(act==='editaddress'){
@@ -3087,6 +3124,11 @@ document.getElementById('projectList').addEventListener('change',function(e){
     var pBp=projById(e.target.closest('.card').dataset.pid);
     var bpFile=e.target.files && e.target.files[0];
     handleBlueprintUpload(pBp,bpFile,e.target);
+    return;
+  }
+  if(e.target.dataset.act==='uploaddoc'){
+    var pDoc=projById(e.target.closest('.card').dataset.pid);
+    handleDocUpload(pDoc, e.target.files && e.target.files[0], e.target, e.target.dataset.kind);
     return;
   }
   if(e.target.dataset.editdate){
