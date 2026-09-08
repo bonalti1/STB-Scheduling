@@ -443,6 +443,12 @@
       <div class="campo"><label>Formas de pago (aparece en el PDF que se manda al cliente)</label>
         <textarea id="cfDatosPago" placeholder="Ej.&#10;Zelle: pagos@stb.com&#10;Cheque a nombre de: South Texas Builders&#10;Transferencia: Banco X, cuenta ..."></textarea>
       </div>
+      <div class="campo"><label>Zelle — correo o teléfono (aparece en la página de firma del cliente)</label>
+        <input id="cfZelle" placeholder="Ej. pagos@southtexasbuilders.com  o  (956) 555-1234">
+      </div>
+      <div class="campo"><label>Cheque — a nombre de / dirección de entrega (página de firma)</label>
+        <textarea id="cfCheque" placeholder="Ej.&#10;South Texas Builders LLC&#10;123 Main St, Harlingen, TX 78550"></textarea>
+      </div>
       <div class="campo"><label>Usuarios del sistema (separados por coma)</label>
         <input id="cfUsuarios" placeholder="Jacqueline, Cristo, ...">
         <div class="hint">Cada quien elige su nombre arriba antes de registrar pagos.</div>
@@ -1234,6 +1240,8 @@ async function borrarPago(pid, coid, pgid) {
 function abrirConfig() {
   $('cfEmpresa').value = DATA.config.empresa || '';
   $('cfDatosPago').value = DATA.config.datosPago || '';
+  $('cfZelle').value = DATA.config.zelle || '';
+  $('cfCheque').value = DATA.config.cheque || '';
   $('cfUsuarios').value = DATA.usuarios.join(', ');
   $('cfClave').value = DATA.config.clave || CLAVE_DEFAULT;
   abrir('ovConfig');
@@ -1242,11 +1250,13 @@ function abrirConfig() {
 async function guardarConfig() {
   const empresa = $('cfEmpresa').value.trim();
   const datosPago = $('cfDatosPago').value.trim();
+  const zelle = $('cfZelle').value.trim();
+  const cheque = $('cfCheque').value.trim();
   const clave = $('cfClave').value.trim() || CLAVE_DEFAULT;
   const usuarios = $('cfUsuarios').value.split(',').map(s => s.trim()).filter(Boolean);
   try {
     await guardar(obj => {
-      obj.config = Object.assign(obj.config || {}, { empresa, datosPago, clave });
+      obj.config = Object.assign(obj.config || {}, { empresa, datosPago, zelle, cheque, clave });
       if (usuarios.length) obj.usuarios = usuarios;
     });
     try { localStorage.setItem('stbCobrosAcceso', clave); } catch (e2) {}

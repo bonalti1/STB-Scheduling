@@ -79,6 +79,20 @@
   }
   .fila { display: flex; gap: 12px; } .fila .campo { flex: 1; }
 
+  .due-box { border: 2px solid var(--green); background: #f2faf5; border-radius: 12px; padding: 14px 16px; }
+  .due-lbl { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--gray); }
+  .due-val { font-family: 'Oswald', sans-serif; font-size: 26px; font-weight: 600; color: var(--navy); margin: 4px 0 2px; }
+  .due-note { font-size: 12px; color: var(--gray); }
+  .pay-methods { display: grid; gap: 10px; margin-bottom: 18px; }
+  .pay-method { border: 1.5px solid var(--border); border-radius: 12px; padding: 12px 14px; background: #fff; }
+  .pm-t { font-weight: 700; font-size: 14.5px; margin-bottom: 4px; }
+  .pm-b { font-size: 13px; white-space: pre-wrap; line-height: 1.45; }
+  .pm-b.vacio { color: var(--gray); font-style: italic; }
+  .pm-memo { margin-top: 6px; font-size: 12px; color: var(--gray); }
+  .pm-memo b { color: var(--navy); }
+  .terms { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.4; margin: 6px 0 14px; cursor: pointer; }
+  .terms input { width: 20px; height: 20px; accent-color: var(--green); flex-shrink: 0; margin-top: 1px; }
+  .terms .es { color: var(--gray); font-size: 12px; }
   .preview { margin-top: 14px; font-size: 13px; }
   .preview table { width: 100%; border-collapse: collapse; }
   .preview td, .preview th { padding: 7px 8px; border-bottom: 1px solid #eef0f3; text-align: left; }
@@ -126,13 +140,13 @@
 </header>
 
 <div class="wrap">
-  <div class="cargando" id="cargando">Cargando contrato... / Loading agreement...</div>
+  <div class="cargando" id="cargando">Loading agreement... / Cargando contrato...</div>
 
   <div id="contenido" style="display:none">
     <div class="card">
       <div class="titulo-doc">Change Order Agreement</div>
-      <div class="dato"><span class="lbl">Proyecto / Project</span><b id="dFamilia"></b></div>
-      <div class="dato" id="dDireccionWrap"><span class="lbl">Dirección / Address</span><span id="dDireccion"></span></div>
+      <div class="dato"><span class="lbl">Project / Proyecto</span><b id="dFamilia"></b></div>
+      <div class="dato" id="dDireccionWrap"><span class="lbl">Address / Dirección</span><span id="dDireccion"></span></div>
 
       <div class="agreement">
         <div>Agreement of the price difference for the following item description:</div>
@@ -148,60 +162,60 @@
     </div>
 
     <div class="card" id="seccionFirma">
-      <div class="seccion-titulo">¿Cómo desea pagar?</div>
-      <div class="seccion-sub">How would you like to pay?</div>
+      <div class="seccion-titulo">Single payment</div>
+      <div class="seccion-sub">Un solo pago</div>
 
-      <div class="opciones">
-        <label class="opcion activa" data-tipo="unico">
-          <input type="radio" name="plan" value="unico" checked onchange="cambioPlan()">
-          <div><div class="t">Un solo pago</div><div class="s">Single payment</div></div>
-        </label>
-        <label class="opcion" data-tipo="quincenal">
-          <input type="radio" name="plan" value="quincenal" onchange="cambioPlan()">
-          <div><div class="t">Pagos quincenales</div><div class="s">Biweekly payments (every 15 days)</div></div>
-        </label>
-        <label class="opcion" data-tipo="mensual">
-          <input type="radio" name="plan" value="mensual" onchange="cambioPlan()">
-          <div><div class="t">Pagos mensuales</div><div class="s">Monthly payments</div></div>
-        </label>
+      <div class="due-box">
+        <div class="due-lbl">Payment due date / Fecha límite de pago</div>
+        <div class="due-val" id="dFechaLimite">—</div>
+        <div class="due-note">30 days from today / 30 días a partir de hoy</div>
       </div>
 
-      <div class="fila">
-        <div class="campo" id="campoNumPagos" style="display:none">
-          <label>¿En cuántos pagos? / How many payments?</label>
-          <select id="numPagos" onchange="cambioPlan()"></select>
+      <div class="seccion-titulo" style="margin-top:22px">How would you like to pay?</div>
+      <div class="seccion-sub">¿Cómo va a pagar?</div>
+
+      <div class="pay-methods">
+        <div class="pay-method">
+          <div class="pm-t">💜 Zelle</div>
+          <div class="pm-b" id="pmZelle"></div>
+          <div class="pm-memo">Memo / Referencia: <b id="memoZelle"></b></div>
         </div>
-        <div class="campo">
-          <label>Fecha del primer pago / First payment date</label>
-          <input type="date" id="fechaInicio" onchange="cambioPlan()">
+        <div class="pay-method">
+          <div class="pm-t">🏦 Check / Cheque</div>
+          <div class="pm-b" id="pmCheque"></div>
+          <div class="pm-memo">Memo / Referencia: <b id="memoCheque"></b></div>
         </div>
       </div>
 
-      <div class="preview" id="previewCuotas"></div>
-
       <div class="campo">
-        <label>Nombre completo / Full name *</label>
-        <input id="nombreCliente" placeholder="Escriba su nombre / Type your name" autocomplete="name">
+        <label>Full name / Nombre completo *</label>
+        <input id="nombreCliente" placeholder="Type your name / Escriba su nombre" autocomplete="name">
       </div>
 
       <div class="campo">
-        <label>Firma / Signature *</label>
+        <label>Signature / Firma *</label>
         <canvas class="firma-canvas" id="firmaCanvas"></canvas>
-        <div class="firma-hint">✍ Firme aquí con su dedo o mouse / Sign here with your finger or mouse</div>
-        <button class="btn-limpiar" onclick="limpiarFirma()">↺ Borrar firma / Clear</button>
+        <div class="firma-hint">✍ Sign here with your finger or mouse / Firme aquí con su dedo o mouse</div>
+        <button class="btn-limpiar" onclick="limpiarFirma()">↺ Clear / Borrar firma</button>
       </div>
+
+      <label class="terms">
+        <input type="checkbox" id="aceptaTerminos">
+        <span>I have read and agree to the item description, total amount and payment terms of this Change Order Agreement. *<br>
+        <span class="es">He leído y acepto el concepto, el monto total y las condiciones de pago de este Change Order Agreement.</span></span>
+      </label>
 
       <div class="error-msg" id="errorMsg"></div>
 
-      <button class="btn-firmar" id="btnFirmar" onclick="firmar()">✍ Firmar y Aceptar / Sign &amp; Accept</button>
+      <button class="btn-firmar" id="btnFirmar" onclick="firmar()">✍ Sign &amp; Accept / Firmar y Aceptar</button>
     </div>
 
     <div class="card exito" id="seccionExito" style="display:none">
       <div class="icono">✅</div>
-      <h2>¡Contrato firmado!</h2>
-      <p>Gracias. Su contrato ha quedado registrado.<br>Thank you. Your agreement has been recorded.</p>
+      <h2>Agreement signed! / ¡Contrato firmado!</h2>
+      <p>Thank you. Your agreement has been recorded.<br>Gracias. Su contrato ha quedado registrado.</p>
       <p id="firmadoPor" style="margin-top:10px"></p>
-      <button class="btn-pdf" onclick="abrirContratoPdf()">📄 Descargar contrato PDF / Download PDF</button>
+      <button class="btn-pdf" onclick="abrirContratoPdf()">📄 Download PDF / Descargar contrato PDF</button>
     </div>
   </div>
 </div>
@@ -226,7 +240,26 @@ function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&
 function fechaBonita(iso) {
   if (!iso) return '—';
   const d = new Date(iso + 'T00:00:00');
-  return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
+    ' / ' + d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+// Single payment: due 30 days from the day the form is opened (fixed, not editable).
+function fechaLimiteISO() {
+  const f = new Date();
+  f.setDate(f.getDate() + 30);
+  return f.toISOString().slice(0, 10);
+}
+function memoPago() { return CONTRATO.familia + (CONTRATO.numero ? ' (' + CONTRATO.numero + ')' : '') + ' — Change Order'; }
+function pintarFormasPago() {
+  const memo = memoPago();
+  const z = (EMPRESA_CFG.zelle || '').trim();
+  const c = (EMPRESA_CFG.cheque || '').trim();
+  $('pmZelle').textContent = z ? 'Send to / Enviar a: ' + z : 'Ask our office for the Zelle details. / Pida los datos de Zelle a nuestra oficina.';
+  $('pmZelle').classList.toggle('vacio', !z);
+  $('pmCheque').textContent = c ? 'Payable to / A nombre de:\n' + c : 'Ask our office who to make the check payable to. / Pregunte en nuestra oficina a nombre de quién hacer el cheque.';
+  $('pmCheque').classList.toggle('vacio', !c);
+  $('memoZelle').textContent = memo;
+  $('memoCheque').textContent = memo;
 }
 
 // ── Nube ────────────────────────────────────────────────────
@@ -346,12 +379,8 @@ async function cargar() {
   if (CONTRATO.estado === 'firmado') {
     mostrarExito();
   } else {
-    const hoyISO = new Date().toISOString().slice(0, 10);
-    $('fechaInicio').value = hoyISO;
-    $('fechaInicio').min = hoyISO;
-    $('fechaInicio').max = fechaMaxInicioISO();
-    llenarNumPagos();
-    cambioPlan();
+    $('dFechaLimite').textContent = fechaBonita(fechaLimiteISO());
+    pintarFormasPago();
     prepararCanvas();
   }
 }
@@ -360,59 +389,14 @@ function mostrarExito() {
   $('seccionFirma').style.display = 'none';
   $('seccionExito').style.display = 'block';
   if (CONTRATO.firma) {
-    $('firmadoPor').innerHTML = 'Firmado por / Signed by: <b>' + esc(CONTRATO.firma.nombre) + '</b> · ' + fechaBonita(CONTRATO.firma.fecha);
+    $('firmadoPor').innerHTML = 'Signed by / Firmado por: <b>' + esc(CONTRATO.firma.nombre) + '</b> · ' + fechaBonita(CONTRATO.firma.fecha);
   }
 }
 
 // ── Plan de pago ────────────────────────────────────────────
-// Límites de negocio: todo plan debe terminar en ~3 meses.
-// unico → el primer (y único) pago máx. 1 mes desde hoy;
-// quincenal → máx. 6 quincenas; mensual → máx. 3 meses.
-const MAX_PAGOS = { quincenal: 6, mensual: 3 };
-
-function maxPagos(tipo) { return MAX_PAGOS[tipo] || 1; }
-
-function fechaMaxInicioISO() {
-  const f = new Date();
-  f.setMonth(f.getMonth() + 1);
-  return f.toISOString().slice(0, 10);
-}
-
-function llenarNumPagos() {
-  const tipo = tipoActual();
-  if (tipo === 'unico') return;
-  const sel = $('numPagos');
-  const previo = parseInt(sel.value) || maxPagos(tipo);
-  sel.innerHTML = '';
-  for (let i = 2; i <= maxPagos(tipo); i++) sel.innerHTML += '<option value="' + i + '">' + i + '</option>';
-  sel.value = String(Math.min(Math.max(previo, 2), maxPagos(tipo)));
-}
-
-function tipoActual() { return document.querySelector('input[name=plan]:checked').value; }
-
-function cambioPlan() {
-  const tipo = tipoActual();
-  document.querySelectorAll('.opcion').forEach(o => o.classList.toggle('activa', o.dataset.tipo === tipo));
-  $('campoNumPagos').style.display = tipo === 'unico' ? 'none' : 'block';
-  llenarNumPagos();
-
-  const num = tipo === 'unico' ? 1 : parseInt($('numPagos').value) || 2;
-  const inicio = $('fechaInicio').value;
-  if (!inicio) { $('previewCuotas').innerHTML = ''; return; }
-
-  const base = Math.floor((CONTRATO.monto / num) * 100) / 100;
-  let acumulado = 0, filas = '';
-  for (let i = 0; i < num; i++) {
-    const f = new Date(inicio + 'T00:00:00');
-    if (tipo === 'mensual') f.setMonth(f.getMonth() + i);
-    else if (tipo === 'quincenal') f.setDate(f.getDate() + i * 15);
-    const monto = (i === num - 1) ? Math.round((CONTRATO.monto - acumulado) * 100) / 100 : base;
-    acumulado += monto;
-    filas += '<tr><td>' + (i + 1) + '</td><td>' + fechaBonita(f.toISOString().slice(0, 10)) + '</td><td><b>' + money(monto) + '</b></td></tr>';
-  }
-  $('previewCuotas').innerHTML =
-    '<table><tr><th>#</th><th>Fecha / Date</th><th>Monto / Amount</th></tr>' + filas + '</table>';
-}
+// Contract is single-payment only: one installment, due 30 days from the day
+// the customer opens the form. The office app keeps its own richer plans for
+// internal tracking; those are untouched here.
 
 // ── Firma en canvas ─────────────────────────────────────────
 let ctx, dibujando = false, hayFirma = false;
@@ -469,27 +453,16 @@ function mostrarError(msg) {
 async function firmar() {
   $('errorMsg').style.display = 'none';
   const nombre = $('nombreCliente').value.trim();
-  if (!nombre) return mostrarError('⚠ Escriba su nombre completo. / Please type your full name.');
-  if (!hayFirma) return mostrarError('⚠ Falta su firma en el recuadro. / Please sign in the box.');
-  if (!$('fechaInicio').value) return mostrarError('⚠ Elija la fecha del primer pago. / Choose the first payment date.');
+  if (!nombre) return mostrarError('⚠ Please type your full name. / Escriba su nombre completo.');
+  if (!hayFirma) return mostrarError('⚠ Please sign in the box. / Falta su firma en el recuadro.');
+  if (!$('aceptaTerminos').checked) return mostrarError('⚠ Please check the box to accept the terms. / Marque la casilla para aceptar los términos.');
 
   const btn = $('btnFirmar');
   btn.disabled = true;
-  btn.textContent = 'Enviando... / Sending...';
+  btn.textContent = 'Sending... / Enviando...';
 
-  const tipo = tipoActual();
-  const numPagos = tipo === 'unico' ? 1 : Math.min(maxPagos(tipo), Math.max(2, parseInt($('numPagos').value) || 2));
-  const fechaInicio = $('fechaInicio').value;
   const hoy = new Date().toISOString().slice(0, 10);
-  if (fechaInicio < hoy) {
-    btn.disabled = false; btn.textContent = '✍ Firmar y Aceptar / Sign & Accept';
-    return mostrarError('⚠ La fecha del primer pago no puede ser en el pasado. / The first payment date cannot be in the past.');
-  }
-  if (fechaInicio > fechaMaxInicioISO()) {
-    btn.disabled = false; btn.textContent = '✍ Firmar y Aceptar / Sign & Accept';
-    return mostrarError('⚠ El primer pago debe ser dentro de 1 mes como máximo. / The first payment must be within 1 month.');
-  }
-  const planFinal = { tipo, numPagos, fechaInicio };
+  const planFinal = { tipo: 'unico', numPagos: 1, fechaInicio: fechaLimiteISO() };
 
   try {
     const archivoFirma = await subirFirma($('firmaCanvas').toDataURL('image/png'));
@@ -535,7 +508,7 @@ async function firmar() {
   } catch (e) {
     mostrarError('⚠ ' + e.message);
     btn.disabled = false;
-    btn.textContent = '✍ Firmar y Aceptar / Sign & Accept';
+    btn.textContent = '✍ Sign & Accept / Firmar y Aceptar';
   }
 }
 
@@ -547,19 +520,19 @@ function abrirContratoPdf() {
   const firmado = CONTRATO.estado === 'firmado' && CONTRATO.firma;
   const empresa = (CONTRATO.empresa || 'South Texas Builders').toUpperCase();
 
-  let planHTML = '';
-  if (firmado && CONTRATO.firma.plan) {
-    const plan = CONTRATO.firma.plan;
-    const planTxt = plan.tipo === 'unico' ? 'Una sola exhibición / Single payment'
-      : plan.numPagos + (plan.tipo === 'mensual' ? ' pagos mensuales / monthly payments' : ' pagos quincenales / biweekly payments');
-    const cuotas = generarCuotas(CONTRATO.monto, plan);
-    planHTML = `
-      <div class="plan-t">FORMA DE PAGO ELEGIDA / SELECTED PAYMENT PLAN</div>
-      <div style="font-size:11px">${planTxt} · Primer pago / First payment: ${fechaBonita(plan.fechaInicio)}</div>
-      <table style="margin-top:8px"><tr><th>#</th><th>FECHA / DUE DATE</th><th>MONTO / AMOUNT</th></tr>
-      ${cuotas.map(c => `<tr><td>${c.num}</td><td>${fechaBonita(c.fecha)}</td><td>${money(c.monto)}</td></tr>`).join('')}
-      </table>`;
-  }
+  const plan = (firmado && CONTRATO.firma.plan) || { tipo: 'unico', numPagos: 1, fechaInicio: fechaLimiteISO() };
+  const memo = memoPago();
+  const zelle = (EMPRESA_CFG.zelle || '').trim();
+  const cheque = (EMPRESA_CFG.cheque || '').trim();
+  const planHTML = `
+      <div class="plan-t">PAYMENT TERMS / CONDICIONES DE PAGO</div>
+      <div style="font-size:11px">Single payment / Un solo pago · <b>Payment due date / Fecha límite de pago: ${fechaBonita(plan.fechaInicio)}</b></div>
+      <div style="font-size:9.5px;color:#666;margin-top:2px">30 days from the signing date / 30 días a partir de la fecha de firma</div>
+      <div class="plan-t">HOW TO PAY / CÓMO PAGAR</div>
+      <div style="font-size:10.5px;line-height:1.5">
+        <div><b>Zelle:</b> ${zelle ? esc(zelle) : 'Ask our office / Pregunte en nuestra oficina'} — Memo / Referencia: <b>${esc(memo)}</b></div>
+        <div style="margin-top:4px"><b>Check / Cheque:</b> ${cheque ? esc(cheque).replace(/\n/g, ', ') : 'Ask our office / Pregunte en nuestra oficina'} — Memo / Referencia: <b>${esc(memo)}</b></div>
+      </div>`;
 
   const html = `
     <div class="hoja">
@@ -567,24 +540,24 @@ function abrirContratoPdf() {
         <div>
           <div class="t1">${esc(empresa)}</div>
           <div class="t2">CHANGE ORDER AGREEMENT / CONTRATO</div>
-          <div class="t3">Fecha / Date: ${fechaBonita(firmado ? CONTRATO.firma.fecha : new Date().toISOString().slice(0, 10))}</div>
+          <div class="t3">Date / Fecha: ${fechaBonita(firmado ? CONTRATO.firma.fecha : new Date().toISOString().slice(0, 10))}</div>
         </div>
         <img src="${location.origin}/south-texas-builders-logo.png" alt="">
       </div>
       <div class="cuerpo">
-        <div class="cliente">Proyecto / Project: ${esc(CONTRATO.familia)}${CONTRATO.numero ? ' (' + esc(CONTRATO.numero) + ')' : ''}</div>
-        ${CONTRATO.direccion ? `<div class="sub">Dirección / Address: ${esc(CONTRATO.direccion)}</div>` : ''}
+        <div class="cliente">Project / Proyecto: ${esc(CONTRATO.familia)}${CONTRATO.numero ? ' (' + esc(CONTRATO.numero) + ')' : ''}</div>
+        ${CONTRATO.direccion ? `<div class="sub">Address / Dirección: ${esc(CONTRATO.direccion)}</div>` : ''}
         <div class="agree">Agreement of the price difference for the following item description:</div>
         <div class="agree-es">Acuerdo de la diferencia de precio por el siguiente concepto:</div>
         <div class="desc">${esc(CONTRATO.descripcion)}</div>
         <div class="total"><span class="tl">TOTAL</span><span class="tv">${money(CONTRATO.monto)}</span></div>
         ${planHTML}
-        <div class="legal">Al firmar este documento, el cliente acepta el concepto, el monto total y la forma de pago aquí descritos.<br>
-        By signing this document, the client agrees to the item description, total amount and payment plan described herein.</div>
+        <div class="legal">By signing this document, the client agrees to the item description, total amount and payment terms described herein.<br>
+        Al firmar este documento, el cliente acepta el concepto, el monto total y las condiciones de pago aquí descritas.</div>
         <div class="firmas">
           <div class="firma-col">
             <div class="firma-img">${firmado && CONTRATO.firma.archivo ? `<img src="${archivoUrl(CONTRATO.firma.archivo)}">` : ''}</div>
-            <div class="firma-linea">Cliente / Client${firmado ? ': ' + esc(CONTRATO.firma.nombre) + ' · ' + fechaBonita(CONTRATO.firma.fecha) : ''}</div>
+            <div class="firma-linea">Client / Cliente${firmado ? ': ' + esc(CONTRATO.firma.nombre) + ' · ' + fechaBonita(CONTRATO.firma.fecha) : ''}</div>
           </div>
           <div class="firma-col">
             <div class="firma-img"></div>
