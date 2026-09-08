@@ -39,7 +39,7 @@
     -webkit-font-smoothing:antialiased;
     line-height:1.45;
   }
-  .wrap{max-width:1180px;margin:0 auto;padding:0 14px 80px;}
+  .wrap{max-width:1480px;margin:0 auto;padding:0 14px 80px;}
 
   /* ---------- header ---------- */
   header.app{
@@ -48,7 +48,7 @@
     color:#fff;position:sticky;top:0;z-index:30;
     box-shadow:0 6px 22px -10px rgba(14,27,54,.6);
   }
-  .head-in{max-width:1180px;margin:0 auto;padding:11px 16px;display:flex;align-items:center;gap:14px;}
+  .head-in{max-width:1480px;margin:0 auto;padding:11px 16px;display:flex;align-items:center;gap:14px;}
   .logo-badge{
     width:64px;height:50px;flex:none;border-radius:8px;background:#fff;
     display:flex;align-items:center;justify-content:center;padding:4px 7px;
@@ -65,7 +65,7 @@
   .head-txt p strong{color:#fff;font-weight:800;}
 
   .daystrip{
-    max-width:1180px;margin:0 auto;padding:0 16px 12px;
+    max-width:1480px;margin:0 auto;padding:0 16px 12px;
     display:flex;align-items:center;gap:8px;flex-wrap:wrap;
   }
   .day-pill{
@@ -323,7 +323,8 @@
   .timing-meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:.72rem;}
   .t-total{font-weight:800;color:var(--navy);}
   /* Today's tasks: a white panel beside each house; tasks carry over until checked off */
-  .card-row{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:12px;align-items:stretch;margin-bottom:13px;}
+  .card-row{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:14px;align-items:stretch;margin-bottom:13px;}
+  @media(max-width:1280px){ .card-row{grid-template-columns:minmax(0,1fr) 360px;} }
   .card-row .card{margin-bottom:0;}
   .daytask-panel{
     background:var(--card);border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow);
