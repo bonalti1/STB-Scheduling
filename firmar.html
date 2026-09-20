@@ -168,7 +168,7 @@
       <div class="due-box">
         <div class="due-lbl">Payment due date / Fecha límite de pago</div>
         <div class="due-val" id="dFechaLimite">—</div>
-        <div class="due-note">30 days from today / 30 días a partir de hoy</div>
+        <div class="due-note" id="dFechaNota">30 days from today / 30 días a partir de hoy</div>
       </div>
 
       <div class="seccion-titulo" style="margin-top:22px">How would you like to pay?</div>
@@ -243,11 +243,18 @@ function fechaBonita(iso) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
     ' / ' + d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
 }
-// Single payment: due 30 days from the day the form is opened (fixed, not editable).
+// Single payment. The office sets the due date when it creates the contract; older
+// contracts without one fall back to 30 days from the day the form is opened.
 function fechaLimiteISO() {
+  if (CONTRATO && /^\d{4}-\d{2}-\d{2}$/.test(CONTRATO.fechaLimite || '')) return CONTRATO.fechaLimite;
   const f = new Date();
   f.setDate(f.getDate() + 30);
   return f.toISOString().slice(0, 10);
+}
+function notaFechaLimite() {
+  return (CONTRATO && CONTRATO.fechaLimite)
+    ? 'Set by South Texas Builders / Establecida por South Texas Builders'
+    : '30 days from today / 30 días a partir de hoy';
 }
 function memoPago() { return CONTRATO.familia + (CONTRATO.numero ? ' (' + CONTRATO.numero + ')' : '') + ' — Change Order'; }
 function pintarFormasPago() {
@@ -361,6 +368,7 @@ async function cargar() {
     direccion: proyecto.direccion || '',
     descripcion: contrato.descripcion,
     monto: contrato.monto,
+    fechaLimite: contrato.fechaLimite || '',
     estado: contrato.estado,
     firma: contrato.firma ? { nombre: contrato.firma.nombre, fecha: contrato.firma.fecha, plan: contrato.firma.plan, archivo: contrato.firma.archivo } : null
   };
@@ -380,6 +388,7 @@ async function cargar() {
     mostrarExito();
   } else {
     $('dFechaLimite').textContent = fechaBonita(fechaLimiteISO());
+    $('dFechaNota').textContent = notaFechaLimite();
     pintarFormasPago();
     prepararCanvas();
   }
@@ -527,7 +536,7 @@ function abrirContratoPdf() {
   const planHTML = `
       <div class="plan-t">PAYMENT TERMS / CONDICIONES DE PAGO</div>
       <div style="font-size:11px">Single payment / Un solo pago · <b>Payment due date / Fecha límite de pago: ${fechaBonita(plan.fechaInicio)}</b></div>
-      <div style="font-size:9.5px;color:#666;margin-top:2px">30 days from the signing date / 30 días a partir de la fecha de firma</div>
+      <div style="font-size:9.5px;color:#666;margin-top:2px">${CONTRATO.fechaLimite ? 'Due date set by South Texas Builders / Fecha establecida por South Texas Builders' : '30 days from the signing date / 30 días a partir de la fecha de firma'}</div>
       <div class="plan-t">HOW TO PAY / CÓMO PAGAR</div>
       <div style="font-size:10.5px;line-height:1.5">
         <div><b>Zelle:</b> ${zelle ? esc(zelle) : 'Ask our office / Pregunte en nuestra oficina'} — Memo / Referencia: <b>${esc(memo)}</b></div>

@@ -367,7 +367,7 @@
     <div class="modal-body">
       <input type="hidden" id="ctPid">
       <div class="hint" style="margin-bottom:12px;font-size:13px">
-        Crea el contrato y mándale el link al cliente. Él verá el acuerdo, <b>elegirá cómo pagar</b> y <b>firmará con el dedo</b> desde su celular.
+        Crea el contrato y mándale el link al cliente. Él verá el acuerdo con la <b>fecha límite de pago</b> que fijes aquí y <b>firmará con el dedo</b> desde su celular.
       </div>
       <div class="campo"><label>¿Qué se va a firmar?</label>
         <select id="ctCO" onchange="cambioCOContrato()"></select>
@@ -377,6 +377,10 @@
         <textarea id="ctDesc" placeholder="Ej. Upgrade of kitchen island — quartz countertop instead of granite"></textarea>
       </div>
       <div class="campo"><label>Monto total (USD) *</label><input id="ctMonto" type="number" step="0.01" min="0" placeholder="0.00"></div>
+      <div class="campo"><label>Fecha límite de pago (un solo pago) *</label>
+        <input id="ctFechaLimite" type="date">
+        <div class="hint">Viene con 30 días por defecto. Cámbiala si este contrato tiene otro plazo (máx. 90 días). El cliente la verá fija, sin poder editarla.</div>
+      </div>
     </div>
     <div class="modal-foot">
       <button class="btn" onclick="cerrar('ovContrato')">Cancelar</button>
@@ -1092,7 +1096,15 @@ function abrirModalContrato(pid, coid) {
     '<option value="">✎ Otro concepto (escribir nuevo)</option>';
   $('ctCO').value = coid || (sinFirmar.length ? sinFirmar[0].id : '');
   cambioCOContrato();
+  const fl = $('ctFechaLimite');
+  fl.min = hoyISO(); fl.max = sumarDiasISO(90); fl.value = sumarDiasISO(30);
   abrir('ovContrato');
+}
+
+function sumarDiasISO(n) {
+  const f = new Date(hoyISO() + 'T00:00:00');
+  f.setDate(f.getDate() + n);
+  return f.toISOString().slice(0, 10);
 }
 
 function cambioCOContrato() {
@@ -1101,11 +1113,11 @@ function cambioCOContrato() {
   if (co) {
     $('ctDesc').value = co.descripcion;
     $('ctMonto').value = co.monto;
-    $('ctCOHint').textContent = 'Cuando el cliente firme, el plan de pago que él elija se aplicará a esta change order (no se crea una repetida).';
+    $('ctCOHint').textContent = 'Cuando el cliente firme, el pago único con esta fecha límite se aplicará a esta change order (no se crea una repetida).';
   } else {
     $('ctDesc').value = '';
     $('ctMonto').value = '';
-    $('ctCOHint').textContent = 'Al firmar, se creará una change order nueva con el plan que elija el cliente.';
+    $('ctCOHint').textContent = 'Al firmar, se creará una change order nueva con un pago único y esta fecha límite.';
   }
 }
 
@@ -1114,9 +1126,13 @@ async function guardarContrato() {
   const descripcion = $('ctDesc').value.trim();
   const monto = Math.round(parseFloat($('ctMonto').value) * 100) / 100;
   const coId = $('ctCO').value || '';
+  const fechaLimite = $('ctFechaLimite').value;
   const quien = usuario();
   if (!descripcion) return toast('Escribe la descripción del trabajo.', true);
   if (!(monto > 0)) return toast('Escribe un monto válido.', true);
+  if (!fechaLimite) return toast('Elige la fecha límite de pago.', true);
+  if (fechaLimite < hoyISO()) return toast('La fecha límite no puede ser en el pasado.', true);
+  if (fechaLimite > sumarDiasISO(90)) return toast('La fecha límite debe ser dentro de 90 días como máximo.', true);
   const token = nuevoToken();
   try {
     await guardar(obj => {
@@ -1125,7 +1141,7 @@ async function guardarContrato() {
       if (coId && !p.changeOrders.some(c => c.id === coId)) throw new Error('Change order no encontrada.');
       if (!Array.isArray(p.contratos)) p.contratos = [];
       p.contratos.push({
-        id: nuevoId('ct'), token, descripcion, monto,
+        id: nuevoId('ct'), token, descripcion, monto, fechaLimite,
         estado: 'pendiente', firma: null, coId,
         creadoPor: quien, creado: new Date().toISOString()
       });
