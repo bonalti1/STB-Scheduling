@@ -88,6 +88,16 @@
   .pm-t { font-weight: 700; font-size: 14.5px; margin-bottom: 4px; }
   .pm-b { font-size: 13px; white-space: pre-wrap; line-height: 1.45; }
   .pm-b.vacio { color: var(--gray); font-style: italic; }
+  .pm-big { display: block; font-size: 15px; font-weight: 700; color: var(--navy); overflow-wrap: anywhere; margin-top: 2px; }
+  .btn-copy { margin-top: 6px; background: white; border: 1px solid var(--border); border-radius: 7px; padding: 4px 9px; font-size: 11.5px; font-weight: 600; cursor: pointer; font-family: 'Inter'; vertical-align: middle; }
+  .btn-copy.ok { border-color: var(--green); color: var(--green); }
+  .due-es { font-size: 12px; color: var(--gray); font-style: italic; }
+  .due-sub { font-size: 13px; color: #1c2534; margin-top: 4px; }
+  .due-box table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+  .due-box th { font-size: 10px; text-transform: uppercase; letter-spacing: .8px; color: var(--gray); text-align: left; padding: 6px 4px; border-bottom: 1px solid #cfe5d8; }
+  .due-box td { padding: 7px 4px; border-bottom: 1px solid #e3efe7; }
+  .due-box tr.total td { border-bottom: 0; font-weight: 700; color: var(--navy); }
+  .due-box td.num, .due-box th.num { text-align: right; }
   .pm-memo { margin-top: 6px; font-size: 12px; color: var(--gray); }
   .pm-memo b { color: var(--navy); }
   .terms { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.4; margin: 6px 0 14px; cursor: pointer; }
@@ -162,27 +172,23 @@
     </div>
 
     <div class="card" id="seccionFirma">
-      <div class="seccion-titulo">Single payment</div>
-      <div class="seccion-sub">Un solo pago</div>
+      <div class="seccion-titulo">Payment terms</div>
+      <div class="seccion-sub">Condiciones de pago</div>
 
-      <div class="due-box">
-        <div class="due-lbl">Payment due date / Fecha límite de pago</div>
-        <div class="due-val" id="dFechaLimite">—</div>
-        <div class="due-note" id="dFechaNota">30 days from today / 30 días a partir de hoy</div>
-      </div>
+      <div class="due-box" id="planBox"></div>
 
       <div class="seccion-titulo" style="margin-top:22px">How would you like to pay?</div>
       <div class="seccion-sub">¿Cómo va a pagar?</div>
 
       <div class="pay-methods">
         <div class="pay-method">
-          <div class="pm-t">💜 Zelle</div>
-          <div class="pm-b" id="pmZelle"></div>
+          <div class="pm-t">💳 Zelle</div>
+          <div class="pm-b">Send to / Enviar a: <b class="pm-big" id="pmZelle"></b> <button type="button" class="btn-copy" id="btnCopiarZelle" onclick="copiarZelle()">Copy / Copiar</button></div>
           <div class="pm-memo">Memo / Referencia: <b id="memoZelle"></b></div>
         </div>
         <div class="pay-method">
-          <div class="pm-t">🏦 Check / Cheque</div>
-          <div class="pm-b" id="pmCheque"></div>
+          <div class="pm-t">📝 Check / Cheque</div>
+          <div class="pm-b">Payable to / A nombre de: <b class="pm-big" id="pmCheque"></b></div>
           <div class="pm-memo">Memo / Referencia: <b id="memoCheque"></b></div>
         </div>
       </div>
@@ -243,30 +249,74 @@ function fechaBonita(iso) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
     ' / ' + d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
 }
-// Single payment. The office sets the due date when it creates the contract; older
-// contracts without one fall back to 30 days from the day the form is opened.
-function fechaLimiteISO() {
-  if (CONTRATO && /^\d{4}-\d{2}-\d{2}$/.test(CONTRATO.fechaLimite || '')) return CONTRATO.fechaLimite;
-  const f = new Date();
-  f.setDate(f.getDate() + 30);
-  return f.toISOString().slice(0, 10);
+/* ── Plan de pago (lo fija la oficina; el cliente solo lo ve) ─────────────
+   plan.tipo: 'una' (plazoDias después de la firma), 'varios' (pagos programados
+   con montos exactos), 'final' (al terminar la obra). Contratos viejos: 'unico'
+   → una, 'mensual'/'quincenal' → varios, fechaLimite fija → una con fechaFija. */
+const FREC_TXT = { semanal: 'Semanal', quincenal: 'Quincenal', mensual: 'Mensual' };
+const FREC_EN = { semanal: 'Weekly', quincenal: 'Biweekly', mensual: 'Monthly' };
+const r2 = n => Math.round((Number(n) || 0) * 100) / 100;
+function sumarDiasA(iso, dias) { const f = new Date((iso || hoyISO()) + 'T00:00:00'); f.setDate(f.getDate() + (parseInt(dias) || 0)); return f.toISOString().slice(0, 10); }
+function hoyISO() { return new Date().toISOString().slice(0, 10); }
+function planDe(co) {
+  const p = (co && co.plan) || {};
+  if (p.tipo === 'una' || p.tipo === 'varios' || p.tipo === 'final') return p;
+  if (p.tipo === 'mensual' || p.tipo === 'quincenal') return { tipo: 'varios', numPagos: p.numPagos || (co.cuotas || []).length || 2, frecuencia: p.tipo, fechaInicio: p.fechaInicio || '' };
+  return { tipo: 'una', plazoDias: 30 };
 }
-function notaFechaLimite() {
-  return (CONTRATO && CONTRATO.fechaLimite)
-    ? 'Set by South Texas Builders / Establecida por South Texas Builders'
-    : '30 days from today / 30 días a partir de hoy';
+/* Fecha límite del pago único: firma + plazo (o la fecha fija de contratos viejos). */
+function fechaLimiteISO() {
+  const plan = CONTRATO.plan || {};
+  if (plan.fechaFija) return plan.fechaFija;
+  return sumarDiasA(hoyISO(), plan.plazoDias == null ? 30 : plan.plazoDias);
+}
+/* Pagos que quedarán registrados al firmar (para 'varios' son los montos exactos de la oficina). */
+function cuotasAlFirmar() {
+  const plan = CONTRATO.plan, m = CONTRATO.monto;
+  if (plan.tipo === 'varios') return (CONTRATO.cuotas || []).map(c => ({ num: c.num, fecha: c.fecha, monto: r2(c.monto) }));
+  if (plan.tipo === 'final') return [{ num: 1, fecha: plan.fechaEstimada || '', monto: r2(m) }];
+  return [{ num: 1, fecha: fechaLimiteISO(), monto: r2(m) }];
+}
+function pintarPlan(plan, cuotas) {
+  const m = CONTRATO.monto;
+  let html;
+  if (plan.tipo === 'varios') {
+    const f = plan.frecuencia || 'mensual';
+    html = `<div class="due-lbl">Installment plan</div><div class="due-es">Pago en parcialidades</div>
+      <div class="due-sub"><b>${cuotas.length} payments / ${cuotas.length} pagos</b> · Total ${money(m)} · ${FREC_EN[f]} / ${FREC_TXT[f]}</div>
+      <table><tr><th>Payment / Pago</th><th>Due date / Fecha límite</th><th class="num">Amount / Monto</th></tr>
+      ${cuotas.map(c => `<tr><td>${c.num}</td><td>${fechaBonita(c.fecha)}</td><td class="num">${money(c.monto)}</td></tr>`).join('')}
+      <tr class="total"><td></td><td>Total</td><td class="num">${money(m)}</td></tr></table>`;
+  } else if (plan.tipo === 'final') {
+    html = `<div class="due-lbl">Due at end of construction</div><div class="due-es">Al finalizar la construcción</div>
+      <div class="due-lbl" style="margin-top:10px">Amount due / Monto a pagar</div>
+      <div class="due-val">${money(m)}</div>
+      <div class="due-note">The full amount is due upon completion of construction.<br><i>El monto total se paga al terminar la construcción.</i>${plan.fechaEstimada ? '<br>Estimated completion / Terminación estimada: ' + fechaBonita(plan.fechaEstimada) : ''}</div>`;
+  } else {
+    const d = plan.plazoDias == null ? 30 : plan.plazoDias;
+    const fecha = cuotas && cuotas[0] ? cuotas[0].fecha : fechaLimiteISO();
+    html = `<div class="due-lbl">Single payment</div><div class="due-es">Un solo pago</div>
+      <div class="due-lbl" style="margin-top:10px">Payment due date / Fecha límite de pago</div>
+      <div class="due-val">${fechaBonita(fecha)}</div>
+      <div class="due-note">${money(m)} · ${plan.fechaFija ? 'Due date set by South Texas Builders / Fecha establecida por South Texas Builders' : d + ' days from signing / ' + d + ' días a partir de la firma'}</div>`;
+  }
+  $('planBox').innerHTML = html;
 }
 function memoPago() { return CONTRATO.familia + (CONTRATO.numero ? ' (' + CONTRATO.numero + ')' : '') + ' — Change Order'; }
+function zelleDe() { return (EMPRESA_CFG.zelle || '').trim() || 'Stxbuilders1@gmail.com'; }
+function chequeDe() { return (EMPRESA_CFG.cheque || '').trim() || 'South Texas Builders 1, LLC'; }
 function pintarFormasPago() {
   const memo = memoPago();
-  const z = (EMPRESA_CFG.zelle || '').trim();
-  const c = (EMPRESA_CFG.cheque || '').trim();
-  $('pmZelle').textContent = z ? 'Send to / Enviar a: ' + z : 'Ask our office for the Zelle details. / Pida los datos de Zelle a nuestra oficina.';
-  $('pmZelle').classList.toggle('vacio', !z);
-  $('pmCheque').textContent = c ? 'Payable to / A nombre de:\n' + c : 'Ask our office who to make the check payable to. / Pregunte en nuestra oficina a nombre de quién hacer el cheque.';
-  $('pmCheque').classList.toggle('vacio', !c);
+  $('pmZelle').textContent = zelleDe();
+  $('pmCheque').textContent = chequeDe();
   $('memoZelle').textContent = memo;
   $('memoCheque').textContent = memo;
+}
+function copiarZelle() {
+  const b = $('btnCopiarZelle');
+  const ok = () => { b.textContent = '✓ Copied / Copiado'; b.classList.add('ok'); setTimeout(() => { b.textContent = 'Copy / Copiar'; b.classList.remove('ok'); }, 2000); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(zelleDe()).then(ok, () => {});
+  else { const t = document.createElement('textarea'); t.value = zelleDe(); document.body.appendChild(t); t.select(); try { document.execCommand('copy'); ok(); } catch (e) {} t.remove(); }
 }
 
 // ── Nube ────────────────────────────────────────────────────
@@ -326,23 +376,6 @@ async function subirFirma(dataUrl) {
   return SUPABASE_URL + '/storage/v1/object/public/' + BUCKET + '/' + ruta;
 }
 
-function generarCuotas(monto, plan) {
-  const cuotas = [];
-  const num = plan.tipo === 'unico' ? 1 : Math.max(1, parseInt(plan.numPagos) || 1);
-  const base = Math.floor((monto / num) * 100) / 100;
-  let acumulado = 0;
-  const inicio = new Date(plan.fechaInicio + 'T00:00:00');
-  for (let i = 0; i < num; i++) {
-    const fecha = new Date(inicio);
-    if (plan.tipo === 'mensual') fecha.setMonth(fecha.getMonth() + i);
-    else if (plan.tipo === 'quincenal') fecha.setDate(fecha.getDate() + i * 15);
-    const montoCuota = (i === num - 1) ? Math.round((monto - acumulado) * 100) / 100 : base;
-    acumulado += montoCuota;
-    cuotas.push({ num: i + 1, fecha: fecha.toISOString().slice(0, 10), monto: montoCuota });
-  }
-  return cuotas;
-}
-
 function nuevoId(prefijo) { return prefijo + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7); }
 
 // ── Cargar contrato ─────────────────────────────────────────
@@ -361,6 +394,16 @@ async function cargar() {
   }
 
   const { proyecto, contrato } = hit;
+  // El plan vive en la change order ligada; contratos de "otro concepto" traen su propio plan;
+  // contratos viejos con fecha fija o sin nada se tratan como pago único.
+  const coLig = contrato.coId ? (proyecto.changeOrders || []).find(c => c.id === contrato.coId) : null;
+  let plan, cuotas;
+  if (contrato.firma && contrato.firma.plan) { plan = planDe({ plan: contrato.firma.plan }); cuotas = contrato.firma.cuotas || (coLig ? coLig.cuotas : null) || []; }
+  else if (coLig) { plan = planDe(coLig); cuotas = coLig.cuotas || []; }
+  else if (contrato.plan) { plan = planDe({ plan: contrato.plan }); cuotas = []; }
+  else if (contrato.fechaLimite) { plan = { tipo: 'una', plazoDias: 30, fechaFija: contrato.fechaLimite }; cuotas = []; }
+  else { plan = { tipo: 'una', plazoDias: 30 }; cuotas = []; }
+
   CONTRATO = {
     empresa: EMPRESA_CFG.empresa || 'South Texas Builders',
     familia: proyecto.familia,
@@ -368,9 +411,9 @@ async function cargar() {
     direccion: proyecto.direccion || '',
     descripcion: contrato.descripcion,
     monto: contrato.monto,
-    fechaLimite: contrato.fechaLimite || '',
+    plan, cuotas,
     estado: contrato.estado,
-    firma: contrato.firma ? { nombre: contrato.firma.nombre, fecha: contrato.firma.fecha, plan: contrato.firma.plan, archivo: contrato.firma.archivo } : null
+    firma: contrato.firma ? { nombre: contrato.firma.nombre, fecha: contrato.firma.fecha, plan: contrato.firma.plan, cuotas: contrato.firma.cuotas, archivo: contrato.firma.archivo } : null
   };
 
   const partes = CONTRATO.empresa.toUpperCase().split(' ');
@@ -387,8 +430,7 @@ async function cargar() {
   if (CONTRATO.estado === 'firmado') {
     mostrarExito();
   } else {
-    $('dFechaLimite').textContent = fechaBonita(fechaLimiteISO());
-    $('dFechaNota').textContent = notaFechaLimite();
+    pintarPlan(CONTRATO.plan, cuotasAlFirmar());
     pintarFormasPago();
     prepararCanvas();
   }
@@ -470,8 +512,10 @@ async function firmar() {
   btn.disabled = true;
   btn.textContent = 'Sending... / Enviando...';
 
-  const hoy = new Date().toISOString().slice(0, 10);
-  const planFinal = { tipo: 'unico', numPagos: 1, fechaInicio: fechaLimiteISO() };
+  const hoy = hoyISO();
+  // Se congela lo que el cliente vio: el plan y la lista exacta de pagos.
+  const planFinal = Object.assign({}, CONTRATO.plan);
+  const cuotasFinal = cuotasAlFirmar();
 
   try {
     const archivoFirma = await subirFirma($('firmaCanvas').toDataURL('image/png'));
@@ -482,7 +526,7 @@ async function firmar() {
       if (contrato.estado === 'firmado') throw new Error('Este contrato ya fue firmado. / This agreement has already been signed.');
 
       contrato.estado = 'firmado';
-      contrato.firma = { nombre, fecha: hoy, archivo: archivoFirma, plan: planFinal, timestamp: new Date().toISOString() };
+      contrato.firma = { nombre, fecha: hoy, archivo: archivoFirma, plan: planFinal, cuotas: cuotasFinal, timestamp: new Date().toISOString() };
 
       const coExistente = contrato.coId && proyecto.changeOrders.find(c => c.id === contrato.coId);
       if (coExistente) {
@@ -491,7 +535,7 @@ async function firmar() {
         coExistente.fechaFirma = hoy;
         coExistente.contratoId = contrato.id;
         coExistente.plan = planFinal;
-        coExistente.cuotas = generarCuotas(contrato.monto, planFinal);
+        coExistente.cuotas = cuotasFinal;
       } else {
         const co = {
           id: nuevoId('co'),
@@ -501,7 +545,7 @@ async function firmar() {
           invoiceFile: '',
           contratoId: contrato.id,
           plan: planFinal,
-          cuotas: generarCuotas(contrato.monto, planFinal),
+          cuotas: cuotasFinal,
           pagos: [],
           creadoPor: 'Firmado por cliente: ' + nombre,
           creado: new Date().toISOString()
@@ -511,7 +555,8 @@ async function firmar() {
       }
     });
     CONTRATO.estado = 'firmado';
-    CONTRATO.firma = { nombre, fecha: hoy, plan: planFinal, archivo: archivoFirma };
+    CONTRATO.cuotas = cuotasFinal;
+    CONTRATO.firma = { nombre, fecha: hoy, plan: planFinal, cuotas: cuotasFinal, archivo: archivoFirma };
     mostrarExito();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (e) {
@@ -529,18 +574,33 @@ function abrirContratoPdf() {
   const firmado = CONTRATO.estado === 'firmado' && CONTRATO.firma;
   const empresa = (CONTRATO.empresa || 'South Texas Builders').toUpperCase();
 
-  const plan = (firmado && CONTRATO.firma.plan) || { tipo: 'unico', numPagos: 1, fechaInicio: fechaLimiteISO() };
+  const plan = (firmado && CONTRATO.firma.plan) ? planDe({ plan: CONTRATO.firma.plan }) : CONTRATO.plan;
+  const cuotas = (firmado && CONTRATO.firma.cuotas) || cuotasAlFirmar();
   const memo = memoPago();
-  const zelle = (EMPRESA_CFG.zelle || '').trim();
-  const cheque = (EMPRESA_CFG.cheque || '').trim();
-  const planHTML = `
-      <div class="plan-t">PAYMENT TERMS / CONDICIONES DE PAGO</div>
-      <div style="font-size:11px">Single payment / Un solo pago · <b>Payment due date / Fecha límite de pago: ${fechaBonita(plan.fechaInicio)}</b></div>
-      <div style="font-size:9.5px;color:#666;margin-top:2px">${CONTRATO.fechaLimite ? 'Due date set by South Texas Builders / Fecha establecida por South Texas Builders' : '30 days from the signing date / 30 días a partir de la fecha de firma'}</div>
+  const m = CONTRATO.monto;
+  let terminos;
+  if (plan.tipo === 'varios') {
+    const f = plan.frecuencia || 'mensual';
+    terminos = `<div class="plan-t">INSTALLMENT PLAN / PAGO EN PARCIALIDADES</div>
+      <div style="font-size:11px">${cuotas.length} payments / ${cuotas.length} pagos · Total ${money(m)} · ${FREC_EN[f]} / ${FREC_TXT[f]}</div>
+      <table style="margin-top:8px"><tr><th>PAYMENT / PAGO</th><th>DUE DATE / FECHA LÍMITE</th><th>AMOUNT / MONTO</th></tr>
+      ${cuotas.map(c => `<tr><td>${c.num}</td><td>${fechaBonita(c.fecha)}</td><td>${money(c.monto)}</td></tr>`).join('')}
+      <tr><td></td><td style="font-weight:bold">Total</td><td style="font-weight:bold">${money(m)}</td></tr></table>`;
+  } else if (plan.tipo === 'final') {
+    terminos = `<div class="plan-t">DUE AT END OF CONSTRUCTION / AL FINALIZAR LA CONSTRUCCIÓN</div>
+      <div style="font-size:11px"><b>Amount due / Monto a pagar: ${money(m)}</b></div>
+      <div style="font-size:9.5px;color:#666;margin-top:2px">The full amount is due upon completion of construction. / El monto total se paga al terminar la construcción.${plan.fechaEstimada ? ' · Estimated completion / Terminación estimada: ' + fechaBonita(plan.fechaEstimada) : ''}</div>`;
+  } else {
+    const d = plan.plazoDias == null ? 30 : plan.plazoDias;
+    terminos = `<div class="plan-t">SINGLE PAYMENT / UN SOLO PAGO</div>
+      <div style="font-size:11px"><b>Payment due date / Fecha límite de pago: ${fechaBonita(cuotas[0] ? cuotas[0].fecha : fechaLimiteISO())}</b></div>
+      <div style="font-size:9.5px;color:#666;margin-top:2px">${money(m)} · ${plan.fechaFija ? 'Due date set by South Texas Builders / Fecha establecida por South Texas Builders' : d + ' days from signing / ' + d + ' días a partir de la firma'}</div>`;
+  }
+  const planHTML = terminos + `
       <div class="plan-t">HOW TO PAY / CÓMO PAGAR</div>
       <div style="font-size:10.5px;line-height:1.5">
-        <div><b>Zelle:</b> ${zelle ? esc(zelle) : 'Ask our office / Pregunte en nuestra oficina'} — Memo / Referencia: <b>${esc(memo)}</b></div>
-        <div style="margin-top:4px"><b>Check / Cheque:</b> ${cheque ? esc(cheque).replace(/\n/g, ', ') : 'Ask our office / Pregunte en nuestra oficina'} — Memo / Referencia: <b>${esc(memo)}</b></div>
+        <div><b>Zelle:</b> ${esc(zelleDe())} — Memo / Referencia: <b>${esc(memo)}</b></div>
+        <div style="margin-top:4px"><b>Check / Cheque — Payable to / A nombre de:</b> ${esc(chequeDe()).replace(/\n/g, ', ')} — Memo / Referencia: <b>${esc(memo)}</b></div>
       </div>`;
 
   const html = `

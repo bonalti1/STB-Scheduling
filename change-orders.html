@@ -232,6 +232,35 @@
   }
   .campo textarea { resize: vertical; min-height: 70px; }
   .fila { display: flex; gap: 12px; } .fila .campo { flex: 1; }
+  /* plan de pago (modal de change order) */
+  .modal.modal-wide { max-width: 640px; }
+  .plan-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .plan-card { border: 2px solid var(--border); border-radius: 10px; padding: 10px 12px; cursor: pointer; background: white; }
+  .plan-card:hover { background: #f7f8fa; }
+  .plan-card.activa { border-color: var(--green); background: #f2faf5; }
+  .plan-card .pc-t { font-weight: 700; font-size: 13.5px; }
+  .plan-card .pc-s { font-size: 11.5px; color: var(--gray); margin-top: 2px; }
+  .plan-cards.bloqueado .plan-card { pointer-events: none; opacity: .6; }
+  .lock-note { margin-top: 8px; background: var(--amber-soft); color: var(--amber-text); border: 1px solid #f0dcae; border-radius: 8px; padding: 8px 10px; font-size: 12px; font-weight: 600; }
+  .quick { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .qbtn { border: 1.5px solid var(--border); background: white; border-radius: 8px; padding: 7px 11px; font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: 'Inter'; }
+  .qbtn.activa { border-color: var(--green); background: #f2faf5; color: var(--green); }
+  .qotro { font-size: 12.5px; color: var(--gray); display: inline-flex; align-items: center; gap: 6px; }
+  .qotro input { width: 84px; padding: 7px 9px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: 'Inter'; }
+  .nota-verde { background: var(--green-soft); color: var(--green); border-radius: 8px; padding: 9px 11px; font-size: 12.5px; font-weight: 600; margin-bottom: 14px; }
+  .fila-3 .campo { flex: 1; }
+  .stepper { display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .stepper button { width: 40px; border: 0; background: #f2f4f7; font-size: 18px; cursor: pointer; }
+  .stepper input { flex: 1; border: 0; text-align: center; font-size: 15px; font-weight: 700; padding: 8px 0; min-width: 0; font-family: 'Inter'; }
+  #vTabla input { width: 100%; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; font-family: 'Inter'; }
+  #vTabla input[type=number] { text-align: right; }
+  .suma-bar { border-radius: 8px; padding: 9px 12px; font-size: 13px; font-weight: 700; margin-bottom: 14px; display: flex; justify-content: space-between; }
+  .suma-bar.ok { background: var(--green-soft); color: var(--green); }
+  .suma-bar.mal { background: var(--red-soft); color: var(--red); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .ct-resumen { background: #f6f7f9; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 12.5px; }
+  .ct-resumen b { color: var(--navy); }
+  @media (max-width: 560px) { .plan-cards { grid-template-columns: 1fr; } .fila-3 { flex-direction: column; } }
   .modal-foot { padding: 0 22px 20px; display: flex; gap: 10px; justify-content: flex-end; }
   .hint { font-size: 11.5px; color: var(--gray); margin-top: 4px; }
 
@@ -319,6 +348,15 @@
       <div class="campo"><label>Correo electrónico</label><input id="pCorreo" type="email" placeholder="cliente@correo.com"></div>
       <div class="campo"><label>Dirección</label><input id="pDireccion" placeholder="Dirección de la casa"></div>
       <div class="campo"><label>Foto de la casa (opcional)</label><input id="pFoto" type="file" accept="image/*"></div>
+      <div class="fila">
+        <div class="campo" style="flex:0 0 auto"><label>Obra</label>
+          <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-size:13px;color:#1b1f27;cursor:pointer;margin-top:9px">
+            <input id="pTerminado" type="checkbox" style="width:18px;height:18px;accent-color:var(--green)" onchange="document.getElementById('pTerminadoFecha').disabled=!this.checked"> Proyecto terminado
+          </label>
+        </div>
+        <div class="campo"><label>Fecha de terminación</label><input id="pTerminadoFecha" type="date" disabled></div>
+      </div>
+      <div class="hint" style="margin-top:-8px">Las change orders "al final de la construcción" vencen en esta fecha. Mientras la obra siga abierta no se marcan como atrasadas.</div>
     </div>
     <div class="modal-foot">
       <button class="btn" onclick="cerrar('ovProyecto')">Cancelar</button>
@@ -329,7 +367,7 @@
 
 <!-- ── Modal: Change Order ── -->
 <div class="overlay" id="ovCO">
-  <div class="modal">
+  <div class="modal modal-wide">
     <div class="modal-head"><span id="tituloCO">Nueva Change Order</span><span class="x" onclick="cerrar('ovCO')">✕</span></div>
     <div class="modal-body">
       <input type="hidden" id="coPid"><input type="hidden" id="coId">
@@ -338,24 +376,58 @@
         <div class="campo"><label>Monto total (USD) *</label><input id="coMonto" type="number" step="0.01" min="0" placeholder="0.00"></div>
         <div class="campo"><label>Fecha de firma (opcional)</label><input id="coFirma" type="date"></div>
       </div>
-      <div class="fila">
-        <div class="campo"><label>Plan de pago *</label>
-          <select id="coPlanTipo" onchange="toggleNumPagos()">
-            <option value="unico">Una sola exhibición</option>
-            <option value="mensual">Mensual</option>
-            <option value="quincenal">Quincenal</option>
-          </select>
+      <div class="campo"><label>Plan de pago *</label>
+        <div class="plan-cards" id="planCards">
+          <div class="plan-card" data-tipo="una" onclick="setPlanTipo('una')"><div class="pc-t">Una sola exhibición</div><div class="pc-s">Un pago, tú eliges el plazo</div></div>
+          <div class="plan-card" data-tipo="varios" onclick="setPlanTipo('varios')"><div class="pc-t">En varios pagos</div><div class="pc-s">Tú decides cuántos y cuánto</div></div>
+          <div class="plan-card" data-tipo="final" onclick="setPlanTipo('final')"><div class="pc-t">Al final de la construcción</div><div class="pc-s">Se paga al terminar la obra</div></div>
         </div>
-        <div class="campo" id="campoNumPagos" style="display:none"><label># de pagos</label><input id="coNumPagos" type="number" min="2" value="6"></div>
+        <div class="lock-note" id="planLock" style="display:none">🔒 El cliente ya firmó estos términos. El monto y el plan quedan bloqueados; para cambiarlos, crea un contrato nuevo.</div>
       </div>
-      <div class="campo"><label>Fecha del primer pago *</label><input id="coFechaInicio" type="date"></div>
+
+      <div id="panelUna">
+        <div class="campo"><label>Plazo para pagar (días después de la firma)</label>
+          <div class="quick" id="plazoQuick">
+            <button type="button" class="qbtn" data-d="7" onclick="setPlazo(7)">7 días</button>
+            <button type="button" class="qbtn" data-d="15" onclick="setPlazo(15)">15 días</button>
+            <button type="button" class="qbtn" data-d="30" onclick="setPlazo(30)">30 días</button>
+            <button type="button" class="qbtn" data-d="45" onclick="setPlazo(45)">45 días</button>
+            <button type="button" class="qbtn" data-d="60" onclick="setPlazo(60)">60 días</button>
+            <span class="qotro">Otro: <input id="plazoOtro" type="number" min="1" max="365" placeholder="días" oninput="setPlazo(parseInt(this.value)||0, true)"></span>
+          </div>
+        </div>
+        <div class="nota-verde" id="notaUna"></div>
+      </div>
+
+      <div id="panelVarios">
+        <div class="fila fila-3">
+          <div class="campo"><label>Número de pagos</label>
+            <div class="stepper"><button type="button" onclick="cambiarNum(-1)">−</button><input id="vNum" type="number" min="2" max="12" value="3" readonly><button type="button" onclick="cambiarNum(1)">+</button></div>
+          </div>
+          <div class="campo"><label>Frecuencia</label>
+            <select id="vFrec" onchange="cambiarFrecOInicio()"><option value="semanal">Semanal</option><option value="quincenal">Quincenal</option><option value="mensual" selected>Mensual</option></select>
+          </div>
+          <div class="campo"><label>Primer pago</label><input id="vInicio" type="date" onchange="cambiarFrecOInicio()"></div>
+        </div>
+        <div class="campo"><label>Desglose — escribe el monto de cada pago</label>
+          <table class="cuotas-table" id="vTabla"></table>
+          <button type="button" class="btn" style="margin-top:8px" onclick="repartirIgual()">↔ Repartir en partes iguales</button>
+        </div>
+        <div class="suma-bar" id="sumaBar"></div>
+      </div>
+
+      <div id="panelFinal">
+        <div class="nota-verde" id="notaFinal"></div>
+        <div class="campo"><label>Fecha estimada de terminación (opcional)</label><input id="fEstimada" type="date"></div>
+      </div>
+
       <div class="campo"><label>Invoice (PDF o imagen)</label><input id="coInvoice" type="file" accept=".pdf,image/*">
         <div class="hint" id="invoiceActual"></div>
       </div>
     </div>
     <div class="modal-foot">
       <button class="btn" onclick="cerrar('ovCO')">Cancelar</button>
-      <button class="btn primary" onclick="guardarCO()">Guardar</button>
+      <button class="btn primary" id="btnGuardarCO" onclick="guardarCO()">Guardar</button>
     </div>
   </div>
 </div>
@@ -377,9 +449,12 @@
         <textarea id="ctDesc" placeholder="Ej. Upgrade of kitchen island — quartz countertop instead of granite"></textarea>
       </div>
       <div class="campo"><label>Monto total (USD) *</label><input id="ctMonto" type="number" step="0.01" min="0" placeholder="0.00"></div>
-      <div class="campo"><label>Fecha límite de pago (un solo pago) *</label>
-        <input id="ctFechaLimite" type="date">
-        <div class="hint">Viene con 30 días por defecto. Cámbiala si este contrato tiene otro plazo (máx. 90 días). El cliente la verá fija, sin poder editarla.</div>
+      <div class="campo"><label>Plan de pago que verá el cliente</label>
+        <div class="ct-resumen" id="ctPlanResumen"></div>
+      </div>
+      <div class="campo" id="ctPlazoWrap" style="display:none"><label>Plazo para pagar (días después de la firma)</label>
+        <input id="ctPlazo" type="number" min="1" max="365" value="30">
+        <div class="hint">Un solo pago. Si necesitas varios pagos o "al final de la construcción", crea primero la change order con ese plan y elígela arriba.</div>
       </div>
     </div>
     <div class="modal-foot">
@@ -448,10 +523,12 @@
         <textarea id="cfDatosPago" placeholder="Ej.&#10;Zelle: pagos@stb.com&#10;Cheque a nombre de: South Texas Builders&#10;Transferencia: Banco X, cuenta ..."></textarea>
       </div>
       <div class="campo"><label>Zelle — correo o teléfono (aparece en la página de firma del cliente)</label>
-        <input id="cfZelle" placeholder="Ej. pagos@southtexasbuilders.com  o  (956) 555-1234">
+        <input id="cfZelle" placeholder="Stxbuilders1@gmail.com">
+        <div class="hint">Si se deja vacío se usa Stxbuilders1@gmail.com.</div>
       </div>
-      <div class="campo"><label>Cheque — a nombre de / dirección de entrega (página de firma)</label>
-        <textarea id="cfCheque" placeholder="Ej.&#10;South Texas Builders LLC&#10;123 Main St, Harlingen, TX 78550"></textarea>
+      <div class="campo"><label>Cheque — a nombre de (página de firma)</label>
+        <textarea id="cfCheque" placeholder="South Texas Builders 1, LLC"></textarea>
+        <div class="hint">Si se deja vacío se usa South Texas Builders 1, LLC.</div>
       </div>
       <div class="campo"><label>Usuarios del sistema (separados por coma)</label>
         <input id="cfUsuarios" placeholder="Jacqueline, Cristo, ...">
@@ -638,21 +715,79 @@ function entrarGate(e) {
 }
 
 // ── Cálculos de estado ──────────────────────────────────────
-function generarCuotas(monto, plan) {
-  const cuotas = [];
-  const num = plan.tipo === 'unico' ? 1 : Math.max(1, parseInt(plan.numPagos) || 1);
-  const base = Math.floor((monto / num) * 100) / 100;
-  let acumulado = 0;
-  const inicio = new Date(plan.fechaInicio + 'T00:00:00');
-  for (let i = 0; i < num; i++) {
-    const fecha = new Date(inicio);
-    if (plan.tipo === 'mensual') fecha.setMonth(fecha.getMonth() + i);
-    else if (plan.tipo === 'quincenal') fecha.setDate(fecha.getDate() + i * 15);
-    const montoCuota = (i === num - 1) ? Math.round((monto - acumulado) * 100) / 100 : base;
-    acumulado += montoCuota;
-    cuotas.push({ num: i + 1, fecha: fecha.toISOString().slice(0, 10), monto: montoCuota });
+/* ── Planes de pago ──────────────────────────────────────────
+   plan.tipo: 'una' (un solo pago, plazoDias después de la firma)
+              'varios' (numPagos, frecuencia, fechaInicio; montos editables)
+              'final' (al terminar la obra; fechaEstimada opcional)
+   Change orders viejas: 'unico' → una (30 días), 'mensual'/'quincenal' → varios.
+   cuotas: [{ num, fecha, monto }] es siempre la lista de pagos programados. */
+const r2 = n => Math.round((Number(n) || 0) * 100) / 100;
+const FREC_TXT = { semanal: 'Semanal', quincenal: 'Quincenal', mensual: 'Mensual' };
+const FREC_EN = { semanal: 'Weekly', quincenal: 'Biweekly', mensual: 'Monthly' };
+
+function sumarDiasA(iso, dias) {
+  const f = new Date((iso || hoyISO()) + 'T00:00:00');
+  f.setDate(f.getDate() + (parseInt(dias) || 0));
+  return f.toISOString().slice(0, 10);
+}
+function fechaCuota(inicio, frecuencia, i) {
+  const f = new Date((inicio || hoyISO()) + 'T00:00:00');
+  if (frecuencia === 'mensual') f.setMonth(f.getMonth() + i);
+  else if (frecuencia === 'quincenal') f.setDate(f.getDate() + i * 15);
+  else f.setDate(f.getDate() + i * 7);
+  return f.toISOString().slice(0, 10);
+}
+function planDe(co) {
+  const p = (co && co.plan) || {};
+  if (p.tipo === 'una' || p.tipo === 'varios' || p.tipo === 'final') return p;
+  if (p.tipo === 'mensual' || p.tipo === 'quincenal') {
+    return { tipo: 'varios', numPagos: p.numPagos || (co.cuotas || []).length || 2, frecuencia: p.tipo, fechaInicio: p.fechaInicio || ((co.cuotas || [])[0] || {}).fecha || hoyISO() };
   }
-  return cuotas;
+  return { tipo: 'una', plazoDias: 30 };
+}
+function repartirMontos(monto, num) {
+  const base = Math.floor((monto / num) * 100) / 100;
+  const out = []; let acc = 0;
+  for (let i = 0; i < num; i++) { const m = i === num - 1 ? r2(monto - acc) : base; acc += m; out.push(m); }
+  return out;
+}
+/* Genera la lista de pagos desde un plan. fechaFirma: para 'una' la fecha límite es firma + plazo. */
+function generarCuotas(monto, plan, fechaFirma) {
+  plan = plan || { tipo: 'una', plazoDias: 30 };
+  const t = plan.tipo;
+  if (t === 'final') return [{ num: 1, fecha: plan.fechaEstimada || '', monto: r2(monto) }];
+  if (t === 'varios' || t === 'mensual' || t === 'quincenal') {
+    const frec = t === 'varios' ? (plan.frecuencia || 'mensual') : t;
+    const num = Math.max(1, parseInt(plan.numPagos) || 1);
+    const montos = repartirMontos(monto, num);
+    return montos.map((m, i) => ({ num: i + 1, fecha: fechaCuota(plan.fechaInicio, frec, i), monto: m }));
+  }
+  const plazo = plan.plazoDias == null ? 30 : plan.plazoDias;
+  const base = plan.fechaFija ? null : (fechaFirma || hoyISO());
+  return [{ num: 1, fecha: plan.fechaFija || sumarDiasA(base, plazo), monto: r2(monto) }];
+}
+function planTexto(plan, bilingue) {
+  plan = plan || {};
+  if (plan.tipo === 'final') return bilingue ? 'Al final de la construcción / Due at end of construction' : 'Al final de la construcción';
+  if (plan.tipo === 'varios') {
+    const f = plan.frecuencia || 'mensual';
+    return bilingue ? `${plan.numPagos} pagos · ${FREC_TXT[f]} / ${plan.numPagos} payments · ${FREC_EN[f]}` : `${plan.numPagos} pagos · ${FREC_TXT[f]}`;
+  }
+  const d = plan.plazoDias == null ? 30 : plan.plazoDias;
+  return bilingue ? `Una exhibición · ${d} días / Single payment · ${d} days` : `Una exhibición · ${d} días`;
+}
+/* Pagos programados con la fecha real de vencimiento. 'final' no vence hasta que
+   el proyecto esté marcado como terminado. */
+function cuotasEfectivas(co, p) {
+  const plan = planDe(co);
+  return (co.cuotas || []).map(c => {
+    const q = Object.assign({}, c);
+    if (plan.tipo === 'final') {
+      if (p && p.terminado) q.fecha = p.terminadoFecha || q.fecha || hoyISO();
+      else { q.fecha = q.fecha || ''; q.abierta = true; }
+    }
+    return q;
+  });
 }
 
 function nuevoId(prefijo) { return prefijo + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7); }
@@ -663,17 +798,19 @@ function nuevoToken() {
   return Array.from(a, b => b.toString(16).padStart(2, '0')).join('');
 }
 
-function calcCO(co) {
-  const pagado = co.pagos.reduce((s, p) => s + p.monto, 0);
+function calcCO(co, p) {
+  const pagado = co.pagos.reduce((s, x) => s + x.monto, 0);
   const hoy = hoyISO();
   const en7 = new Date(); en7.setDate(en7.getDate() + 7);
   const hoy7 = en7.toISOString().slice(0, 10);
-  const esperadoHoy = co.cuotas.filter(c => c.fecha <= hoy).reduce((s, c) => s + c.monto, 0);
+  const cuotas = cuotasEfectivas(co, p);
+  // Lo que ya debería estar pagado: pagos con fecha vencida (un 'final' con obra abierta nunca vence)
+  const esperadoHoy = cuotas.filter(c => !c.abierta && c.fecha && c.fecha <= hoy).reduce((s, c) => s + c.monto, 0);
 
   let estado;
   if (pagado >= co.monto - 0.005) estado = 'pagado';
   else if (pagado < esperadoHoy - 0.005) estado = 'atrasado';
-  else if (co.cuotas.some(c => c.fecha > hoy && c.fecha <= hoy7)) estado = 'proximo';
+  else if (cuotas.some(c => !c.abierta && c.fecha > hoy && c.fecha <= hoy7)) estado = 'proximo';
   else estado = 'corriente';
 
   return { pagado, saldo: Math.max(0, co.monto - pagado), atrasadoMonto: Math.max(0, esperadoHoy - pagado), estado };
@@ -683,7 +820,7 @@ function calcProyecto(p) {
   let total = 0, pagado = 0, atrasado = 0;
   let estados = [];
   p.changeOrders.forEach(co => {
-    const c = calcCO(co);
+    const c = calcCO(co, p);
     total += co.monto; pagado += c.pagado; atrasado += c.atrasadoMonto;
     estados.push(c.estado);
   });
@@ -696,14 +833,16 @@ function calcProyecto(p) {
   return { total, pagado, saldo: Math.max(0, total - pagado), atrasado, pct, estado };
 }
 
-function estadoCuotasCliente(co) {
-  let restante = co.pagos.reduce((s, p) => s + p.monto, 0);
+/* Cada pago recibido se aplica en orden a los pagos programados (el primero se llena
+   antes que el siguiente), así un pago parcial o doble queda bien reflejado. */
+function estadoCuotasCliente(co, p) {
+  let restante = co.pagos.reduce((s, x) => s + x.monto, 0);
   const hoy = hoyISO();
-  return co.cuotas.map(c => {
+  return cuotasEfectivas(co, p).map(c => {
     let estado;
     if (restante >= c.monto - 0.005) { estado = 'pagada'; restante -= c.monto; }
     else if (restante > 0.005) { estado = 'parcial'; restante = 0; }
-    else estado = c.fecha < hoy ? 'atrasada' : 'pendiente';
+    else estado = (!c.abierta && c.fecha && c.fecha < hoy) ? 'atrasada' : 'pendiente';
     return { ...c, estado };
   });
 }
@@ -770,6 +909,7 @@ function render() {
             ${p.direccion ? `<span class="chip link" onclick="window.open('https://maps.google.com/?q='+encodeURIComponent('${esc(p.direccion)}'))">📍 ${esc(p.direccion)}</span>` : ''}
             <span class="chip btn" onclick="abrirModalProyecto('${p.id}')">Editar</span>
             <span class="chip">${p.changeOrders.length} change order${p.changeOrders.length === 1 ? '' : 's'}</span>
+            ${p.terminado ? `<span class="chip" style="background:var(--green-soft);color:var(--green);border-color:#bfe0cc">🏁 Terminado${p.terminadoFecha ? ' ' + fechaBonita(p.terminadoFecha) : ''}</span>` : ''}
             ${(p.contratos || []).some(c => c.estado === 'pendiente')
               ? `<span class="chip" style="background:var(--amber-soft);color:var(--amber-text);border-color:#f0dcae">⏳ ${(p.contratos || []).filter(c => c.estado === 'pendiente').length} por firmar</span>` : ''}
           </div>
@@ -820,10 +960,10 @@ function renderDetalle(p) {
   const contratosHTML = renderContratos(p);
   if (!p.changeOrders.length) return contratosHTML + '<div class="hint">Sin change orders. Presiona <b>+ Change Order</b> para agregar la primera, o <b>✍ Contrato para Firma</b> para que el cliente firme y elija su plan.</div>';
   return contratosHTML + p.changeOrders.map(co => {
-    const c = calcCO(co);
-    const cuotas = estadoCuotasCliente(co);
-    const planTxt = co.plan.tipo === 'unico' ? 'Una exhibición' :
-      co.cuotas.length + (co.plan.tipo === 'mensual' ? ' pagos mensuales' : ' pagos quincenales');
+    const c = calcCO(co, p);
+    const cuotas = estadoCuotasCliente(co, p);
+    const plan = planDe(co);
+    const planTxt = planTexto(plan) + (plan.tipo === 'final' && plan.fechaEstimada ? ' · est. ' + fechaBonita(plan.fechaEstimada) : '');
     return `
     <div class="co-box">
       <div class="co-head">
@@ -839,7 +979,7 @@ function renderDetalle(p) {
         <table class="cuotas-table">
           <tr><th>#</th><th>Fecha</th><th>Monto</th><th>Estado</th></tr>
           ${cuotas.map(q => `<tr>
-            <td>${q.num}</td><td>${fechaBonita(q.fecha)}</td><td>${money(q.monto)}</td>
+            <td>${q.num}</td><td>${q.abierta ? (q.fecha ? 'Al terminar (est. ' + fechaBonita(q.fecha) + ')' : 'Al terminar la obra') : fechaBonita(q.fecha)}</td><td>${money(q.monto)}</td>
             <td><span class="mini-tag" style="${MINI[q.estado][0]}">${MINI[q.estado][1]}</span></td>
           </tr>`).join('')}
         </table>
@@ -884,8 +1024,8 @@ function renderDash() {
     atrasado += c.atrasado;
     if (c.estado === 'atrasado') numAtrasados++;
     p.changeOrders.forEach(co => {
-      estadoCuotasCliente(co).forEach(q => {
-        if ((q.estado === 'pendiente' || q.estado === 'parcial') && q.fecha > hoy && q.fecha <= hoy7) semana += q.monto;
+      estadoCuotasCliente(co, p).forEach(q => {
+        if ((q.estado === 'pendiente' || q.estado === 'parcial') && !q.abierta && q.fecha > hoy && q.fecha <= hoy7) semana += q.monto;
       });
       co.pagos.forEach(pg => { if (pg.fecha.slice(0, 7) === mes) mesCobrado += pg.monto; });
     });
@@ -929,6 +1069,9 @@ function abrirModalProyecto(id) {
   $('pCorreo').value = p ? p.correo : '';
   $('pDireccion').value = p ? p.direccion : '';
   $('pFoto').value = '';
+  $('pTerminado').checked = !!(p && p.terminado);
+  $('pTerminadoFecha').value = p && p.terminadoFecha ? p.terminadoFecha : '';
+  $('pTerminadoFecha').disabled = !(p && p.terminado);
   abrir('ovProyecto');
 }
 
@@ -940,6 +1083,8 @@ async function guardarProyecto() {
     const numero = $('pNumero').value.trim();
     const correo = $('pCorreo').value.trim();
     const direccion = $('pDireccion').value.trim();
+    const terminado = $('pTerminado').checked;
+    const terminadoFecha = terminado ? ($('pTerminadoFecha').value || hoyISO()) : '';
     const quien = usuario();
     const fotoUrl = await subirImagen($('pFoto'), 'fotos');
     await guardar(obj => {
@@ -947,10 +1092,11 @@ async function guardarProyecto() {
         const p = obj.proyectos.find(x => x.id === id);
         if (!p) throw new Error('Proyecto no encontrado.');
         p.familia = familia; p.numero = numero; p.correo = correo; p.direccion = direccion;
+        p.terminado = terminado; p.terminadoFecha = terminadoFecha;
         if (fotoUrl) p.foto = fotoUrl;
       } else {
         obj.proyectos.push({
-          id: nuevoId('p'), familia, numero, correo, direccion,
+          id: nuevoId('p'), familia, numero, correo, direccion, terminado, terminadoFecha,
           foto: fotoUrl || '', creadoPor: quien, creado: new Date().toISOString(),
           changeOrders: [], contratos: []
         });
@@ -974,24 +1120,93 @@ async function borrarProyecto(id, nombre) {
 }
 
 // ── Change orders ───────────────────────────────────────────
-// Límites de negocio: todo plan debe terminar en ~3 meses.
-// unico → primer pago máx. 1 mes desde hoy; quincenal → máx. 6; mensual → máx. 3.
-const MAX_PAGOS_PLAN = { quincenal: 6, mensual: 3 };
+/* Estado del editor de plan (modal Nueva/Editar Change Order). */
+const PS = { tipo: 'una', plazoDias: 30, numPagos: 3, frecuencia: 'mensual', fechaInicio: '', fechaEstimada: '', filas: [], bloqueado: false };
+const MAX_MESES_PLAN = 12;   // ningún pago programado más allá de 12 meses (evita fechas "2040" por error)
 
-function fechaMaxInicioISO() {
-  const f = new Date();
-  f.setMonth(f.getMonth() + 1);
-  return f.toISOString().slice(0, 10);
+function montoModal() { return r2(parseFloat($('coMonto').value) || 0); }
+function fechaMaxPlanISO() { const f = new Date(hoyISO() + 'T00:00:00'); f.setMonth(f.getMonth() + MAX_MESES_PLAN); return f.toISOString().slice(0, 10); }
+
+function setPlanTipo(t) {
+  if (PS.bloqueado) return;
+  PS.tipo = t;
+  // Al entrar a "varios", si el desglose no cuadra con el total (o está vacío), se reparte en partes iguales.
+  if (t === 'varios' && (!PS.filas.length || Math.abs(sumaFilas() - montoModal()) > 0.005)) construirFilas(true);
+  renderPlanUI();
+}
+function setPlazo(d, desdeOtro) {
+  if (PS.bloqueado) return;
+  PS.plazoDias = d;
+  if (!desdeOtro) $('plazoOtro').value = [7, 15, 30, 45, 60].includes(d) ? '' : d;
+  renderPlanUI();
+}
+function cambiarNum(delta) {
+  if (PS.bloqueado) return;
+  PS.numPagos = Math.min(12, Math.max(2, PS.numPagos + delta));
+  construirFilas(true);
+  renderPlanUI();
+}
+function cambiarFrecOInicio() {
+  if (PS.bloqueado) return;
+  PS.frecuencia = $('vFrec').value; PS.fechaInicio = $('vInicio').value || hoyISO();
+  PS.filas.forEach((f, i) => { f.fecha = fechaCuota(PS.fechaInicio, PS.frecuencia, i); });
+  renderPlanUI();
+}
+/* Rehace las filas: fechas desde el primer pago y, si se pide, montos en partes iguales. */
+function construirFilas(repartir) {
+  const num = PS.numPagos, total = montoModal();
+  const montos = repartir ? repartirMontos(total, num) : null;
+  PS.filas = Array.from({ length: num }, (_, i) => ({
+    fecha: fechaCuota(PS.fechaInicio, PS.frecuencia, i),
+    monto: montos ? montos[i] : (PS.filas[i] ? PS.filas[i].monto : 0)
+  }));
+}
+function repartirIgual() { if (PS.bloqueado) return; construirFilas(true); renderPlanUI(); }
+function editarFila(i, campo, val) {
+  if (PS.bloqueado) return;
+  if (!PS.filas[i]) return;
+  if (campo === 'monto') PS.filas[i].monto = r2(val);
+  else PS.filas[i].fecha = val;
+  actualizarSuma();
+}
+function sumaFilas() { return r2(PS.filas.reduce((s, f) => s + (Number(f.monto) || 0), 0)); }
+
+function actualizarSuma() {
+  const total = montoModal(), suma = sumaFilas(), diff = r2(total - suma);
+  const bar = $('sumaBar');
+  const cuadra = Math.abs(diff) < 0.005;
+  bar.className = 'suma-bar ' + (cuadra ? 'ok' : 'mal');
+  bar.innerHTML = `<span>Suma: ${money(suma)} de ${money(total)}</span><span>${cuadra ? '✓ Cuadra con el total' : (diff > 0 ? 'Faltan ' + money(diff) : 'Sobran ' + money(-diff))}</span>`;
+  $('btnGuardarCO').disabled = PS.tipo === 'varios' && !PS.bloqueado && !cuadra;
 }
 
-function toggleNumPagos() {
-  const tipo = $('coPlanTipo').value;
-  $('campoNumPagos').style.display = tipo === 'unico' ? 'none' : 'block';
-  if (tipo !== 'unico') {
-    const lim = MAX_PAGOS_PLAN[tipo];
-    $('coNumPagos').max = lim;
-    if (parseInt($('coNumPagos').value) > lim) $('coNumPagos').value = lim;
-  }
+function renderPlanUI() {
+  const total = montoModal();
+  document.querySelectorAll('#planCards .plan-card').forEach(c => c.classList.toggle('activa', c.dataset.tipo === PS.tipo));
+  $('panelUna').style.display = PS.tipo === 'una' ? '' : 'none';
+  $('panelVarios').style.display = PS.tipo === 'varios' ? '' : 'none';
+  $('panelFinal').style.display = PS.tipo === 'final' ? '' : 'none';
+
+  document.querySelectorAll('#plazoQuick .qbtn').forEach(b => b.classList.toggle('activa', parseInt(b.dataset.d) === PS.plazoDias));
+  $('notaUna').textContent = `El cliente paga ${money(total)} en un solo pago y tiene ${PS.plazoDias || '—'} días después de firmar. La fecha límite se calcula sola al momento de la firma.`;
+
+  $('vNum').value = PS.numPagos; $('vFrec').value = PS.frecuencia; $('vInicio').value = PS.fechaInicio;
+  $('vTabla').innerHTML = '<tr><th>#</th><th>Fecha</th><th style="text-align:right">Monto (USD)</th></tr>' +
+    PS.filas.map((f, i) => `<tr>
+      <td>${i + 1}</td>
+      <td><input type="date" value="${f.fecha}" min="${hoyISO()}" max="${fechaMaxPlanISO()}" onchange="editarFila(${i},'fecha',this.value)" ${PS.bloqueado ? 'disabled' : ''}></td>
+      <td><input type="number" step="0.01" min="0" value="${f.monto}" oninput="editarFila(${i},'monto',this.value)" ${PS.bloqueado ? 'disabled' : ''}></td>
+    </tr>`).join('');
+  actualizarSuma();
+
+  $('notaFinal').textContent = `El cliente paga ${money(total)} al terminar la construcción. No se marca como Atrasado mientras la obra siga abierta.`;
+  $('fEstimada').value = PS.fechaEstimada;
+
+  const lock = PS.bloqueado;
+  $('planCards').classList.toggle('bloqueado', lock);
+  $('planLock').style.display = lock ? '' : 'none';
+  ['coMonto', 'plazoOtro', 'vFrec', 'vInicio', 'fEstimada'].forEach(id => { $(id).disabled = lock; });
+  document.querySelectorAll('#plazoQuick .qbtn, .stepper button').forEach(b => { b.disabled = lock; });
 }
 
 function abrirModalCO(pid, coid) {
@@ -1002,35 +1217,60 @@ function abrirModalCO(pid, coid) {
   $('coDesc').value = co ? co.descripcion : '';
   $('coMonto').value = co ? co.monto : '';
   $('coFirma').value = co ? (co.fechaFirma || '') : '';
-  $('coPlanTipo').value = co ? co.plan.tipo : 'unico';
-  $('coNumPagos').value = co && co.plan.numPagos ? co.plan.numPagos : 6;
-  $('coFechaInicio').value = co ? co.plan.fechaInicio : hoyISO();
-  $('coFechaInicio').max = fechaMaxInicioISO();
   $('coInvoice').value = '';
-  $('invoiceActual').innerHTML = co && co.invoiceFile
-    ? '📎 Ya hay un invoice cargado. Sube otro solo si quieres reemplazarlo.' : '';
-  toggleNumPagos();
+  $('invoiceActual').innerHTML = co && co.invoiceFile ? '📎 Ya hay un invoice cargado. Sube otro solo si quieres reemplazarlo.' : '';
+
+  const plan = co ? planDe(co) : { tipo: 'una', plazoDias: 30 };
+  PS.tipo = plan.tipo;
+  PS.plazoDias = plan.plazoDias == null ? 30 : plan.plazoDias;
+  PS.numPagos = Math.min(12, Math.max(2, parseInt(plan.numPagos) || (co && co.cuotas ? co.cuotas.length : 0) || 3));
+  PS.frecuencia = plan.frecuencia || 'mensual';
+  PS.fechaInicio = plan.fechaInicio || hoyISO();
+  PS.fechaEstimada = plan.fechaEstimada || '';
+  PS.bloqueado = !!(co && co.fechaFirma);   // el cliente ya firmó: monto y plan quedan fijos
+  $('plazoOtro').value = [7, 15, 30, 45, 60].includes(PS.plazoDias) ? '' : PS.plazoDias;
+  if (plan.tipo === 'varios' && co && Array.isArray(co.cuotas) && co.cuotas.length) {
+    PS.filas = co.cuotas.map(c => ({ fecha: c.fecha, monto: c.monto }));
+    PS.numPagos = PS.filas.length;
+  } else { PS.filas = []; construirFilas(true); }
+  renderPlanUI();
   abrir('ovCO');
 }
+// Si cambia el monto total, el desglose vuelve a partes iguales (Jacky) y las notas se actualizan.
+$('coMonto').addEventListener('input', () => { if (PS.tipo === 'varios') construirFilas(true); renderPlanUI(); });
+$('fEstimada').addEventListener('change', () => { PS.fechaEstimada = $('fEstimada').value; });
 
 async function guardarCO() {
   const pid = $('coPid').value;
   const coid = $('coId').value;
   const desc = $('coDesc').value.trim();
-  const monto = Math.round(parseFloat($('coMonto').value) * 100) / 100;
-  const fechaInicio = $('coFechaInicio').value;
+  const monto = montoModal();
   const fechaFirma = $('coFirma').value;
-  const plan = { tipo: $('coPlanTipo').value, numPagos: parseInt($('coNumPagos').value) || 1, fechaInicio };
   const quien = usuario();
   if (!desc) return toast('Escribe la descripción.', true);
   if (!(monto > 0)) return toast('Escribe un monto válido.', true);
-  if (!fechaInicio) return toast('Elige la fecha del primer pago.', true);
-  if (plan.tipo !== 'unico') {
-    const lim = MAX_PAGOS_PLAN[plan.tipo];
-    if (!(plan.numPagos >= 2)) return toast('El plan debe tener al menos 2 pagos.', true);
-    if (plan.numPagos > lim) return toast('Máximo ' + lim + ' pagos ' + (plan.tipo === 'quincenal' ? 'quincenales' : 'mensuales') + ' — todo plan debe terminar en 3 meses.', true);
+
+  let plan, cuotas;
+  if (PS.tipo === 'una') {
+    if (!(PS.plazoDias >= 1 && PS.plazoDias <= 365)) return toast('El plazo debe ser entre 1 y 365 días.', true);
+    plan = { tipo: 'una', plazoDias: PS.plazoDias };
+    cuotas = generarCuotas(monto, plan, fechaFirma || '');
+  } else if (PS.tipo === 'varios') {
+    PS.fechaEstimada = '';
+    if (!PS.fechaInicio) return toast('Elige la fecha del primer pago.', true);
+    if (PS.filas.length < 2) return toast('El plan debe tener al menos 2 pagos.', true);
+    for (const [i, f] of PS.filas.entries()) {
+      if (!f.fecha) return toast('Falta la fecha del pago #' + (i + 1) + '.', true);
+      if (f.fecha > fechaMaxPlanISO()) return toast('El pago #' + (i + 1) + ' queda a más de ' + MAX_MESES_PLAN + ' meses. Ajusta la fecha.', true);
+      if (!(f.monto > 0)) return toast('El pago #' + (i + 1) + ' debe ser mayor a $0.', true);
+    }
+    if (Math.abs(sumaFilas() - monto) > 0.005) return toast('La suma de los pagos debe ser igual al monto total.', true);
+    plan = { tipo: 'varios', numPagos: PS.filas.length, frecuencia: PS.frecuencia, fechaInicio: PS.fechaInicio };
+    cuotas = PS.filas.map((f, i) => ({ num: i + 1, fecha: f.fecha, monto: r2(f.monto) }));
+  } else {
+    plan = { tipo: 'final', fechaEstimada: $('fEstimada').value || '' };
+    cuotas = generarCuotas(monto, plan);
   }
-  if (fechaInicio > fechaMaxInicioISO()) return toast('El primer pago debe ser dentro de 1 mes como máximo.', true);
 
   try {
     let invoiceUrl = null;
@@ -1051,16 +1291,15 @@ async function guardarCO() {
         const co = p.changeOrders.find(x => x.id === coid);
         if (!co) throw new Error('Change order no encontrada.');
         co.descripcion = desc;
-        co.fechaFirma = fechaFirma || '';
         if (invoiceUrl) co.invoiceFile = invoiceUrl;
-        if (co.monto !== monto || JSON.stringify(co.plan) !== JSON.stringify(plan)) {
-          co.monto = monto; co.plan = plan; co.cuotas = generarCuotas(monto, plan);
-        }
+        if (co.fechaFirma) return;                       // firmada: monto y plan intocables
+        co.fechaFirma = fechaFirma || '';
+        co.monto = monto; co.plan = plan; co.cuotas = cuotas;
       } else {
         p.changeOrders.push({
           id: nuevoId('co'), descripcion: desc, monto,
           fechaFirma: fechaFirma || '', invoiceFile: invoiceUrl || '',
-          plan, cuotas: generarCuotas(monto, plan), pagos: [],
+          plan, cuotas, pagos: [],
           creadoPor: quien, creado: new Date().toISOString()
         });
       }
@@ -1095,10 +1334,20 @@ function abrirModalContrato(pid, coid) {
     `<option value="${co.id}">${esc(co.descripcion)} — ${money(co.monto)}</option>`).join('') +
     '<option value="">✎ Otro concepto (escribir nuevo)</option>';
   $('ctCO').value = coid || (sinFirmar.length ? sinFirmar[0].id : '');
+  $('ctPlazo').value = 30;
   cambioCOContrato();
-  const fl = $('ctFechaLimite');
-  fl.min = hoyISO(); fl.max = sumarDiasISO(90); fl.value = sumarDiasISO(30);
   abrir('ovContrato');
+}
+
+function resumenPlanHTML(co) {
+  const plan = planDe(co);
+  const cu = co.cuotas || [];
+  if (plan.tipo === 'varios') {
+    return `<b>${planTexto(plan)}</b> · Total ${money(co.monto)}<br>` +
+      cu.map(c => `#${c.num} ${fechaBonita(c.fecha)} — ${money(c.monto)}`).join(' · ');
+  }
+  if (plan.tipo === 'final') return `<b>Al final de la construcción</b> · ${money(co.monto)}` + (plan.fechaEstimada ? ` · Terminación estimada: ${fechaBonita(plan.fechaEstimada)}` : '');
+  return `<b>Una sola exhibición</b> · ${money(co.monto)} · ${plan.plazoDias == null ? 30 : plan.plazoDias} días después de la firma`;
 }
 
 function sumarDiasISO(n) {
@@ -1113,11 +1362,15 @@ function cambioCOContrato() {
   if (co) {
     $('ctDesc').value = co.descripcion;
     $('ctMonto').value = co.monto;
-    $('ctCOHint').textContent = 'Cuando el cliente firme, el pago único con esta fecha límite se aplicará a esta change order (no se crea una repetida).';
+    $('ctCOHint').textContent = 'El cliente verá el plan de esta change order tal como está guardado. Cuando firme, se aplica a esta misma change order (no se crea una repetida).';
+    $('ctPlanResumen').innerHTML = resumenPlanHTML(co);
+    $('ctPlazoWrap').style.display = 'none';
   } else {
     $('ctDesc').value = '';
     $('ctMonto').value = '';
-    $('ctCOHint').textContent = 'Al firmar, se creará una change order nueva con un pago único y esta fecha límite.';
+    $('ctCOHint').textContent = 'Al firmar, se creará una change order nueva con un solo pago.';
+    $('ctPlanResumen').innerHTML = '<b>Una sola exhibición</b> · el plazo se elige abajo';
+    $('ctPlazoWrap').style.display = '';
   }
 }
 
@@ -1126,13 +1379,12 @@ async function guardarContrato() {
   const descripcion = $('ctDesc').value.trim();
   const monto = Math.round(parseFloat($('ctMonto').value) * 100) / 100;
   const coId = $('ctCO').value || '';
-  const fechaLimite = $('ctFechaLimite').value;
+  const plazo = parseInt($('ctPlazo').value) || 0;
   const quien = usuario();
   if (!descripcion) return toast('Escribe la descripción del trabajo.', true);
   if (!(monto > 0)) return toast('Escribe un monto válido.', true);
-  if (!fechaLimite) return toast('Elige la fecha límite de pago.', true);
-  if (fechaLimite < hoyISO()) return toast('La fecha límite no puede ser en el pasado.', true);
-  if (fechaLimite > sumarDiasISO(90)) return toast('La fecha límite debe ser dentro de 90 días como máximo.', true);
+  if (!coId && !(plazo >= 1 && plazo <= 365)) return toast('El plazo debe ser entre 1 y 365 días.', true);
+  const planOtro = coId ? null : { tipo: 'una', plazoDias: plazo };
   const token = nuevoToken();
   try {
     await guardar(obj => {
@@ -1141,7 +1393,7 @@ async function guardarContrato() {
       if (coId && !p.changeOrders.some(c => c.id === coId)) throw new Error('Change order no encontrada.');
       if (!Array.isArray(p.contratos)) p.contratos = [];
       p.contratos.push({
-        id: nuevoId('ct'), token, descripcion, monto, fechaLimite,
+        id: nuevoId('ct'), token, descripcion, monto, plan: planOtro,
         estado: 'pendiente', firma: null, coId,
         creadoPor: quien, creado: new Date().toISOString()
       });
@@ -1204,10 +1456,12 @@ async function borrarContrato(pid, cid, estado) {
 function abrirModalPago(pid, coid) {
   const p = DATA.proyectos.find(x => x.id === pid);
   const co = p.changeOrders.find(x => x.id === coid);
-  const c = calcCO(co);
+  const c = calcCO(co, p);
+  const sig = estadoCuotasCliente(co, p).find(q => q.estado !== 'pagada');
   $('pgPid').value = pid; $('pgCoid').value = coid;
-  $('pgContexto').innerHTML = `<b>${esc(p.familia)}</b> — ${esc(co.descripcion)}<br>Saldo pendiente: <b style="color:var(--red)">${money(c.saldo)}</b>`;
-  $('pgMonto').value = ''; $('pgFecha').value = hoyISO();
+  $('pgContexto').innerHTML = `<b>${esc(p.familia)}</b> — ${esc(co.descripcion)}<br>Saldo pendiente: <b style="color:var(--red)">${money(c.saldo)}</b>` +
+    (sig ? `<br>Se aplica al pago #${sig.num}${sig.abierta ? '' : ' (' + fechaBonita(sig.fecha) + ')'} de ${money(sig.monto)}${sig.estado === 'parcial' ? ' (parcial)' : ''}.` : '');
+  $('pgMonto').value = sig ? (sig.estado === 'parcial' ? '' : sig.monto) : ''; $('pgFecha').value = hoyISO();
   $('pgEvidencia').value = ''; $('pgNota').value = '';
   abrir('ovPago');
 }
@@ -1348,16 +1602,15 @@ function abrirEstadoCuenta(pid) {
   const ET = { pagada: 'Pagada / Paid', parcial: 'Parcial / Partial', atrasada: 'Atrasada / Overdue', pendiente: 'Pendiente / Upcoming' };
 
   let cos = p.changeOrders.map((co, idx) => {
-    const cuotas = estadoCuotasCliente(co);
+    const cuotas = estadoCuotasCliente(co, p);
     const pagadoCO = co.pagos.reduce((s, g) => s + g.monto, 0);
     const saldoCO = Math.max(0, co.monto - pagadoCO);
-    const planTxt = co.plan.tipo === 'unico' ? 'Una sola exhibición / Single payment'
-      : co.cuotas.length + (co.plan.tipo === 'mensual' ? ' pagos mensuales / monthly payments' : ' pagos quincenales / biweekly payments');
+    const planTxt = planTexto(planDe(co), true);
     return `
       <div class="co-titulo"><span>CHANGE ORDER #${idx + 1} — ${esc(co.descripcion)}</span><span>${money(co.monto)}</span></div>
       <div class="plan">Plan: ${planTxt} &nbsp;·&nbsp; Pagado / Paid: ${money(pagadoCO)} &nbsp;·&nbsp; Saldo / Balance: ${money(saldoCO)}</div>
       <table><tr><th>#</th><th>FECHA / DUE DATE</th><th>MONTO / AMOUNT</th><th>ESTADO / STATUS</th></tr>
-      ${cuotas.map(q => `<tr><td>${q.num}</td><td>${fechaBonita(q.fecha)}</td><td>${money(q.monto)}</td><td class="est-${q.estado}">${ET[q.estado]}</td></tr>`).join('')}
+      ${cuotas.map(q => `<tr><td>${q.num}</td><td>${q.abierta ? 'Al terminar la obra / Upon completion' + (q.fecha ? ' (est. ' + fechaBonita(q.fecha) + ')' : '') : fechaBonita(q.fecha)}</td><td>${money(q.monto)}</td><td class="est-${q.estado}">${ET[q.estado]}</td></tr>`).join('')}
       </table>
       ${co.pagos.length ? `<div class="pagos-t">PAGOS RECIBIDOS / PAYMENTS RECEIVED</div>` +
         co.pagos.slice().sort((a, b) => a.fecha.localeCompare(b.fecha)).map(g =>
@@ -1392,6 +1645,32 @@ function abrirEstadoCuenta(pid) {
     </div>`);
 }
 
+/* Caja de condiciones de pago para el PDF del contrato (inglés primero, español debajo). */
+function planPdfHTML(plan, cuotas, monto, firmado) {
+  const fila = (c) => `<tr><td>${c.num}</td><td>${fechaBonita(c.fecha)}</td><td>${money(c.monto)}</td></tr>`;
+  if (plan.tipo === 'varios') {
+    const f = plan.frecuencia || 'mensual';
+    return `
+      <div class="plan-t">INSTALLMENT PLAN / PAGO EN PARCIALIDADES</div>
+      <div style="font-size:11px">${cuotas.length} payments / ${cuotas.length} pagos · Total ${money(monto)} · ${FREC_EN[f]} / ${FREC_TXT[f]}</div>
+      <table style="margin-top:8px"><tr><th>PAYMENT / PAGO</th><th>DUE DATE / FECHA LÍMITE</th><th>AMOUNT / MONTO</th></tr>
+      ${cuotas.map(fila).join('')}
+      <tr><td></td><td style="font-weight:bold">Total</td><td style="font-weight:bold">${money(monto)}</td></tr></table>`;
+  }
+  if (plan.tipo === 'final') {
+    return `
+      <div class="plan-t">DUE AT END OF CONSTRUCTION / AL FINALIZAR LA CONSTRUCCIÓN</div>
+      <div style="font-size:11px"><b>Amount due / Monto a pagar: ${money(monto)}</b></div>
+      <div style="font-size:9.5px;color:#666;margin-top:2px">The full amount is due upon completion of construction. / El monto total se paga al terminar la construcción.${plan.fechaEstimada ? ' · Estimated completion / Terminación estimada: ' + fechaBonita(plan.fechaEstimada) : ''}</div>`;
+  }
+  const d = plan.plazoDias == null ? 30 : plan.plazoDias;
+  const fecha = cuotas && cuotas[0] ? cuotas[0].fecha : '';
+  return `
+    <div class="plan-t">SINGLE PAYMENT / UN SOLO PAGO</div>
+    <div style="font-size:11px"><b>Payment due date / Fecha límite de pago: ${fechaBonita(fecha)}</b></div>
+    <div style="font-size:9.5px;color:#666;margin-top:2px">${money(monto)} · ${plan.fechaFija ? 'Due date set by South Texas Builders / Fecha establecida por South Texas Builders' : d + ' days from signing / ' + d + ' días a partir de la firma'}${!firmado && !plan.fechaFija ? ' (final date set on signing / la fecha final se fija al firmar)' : ''}</div>`;
+}
+
 function abrirContratoPdf(token) {
   let proyecto = null, contrato = null;
   DATA.proyectos.forEach(p => {
@@ -1402,19 +1681,13 @@ function abrirContratoPdf(token) {
   const empresa = (DATA.config.empresa || 'South Texas Builders').toUpperCase();
   const firmado = contrato.estado === 'firmado' && contrato.firma;
 
-  let planHTML = '';
-  if (firmado) {
-    const plan = contrato.firma.plan;
-    const planTxt = plan.tipo === 'unico' ? 'Una sola exhibición / Single payment'
-      : plan.numPagos + (plan.tipo === 'mensual' ? ' pagos mensuales / monthly payments' : ' pagos quincenales / biweekly payments');
-    const cuotas = generarCuotas(contrato.monto, plan);
-    planHTML = `
-      <div class="plan-t">FORMA DE PAGO ELEGIDA / SELECTED PAYMENT PLAN</div>
-      <div style="font-size:11px">${planTxt} · Primer pago / First payment: ${fechaBonita(plan.fechaInicio)}</div>
-      <table style="margin-top:8px"><tr><th>#</th><th>FECHA / DUE DATE</th><th>MONTO / AMOUNT</th></tr>
-      ${cuotas.map(c => `<tr><td>${c.num}</td><td>${fechaBonita(c.fecha)}</td><td>${money(c.monto)}</td></tr>`).join('')}
-      </table>`;
-  }
+  // Plan y pagos: los firmados quedan congelados en la firma; los pendientes se muestran desde la change order.
+  const coLig = contrato.coId ? proyecto.changeOrders.find(c => c.id === contrato.coId) : null;
+  let plan, cuotas;
+  if (firmado && contrato.firma.plan) { plan = planDe({ plan: contrato.firma.plan }); cuotas = contrato.firma.cuotas || (coLig ? coLig.cuotas : generarCuotas(contrato.monto, plan, contrato.firma.fecha)); }
+  else if (coLig) { plan = planDe(coLig); cuotas = coLig.cuotas || generarCuotas(contrato.monto, plan); }
+  else { plan = contrato.plan || (contrato.fechaLimite ? { tipo: 'una', plazoDias: 30, fechaFija: contrato.fechaLimite } : { tipo: 'una', plazoDias: 30 }); cuotas = generarCuotas(contrato.monto, plan); }
+  const planHTML = planPdfHTML(plan, cuotas, contrato.monto, firmado);
 
   ventanaImprimir('Contrato_' + proyecto.familia.replace(/[^a-zA-Z0-9]/g, ''), `
     <div class="hoja">
@@ -1434,12 +1707,12 @@ function abrirContratoPdf(token) {
         <div class="desc">${esc(contrato.descripcion)}</div>
         <div class="total"><span class="tl">TOTAL</span><span class="tv">${money(contrato.monto)}</span></div>
         ${planHTML}
-        <div class="legal">Al firmar este documento, el cliente acepta el concepto, el monto total y la forma de pago aquí descritos.<br>
-        By signing this document, the client agrees to the item description, total amount and payment plan described herein.</div>
+        <div class="legal">By signing this document, the client agrees to the item description, total amount and payment terms described herein.<br>
+        Al firmar este documento, el cliente acepta el concepto, el monto total y las condiciones de pago aquí descritas.</div>
         <div class="firmas">
           <div class="firma-col">
             <div class="firma-img">${firmado && contrato.firma.archivo ? `<img src="${archivoUrl(contrato.firma.archivo)}">` : ''}</div>
-            <div class="firma-linea">Cliente / Client${firmado ? ': ' + esc(contrato.firma.nombre) + ' · ' + fechaBonita(contrato.firma.fecha) : ''}</div>
+            <div class="firma-linea">Client / Cliente${firmado ? ': ' + esc(contrato.firma.nombre) + ' · ' + fechaBonita(contrato.firma.fecha) : ''}</div>
           </div>
           <div class="firma-col">
             <div class="firma-img"></div>
