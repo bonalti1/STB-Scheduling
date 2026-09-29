@@ -129,3 +129,9 @@ Two connected web apps for South Texas Builders (STB):
 - It embeds a copy of the master checklist; after editing `PHASE_TASKS` in `index.html`,
   run `node tools/build-summary-fn.mjs` and re-paste `phase-tasks.js` into Supabase.
 - Give bots ONLY the function URL + token. Never the publishable key (it can write).
+- **Deployed (Sep 29, 2026):** the function is live in Supabase project `krpylhnklvhanmztkgnp`
+  ("South Texas Builders Scheduling"), under the function name **`rapid-processor`** (not
+  `stb-summary`). It reads the real STB data at `ttpkyepzzpxctajrhwvx` by address.
+  URL shape: `https://krpylhnklvhanmztkgnp.supabase.co/functions/v1/rapid-processor?token=<BOT_READ_TOKEN>`.
+  Verify JWT is OFF. The token lives only in Supabase secrets and in the Grok bot. Never write it here.
+- Which login owns the app's own project `ttpkyepzzpxctajrhwvx` (morning text, cron) is still unknown.
