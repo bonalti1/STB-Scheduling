@@ -5,15 +5,17 @@ and the Change Orders tool. It only reads. Whoever holds the bot token can look,
 
 ## Deploy (one time, ~5 minutes, Supabase dashboard)
 
-1. Supabase → project `ttpkyepzzpxctajrhwvx` → **Edge Functions** → **Deploy a new function**
-   → "Via Editor". Name it exactly `stb-summary`.
+1. Supabase → **any project you control** (ideally the STB one, `ttpkyepzzpxctajrhwvx`, but
+   `RolandoJoanPena` works too: the function reads the STB database by address) →
+   **Edge Functions** → **Deploy a new function** → "Via Editor". Name it exactly `stb-summary`.
 2. Create three files in the editor and paste the contents from this folder:
    `index.ts`, `summary.js`, `phase-tasks.js`.
 3. In the function's settings turn **"Verify JWT" OFF** (the bot only needs our token).
 4. **Edge Functions → Secrets** → add `BOT_READ_TOKEN` with a long random value
    (for example 40 random letters and numbers). This is the only thing the bot gets.
 5. Deploy. The URL is:
-   `https://ttpkyepzzpxctajrhwvx.supabase.co/functions/v1/stb-summary?token=<BOT_READ_TOKEN>`
+   `https://<the project you deployed in>.supabase.co/functions/v1/stb-summary?token=<BOT_READ_TOKEN>`
+   (for RolandoJoanPena that is `https://wwzsgfzfjykcvyoimwva.supabase.co/functions/v1/stb-summary?token=…`)
 
 Test it in a browser with the token. You should see JSON with `boards` and `changeOrders`.
 

@@ -10,10 +10,15 @@ import { summarizeBoard, summarizeCobros, activityFeed, summarizeCompleted, summ
 
 const ROWS = { main: 'stb_board_v1', alice: 'stb_board_alice_v1', cobros: 'stb_change_orders_v1', completed: 'stb_completed_v1', lessons: 'stb_lessons_v1' };
 
+// Where the STB data lives. Defaults to the STB project itself, using the same publishable
+// (anon) key the apps ship with, so this function can be deployed in ANY Supabase project.
+// Override with secrets STB_SUPABASE_URL / STB_SUPABASE_KEY if the key is ever rotated.
+const STB_URL = Deno.env.get('STB_SUPABASE_URL') ?? 'https://ttpkyepzzpxctajrhwvx.supabase.co';
+const STB_KEY = Deno.env.get('STB_SUPABASE_KEY') ?? 'sb_publishable_bnhfaLTxNe2ApJ94myqtIg_uHjo3_B1';
+
 async function readRow(id: string) {
-  const url = `${Deno.env.get('SUPABASE_URL')}/rest/v1/stb_app_state?id=eq.${encodeURIComponent(id)}&select=data,updated_at`;
-  const key = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
-  const res = await fetch(url, { headers: { apikey: key, Authorization: `Bearer ${key}` } });
+  const url = `${STB_URL}/rest/v1/stb_app_state?id=eq.${encodeURIComponent(id)}&select=data,updated_at`;
+  const res = await fetch(url, { headers: { apikey: STB_KEY, Authorization: `Bearer ${STB_KEY}` } });
   if (!res.ok) throw new Error(`read ${id} failed (${res.status})`);
   const rows = await res.json();
   if (!rows?.[0]) return null;
