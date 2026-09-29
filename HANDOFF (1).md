@@ -121,3 +121,11 @@ Two connected web apps for South Texas Builders (STB):
 - Undo of a completed task requires confirmation + a reason, and records who/when.
 - Keep each app in its **own** repo. Save every deploy zip. Don't reuse this repo for
   other projects (that's what caused the earlier code loss).
+
+## Read-only bot access (added Sep 29, 2026)
+- `supabase/functions/stb-summary/` is a Supabase Edge Function that returns a read-only
+  summary (JSON or `?format=text`) of the Main + Alice boards and Change Orders. Auth is a
+  single secret `BOT_READ_TOKEN` (Supabase secret). Deploy steps in that folder's README.
+- It embeds a copy of the master checklist; after editing `PHASE_TASKS` in `index.html`,
+  run `node tools/build-summary-fn.mjs` and re-paste `phase-tasks.js` into Supabase.
+- Give bots ONLY the function URL + token. Never the publishable key (it can write).
