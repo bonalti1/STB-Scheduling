@@ -1,0 +1,3403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STB Orders</title>
+<link rel="icon" href="favicon.png">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #13233d; --red: #e8442e;
+    --green: #2e7d4f; --green-soft: #e6f2ea;
+    --amber: #f5a623; --amber-soft: #fdf3dd; --amber-text: #9a6b00;
+    --red-soft: #fdeae7; --blue: #2f6fb3; --blue-soft: #e8f0f9;
+    --gray: #667085; --border: #e3e6eb; --bg: #f6f5f2;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif; background: var(--bg);
+    background-image: linear-gradient(rgba(0,0,0,0.025) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(0,0,0,0.025) 1px, transparent 1px);
+    background-size: 40px 40px; color: #1c2534; min-height: 100vh;
+  }
+  h1,h2,h3,.oswald { font-family: 'Oswald', 'Inter', sans-serif; }
+
+  header { background: var(--navy); color: white; padding: 16px 34px 0;
+           position: sticky; top: 0; z-index: 50; box-shadow: 0 2px 10px rgba(0,0,0,0.25); }
+  .header-top { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .logo-box { background: white; border-radius: 8px; width: 54px; height: 54px; padding: 5px;
+              display: flex; align-items: center; justify-content: center; }
+  .logo-box img { max-width: 100%; max-height: 100%; }
+  .header-title h1 { font-size: 25px; letter-spacing: 1px; text-transform: uppercase; }
+  .header-title h1 span { color: var(--red); }
+  .header-title .sub { font-size: 11px; letter-spacing: 2px; color: #8fa0bb; text-transform: uppercase; margin-top: 2px; }
+  .header-actions { margin-left: auto; display: flex; gap: 9px; flex-wrap: wrap; }
+  nav { display: flex; gap: 2px; margin-top: 14px; flex-wrap: wrap; }
+  nav button { background: transparent; border: none; color: #8fa0bb; font-family: 'Oswald';
+               font-size: 14px; letter-spacing: 1.5px; text-transform: uppercase; padding: 11px 18px;
+               cursor: pointer; border-bottom: 3px solid transparent; }
+  nav button.on { color: white; border-bottom-color: var(--red); }
+  nav button .badge { background: var(--red); color: white; border-radius: 10px; padding: 1px 7px;
+                      font-size: 11px; font-family: 'Inter'; font-weight: 700; margin-left: 6px; }
+
+  .btn { border: none; border-radius: 8px; font-family: 'Oswald'; font-weight: 600;
+         letter-spacing: 1px; text-transform: uppercase; padding: 10px 17px; font-size: 13px; cursor: pointer; }
+  .btn-red { background: var(--red); color: white; }
+  .btn-navy { background: var(--navy); color: white; }
+  .btn-green { background: var(--green); color: white; }
+  .btn:hover { filter: brightness(1.1); }
+  .btn:disabled { opacity: 0.55; cursor: default; }
+  .btn-ghost-w { background: transparent; color: #cfd9e8; border: 1px solid rgba(255,255,255,0.25);
+                 border-radius: 8px; padding: 9px 15px; font-size: 12px; font-weight: 600;
+                 cursor: pointer; font-family: 'Inter'; }
+  .btn-ghost-w:hover { background: rgba(255,255,255,0.08); }
+  .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 7px; border: 1px solid var(--border);
+            background: white; cursor: pointer; font-family: 'Inter'; font-weight: 600; color: #33415c; }
+  .btn-sm:hover { background: #f2f5f9; }
+
+  .container { max-width: 1350px; margin: 0 auto; padding: 24px 30px 70px; }
+  .dash { display: grid; grid-template-columns: repeat(auto-fit, minmax(205px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .dash-card { background: white; border-radius: 12px; padding: 15px 19px;
+               box-shadow: 0 1px 4px rgba(16,30,54,0.08); border-left: 5px solid var(--navy); }
+  .dash-card .dt { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gray); font-weight: 700; }
+  .dash-card .dv { font-family: 'Oswald'; font-size: 27px; font-weight: 600; margin-top: 3px; }
+  .dash-card .dd { font-size: 11px; color: var(--gray); margin-top: 2px; }
+  .c-green { border-left-color: var(--green); } .c-green .dv { color: var(--green); }
+  .c-red { border-left-color: var(--red); } .c-red .dv { color: var(--red); }
+  .c-amber { border-left-color: var(--amber); } .c-amber .dv { color: var(--amber-text); }
+  .c-blue { border-left-color: var(--blue); } .c-blue .dv { color: var(--blue); }
+
+  .section-title { font-family: 'Oswald'; font-size: 17px; text-transform: uppercase; letter-spacing: 1.2px;
+                   color: var(--navy); margin: 26px 0 12px; display: flex; align-items: center; gap: 10px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .card { background: white; border-radius: 14px; margin-bottom: 16px;
+          box-shadow: 0 1px 5px rgba(16,30,54,0.09); overflow: hidden; border-left: 6px solid var(--navy); }
+  .card.n-critical { border-left-color: var(--red); }
+  .card.n-urgent { border-left-color: var(--amber); }
+  .card.n-soon { border-left-color: var(--blue); }
+  .card.n-ok { border-left-color: var(--green); }
+
+  .house-head { padding: 18px 24px; display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; cursor: pointer; }
+  .house-head:hover { background: #fafbfd; }
+  .house-name { font-family: 'Oswald'; font-size: 23px; font-weight: 600; }
+  .house-addr { font-size: 12.5px; color: var(--gray); margin-top: 2px; }
+  .house-nums { margin-left: auto; display: flex; gap: 22px; text-align: right; flex-wrap: wrap; }
+  .house-num .t { font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--gray); font-weight: 700; }
+  .house-num .v { font-family: 'Oswald'; font-size: 20px; font-weight: 600; }
+
+  .chips { display: flex; gap: 7px; margin-top: 9px; flex-wrap: wrap; }
+  .chip { font-size: 11px; font-weight: 700; padding: 4px 11px; border-radius: 20px;
+          background: #eef1f5; color: #48566e; letter-spacing: 0.4px; }
+  .chip.red { background: var(--red-soft); color: #b3311f; }
+  .chip.amber { background: var(--amber-soft); color: var(--amber-text); }
+  .chip.green { background: var(--green-soft); color: var(--green); }
+  .chip.blue { background: var(--blue-soft); color: var(--blue); }
+  .chip.gray { background: #eef1f5; color: #6b7688; }
+
+  .alert { display: flex; gap: 13px; padding: 13px 24px; border-top: 1px solid #f0f2f6; align-items: flex-start; cursor: pointer; }
+  .alert:hover { background: #fafbfd; }
+  .alert-icon { font-size: 19px; line-height: 1.2; }
+  .alert-body { flex: 1; min-width: 0; }
+  .alert-title { font-weight: 700; font-size: 14px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .alert-detail { font-size: 12.5px; color: var(--gray); margin-top: 3px; line-height: 1.5; }
+  .alert-items { font-size: 12px; color: #48566e; margin-top: 5px; }
+
+  .cat-card { background: white; border-radius: 12px; margin-bottom: 13px; overflow: hidden;
+              box-shadow: 0 1px 4px rgba(16,30,54,0.08); border-left: 5px solid var(--border); }
+  .cat-card.s-over { border-left-color: var(--red); }
+  .cat-card.s-close { border-left-color: var(--amber); }
+  .cat-card.s-ok { border-left-color: var(--green); }
+  .cat-card.s-not-applicable { border-left-color: #c9cfd8; opacity: 0.62; }
+  .cat-head { padding: 15px 20px; display: flex; gap: 14px; align-items: center; cursor: pointer; flex-wrap: wrap; }
+  .cat-head:hover { background: #fafbfd; }
+  .cat-icon { font-size: 22px; }
+  .cat-name { font-family: 'Oswald'; font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .rank { background: var(--navy); color: white; font-family: 'Oswald'; font-size: 12px;
+          width: 22px; height: 22px; border-radius: 50%; display: inline-flex;
+          align-items: center; justify-content: center; flex-shrink: 0; }
+  .cat-sub { font-size: 11px; color: var(--gray); margin-top: 1px; }
+  .cat-budget { margin-left: auto; text-align: right; min-width: 195px; }
+  .cat-budget .line { font-size: 12.5px; font-weight: 600; }
+  .cat-budget .line b { font-family: 'Oswald'; font-size: 16px; }
+  .bar { height: 7px; background: #eef1f5; border-radius: 4px; margin-top: 5px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--green); border-radius: 4px; }
+  .bar i.close { background: var(--amber); } .bar i.over { background: var(--red); }
+
+  table.items { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.items th { text-align: left; font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase;
+                   color: var(--gray); font-weight: 700; padding: 9px 14px; background: #f7f9fb;
+                   border-top: 1px solid var(--border); }
+  table.items td { padding: 10px 14px; border-top: 1px solid #f0f2f6; vertical-align: top; }
+  table.items tr.row:hover { background: #fafbfd; cursor: pointer; }
+  .i-name { font-weight: 600; }
+  .i-sel { font-size: 12px; color: var(--gray); margin-top: 2px; max-width: 420px; }
+  .i-sel a { color: var(--blue); text-decoration: none; }
+  .num { font-family: 'Oswald'; font-weight: 600; }
+  .muted { color: var(--gray); }
+  .thumb { width: 42px; height: 42px; object-fit: cover; border-radius: 7px; border: 1px solid var(--border); }
+
+  .gallery { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 20px; background: #fbfcfe; border-top: 1px solid var(--border); }
+  .gallery img { width: 74px; height: 74px; object-fit: cover; border-radius: 8px;
+                 border: 2px solid var(--border); cursor: pointer; }
+  .gallery img:hover { border-color: var(--blue); }
+  .gallery img.picked { border-color: var(--green); box-shadow: 0 0 0 2px var(--green-soft); }
+
+  .modal-bg { position: fixed; inset: 0; background: rgba(12,20,34,0.55); display: none;
+              align-items: flex-start; justify-content: center; z-index: 100; padding: 30px 16px; overflow-y: auto; }
+  .modal-bg.on { display: flex; }
+  .modal { background: white; border-radius: 16px; width: 100%; max-width: 720px;
+           box-shadow: 0 30px 80px rgba(0,0,0,0.4); }
+  .modal.wide { max-width: 940px; }
+  .modal-head { padding: 20px 26px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+  .modal-head h2 { font-size: 20px; text-transform: uppercase; letter-spacing: 0.8px; }
+  .modal-head .close { margin-left: auto; background: none; border: none; font-size: 26px;
+                       color: var(--gray); cursor: pointer; line-height: 1; }
+  .modal-body { padding: 22px 26px; }
+  .modal-foot { padding: 16px 26px; border-top: 1px solid var(--border); display: flex; gap: 10px;
+                justify-content: flex-end; flex-wrap: wrap; }
+
+  label { display: block; font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+          color: var(--gray); font-weight: 700; margin-bottom: 5px; }
+  input[type=text], input[type=number], input[type=date], input[type=password], select, textarea {
+    width: 100%; padding: 10px 13px; border: 1px solid var(--border); border-radius: 9px;
+    font-family: 'Inter'; font-size: 14px; background: white; }
+  textarea { resize: vertical; min-height: 62px; }
+  .field { margin-bottom: 15px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 13px; }
+  .notice { background: var(--amber-soft); color: var(--amber-text); border-radius: 9px;
+            padding: 11px 15px; font-size: 13px; margin-bottom: 15px; line-height: 1.5; }
+  .notice.red { background: var(--red-soft); color: #b3311f; }
+  .notice.blue { background: var(--blue-soft); color: #1f5590; }
+  .gray-box { background: #f7f9fb; border: 1px solid var(--border); border-radius: 11px; padding: 15px; margin-bottom: 15px; }
+  .empty { text-align: center; padding: 55px 20px; color: var(--gray); }
+  .empty .em { font-size: 42px; margin-bottom: 12px; }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+           background: var(--navy); color: white; padding: 13px 24px; border-radius: 10px;
+           font-size: 14px; font-weight: 600; z-index: 200; display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+  .toast.on { display: block; }
+  .back { background: none; border: none; color: var(--gray); font-size: 13px; font-weight: 600;
+          cursor: pointer; margin-bottom: 14px; padding: 0; }
+  .back:hover { color: var(--navy); }
+  .store-card { background: white; border-radius: 12px; padding: 15px 19px; margin-bottom: 11px;
+                box-shadow: 0 1px 4px rgba(16,30,54,0.08); border-left: 5px solid var(--blue); }
+  .store-card.first { border-left-color: var(--green); }
+  .store-name { font-family: 'Oswald'; font-size: 17px; font-weight: 600; }
+  .store-line { font-size: 12.5px; color: var(--gray); margin-top: 3px; }
+  @media (max-width: 720px) {
+    header { padding: 14px 16px 0; } .container { padding: 18px 14px 60px; }
+    .house-nums { width: 100%; margin-left: 0; } .row2, .row3 { grid-template-columns: 1fr; }
+  }
+
+  /* access gate */
+  #gate { position: fixed; inset: 0; z-index: 999; background: #13233d; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .gate-box { background: white; border-radius: 18px; padding: 36px 32px; width: 100%; max-width: 380px; text-align: center; box-shadow: 0 25px 70px rgba(0,0,0,.45); }
+  .gate-box img { width: 120px; height: auto; margin: 0 auto 12px; display: block; }
+  .gate-box h1 { font-size: 22px; text-transform: uppercase; letter-spacing: 1px; color: #13233d; }
+  .gate-box h1 span { color: #e8442e; }
+  .gate-box .sub { font-size: 12px; color: #667085; letter-spacing: 2px; text-transform: uppercase; margin: 4px 0 22px; }
+  .gate-box input { width: 100%; padding: 13px 16px; border: 1px solid #e3e6eb; border-radius: 10px; font-size: 16px; text-align: center; letter-spacing: 2px; font-family: 'Inter'; }
+  .gate-box button { width: 100%; margin-top: 14px; padding: 13px; border: 0; border-radius: 10px; background: #e8442e; color: white; font-family: 'Oswald'; font-size: 15px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; }
+  .gate-box .err { color: #e8442e; font-size: 13px; font-weight: 600; margin-top: 12px; display: none; }
+  .set-sec { margin-top: 18px; padding-top: 14px; border-top: 1px solid #e3e6eb; }
+  .set-sec h4 { font-family: 'Oswald'; font-size: 14px; letter-spacing: 1px; text-transform: uppercase; color: #13233d; margin-bottom: 8px; }
+  #imp-status { font-size: 13px; margin-top: 8px; color: #33415c; }
+</style>
+
+</head>
+<body>
+<div id="gate">
+  <div class="gate-box">
+    <img src="south-texas-builders-logo.png" alt="South Texas Builders">
+    <h1 class="oswald">Orders <span>Selections</span></h1>
+    <div class="sub">South Texas Builders</div>
+    <form onsubmit="orderGate(event)">
+      <input id="gateKey" type="password" placeholder="Access key" autocomplete="current-password">
+      <button type="submit">Sign in</button>
+    </form>
+    <div class="err" id="gateErr">Wrong key. Try again.</div>
+    <div class="err" id="gateMsg"></div>
+  </div>
+</div>
+
+
+<header>
+  <div class="header-top">
+    <div class="logo-box"><img src="south-texas-builders-logo.png" alt="STB"></div>
+    <div class="header-title">
+      <h1>Orders <span>Selections</span></h1>
+      <div class="sub">South Texas Builders · Allowances &amp; ordering</div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-red" onclick="openNewHouse()">+ New house</button>
+      <button class="btn btn-ghost-w" onclick="syncPhases()">Sync phases</button>
+      <button class="btn btn-ghost-w" onclick="openSettings()">Settings</button>
+      <button class="btn btn-ghost-w" onclick="orderSignOut()" title="Lock this device">🔒</button>
+    </div>
+  </div>
+  <nav>
+    <button id="tab-alerts" class="on" onclick="go('alerts')">Alerts <span class="badge" id="badge-alerts">0</span></button>
+    <button id="tab-sequence" onclick="go('sequence')">Order sequence</button>
+    <button id="tab-houses" onclick="go('houses')">Houses</button>
+    <button id="tab-stores" onclick="go('stores')">Stores</button>
+  </nav>
+</header>
+
+<div class="container" id="view"></div>
+
+<div class="modal-bg" id="modalBg"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   STB Orders — cloud engine
+   Replaces the old Node server. Same rules, same data shape; the
+   document now lives in Supabase (row stb_orders_v1) and is saved with
+   compare-and-set, exactly like Change Orders (Cobros), so two people
+   can work at once without overwriting each other.
+   ============================================================ */
+(function () {
+'use strict';
+
+const SUPABASE_URL = 'https://ttpkyepzzpxctajrhwvx.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_bnhfaLTxNe2ApJ94myqtIg_uHjo3_B1';
+const SUPABASE_TABLE = 'stb_app_state';
+const ROW_ID = 'stb_orders_v1';
+const BOARD_ROWS = [['stb_board_v1', 'main'], ['stb_board_alice_v1', 'alice']];
+const COBROS_ROW = 'stb_change_orders_v1';
+const BUCKET = 'stb-project-renders';          // files live under ordenes/
+const DEFAULT_KEY = 'STB2026';
+const ACCESS_LS = 'stbOrdenesAcceso';
+
+// ============================================================
+// STB Orders — Standard catalog
+// ============================================================
+// The categories South Texas Builders actually buys. Everything else in
+// the client portal (paint, shingles, ceilings, cabinets) is picked by
+// the client but not ordered by us, so it is not here.
+//
+// NO PRICES ARE PREFILLED. Every allowance is typed in per house off
+// that house's signed contract. Older contracts are lighter on detail
+// than the new ones, and the figures in the client portal do not always
+// match the contract — so the tool never assumes a number. What each
+// category carries is the *shape* of its allowance, not its value.
+//
+// BUDGET BASES — how a category's allowance is worked out
+//   amount   → one dollar figure          (Cabinet hardware, full set)
+//   percent  → a share of the contract    (Windows, Plumbing, Electrical)
+//   perUnit  → a rate times a count       (Door handles/knobs, each)
+//   perItem  → nothing at category level; each line carries its own
+//   open     → not defined yet
+// A category can ALSO carry lines with their own allowance on top of its
+// base — that is how the contract handles plumbing: a percentage for the
+// general fixtures, plus toilets and the water heater priced separately.
+//
+// ITEM BASES
+//   category → comes out of the category allowance
+//   sqft     → rate per square foot, optionally capped at so many feet
+//   unit     → rate times a count
+//   amount   → its own dollar figure
+//
+// TRACKING — how we prove what was spent
+//   invoice  → vendor bills us, we upload the invoice (windows, doors)
+//   links    → client picks products online, we keep the links
+//   sqft     → measured off the plans
+//   generic  → anything else
+//
+// ORDER RANK — the sequence the office buys things in.
+// The shower heads are the exception: they live inside Plumbing Fixtures
+// (same allowance) but go out as soon as the windows are ordered, which
+// is what `triggerAfter` does.
+//
+// splittable: false marks a category that is always one whole budget —
+// windows, cabinet hardware, light fixtures, mirrors. The allowance sheet
+// does not even offer to break those down; you put in the one figure and
+// everything in the category spends from it.
+//
+// clientSelects: false marks a category the client never picks — STB buys
+// it for itself, so it is a plain reminder to order, never "waiting on
+// the client".
+
+const CATEGORIES = [
+  {
+    id: 'windows',
+    name: 'Windows',
+    icon: '\u{1FA9F}',
+    phase: 2,                 // Framing / Dry-In
+    leadDays: 45,
+    orderRank: 1,
+    budget: { type: 'percent' },
+    splittable: false,        // always one whole budget, never broken down
+    tracking: 'invoice',
+    stores: ['windows-altitude'],
+    note: 'Bought from Windows Altitude — upload their invoice to check it against the allowance. On the Saavedra contract this read "Allowance = 1.5% of sales price", with white included and black as an upgrade the client pays for. Confirm the wording on the contract you have.',
+    items: [
+      { name: 'Windows', type: 'category' }
+    ]
+  },
+  {
+    id: 'tile',
+    name: 'Tile & Flooring',
+    icon: '◻️',
+    phase: 4,                 // Exterior / Floors
+    leadDays: 21,
+    orderRank: 2,
+    budget: { type: 'perItem' },
+    tracking: 'sqft',
+    stores: ['rodriguez-brownsville', 'rodriguez-pharr', 'floor-decor'],
+    note: 'Each line carries its own $/sqft rate off the contract. A line can also be capped — the Saavedra contract covered only 50 sqft of backsplash, so anything past that was on the client. Watch this category: the rates in the client portal did not match the signed contract on Saavedra, so take the numbers from the contract. The portal saves tile as showroom photos, so the pictures come from the PDF and the tile name is typed in.',
+    items: [
+      { name: 'Flooring – Living Area', type: 'sqft' },
+      { name: 'Wall Tile – Showers', type: 'sqft' },
+      { name: 'Floor Tile – Showers', type: 'sqft' },
+      { name: 'Niche Tile – Showers', type: 'sqft' },
+      { name: 'Tile Edge Trim', type: 'category' },
+      { name: 'Backsplash – Kitchen Only', type: 'sqft' }
+    ]
+  },
+  {
+    id: 'frontdoor',
+    name: 'Exterior Doors',
+    icon: '\u{1F6AA}',
+    phase: 5,                 // Interior
+    leadDays: 30,
+    orderRank: 3,
+    budget: { type: 'perItem' },
+    tracking: 'invoice',
+    stores: ['joshuas-doors'],
+    note: "Usually bought from Joshua's Doors — upload their invoice to check it against the allowance. The contract prices the main entrance door and the rear door separately, so each line carries its own allowance. The client brings inspiration (Google, Pinterest) and STB sources or quotes it — metal, wood or fiberglass.",
+    items: [
+      { name: 'Main Entrance Door', type: 'amount' },
+      { name: 'Exterior Rear Door', type: 'amount' }
+    ]
+  },
+  {
+    id: 'hardware',
+    name: 'Cabinet & Countertop Hardware',
+    icon: '\u{1F529}',
+    phase: 6,                 // Final
+    leadDays: 14,
+    orderRank: 4,
+    budget: { type: 'amount' },
+    splittable: false,        // one full set, shared by every line
+    tracking: 'links',
+    stores: ['amazon', 'lowes', 'homedepot'],
+    note: 'The contract prices this as one full set. The client picks it online, so the product links come straight from the selections PDF.',
+    items: [
+      { name: 'Cabinet Handles / Pulls', type: 'category' },
+      { name: 'Cabinet Knobs', type: 'category' },
+      { name: 'Countertop Hardware', type: 'category' }
+    ]
+  },
+  {
+    id: 'doorhardware',
+    name: 'Inside Door Hardware',
+    icon: '\u{1F510}',
+    phase: 6,
+    leadDays: 14,
+    orderRank: 5,
+    budget: { type: 'perItem' },
+    tracking: 'links',
+    stores: ['amazon', 'lowes', 'homedepot'],
+    note: 'On the contracts seen so far only the handles and knobs carry a price, by the piece — put the rate and the number of doors in. The hinges and door stops have no figure yet, so leave them shared until the contract gives them one.',
+    items: [
+      { name: 'Interior Door Handles / Knobs', type: 'unit' },
+      { name: 'Interior Hinges', type: 'category' },
+      { name: 'Door Stops', type: 'category' }
+    ]
+  },
+  {
+    id: 'stone',
+    name: 'Exterior Stone',
+    icon: '\u{1F9F1}',
+    phase: 4,
+    leadDays: 21,
+    orderRank: 6,
+    budget: { type: 'perItem' },
+    tracking: 'sqft',
+    stores: ['southern-donna', 'southern-sanbenito'],
+    note: 'Priced per square foot of material, as shown on the blueprint. Capture the sqft off the plans so the budget can be worked out. The stone type comes from the selections PDF.',
+    items: [
+      { name: 'Exterior Stone', type: 'sqft' }
+    ]
+  },
+  {
+    id: 'garage',
+    name: 'Garage Door',
+    icon: '\u{1F697}',
+    phase: 4,
+    leadDays: 30,
+    orderRank: 7,
+    budget: { type: 'open' },
+    splittable: false,
+    tracking: 'generic',
+    stores: ['joshuas-doors'],
+    note: 'Not every house has one, and a house without a garage will not have this line in its contract. If this house has no garage door, mark the category as "Does not apply".',
+    items: [
+      { name: 'Garage Door', type: 'category' }
+    ]
+  },
+  {
+    id: 'plumbing',
+    name: 'Plumbing Fixtures',
+    icon: '\u{1F6BF}',
+    phase: 6,
+    leadDays: 21,
+    orderRank: 8,
+    budget: { type: 'percent' },
+    tracking: 'links',
+    stores: ['central-showrooms', 'amazon', 'lowes', 'homedepot'],
+    note: 'The contract splits this one up: a percentage of the contract price covers the general fixtures (sinks, faucets, shower kits, pot fillers, disposal, valves), while the toilets are priced by the piece and the water heater gets its own figure. Those two lines carry their own allowance on top of the percentage. Central Showrooms in Pharr is the first-choice vendor — ask for Ana or Silvia, reference South Texas Builders 1, LLC. The shower heads go out as soon as the windows are ordered.',
+    items: [
+      { name: 'Shower Kits / Shower Heads', type: 'category', triggerAfter: 'windows' },
+      { name: 'Vanity Sink Faucets', type: 'category' },
+      { name: 'Bath Accessories', type: 'category' },
+      { name: 'Toilets', type: 'unit' },
+      { name: 'Water Heater', type: 'amount' },
+      { name: 'Shower Drain', type: 'category' },
+      { name: 'Kitchen Sink Faucet', type: 'category' },
+      { name: 'Garbage Disposal', type: 'category' },
+      { name: 'Pot Filler', type: 'category' },
+      { name: 'Kitchen Sink', type: 'category' },
+      { name: 'Kitchen Sink Drain', type: 'category' },
+      { name: 'Vanity Sink', type: 'category' },
+      { name: 'Vanity Sink Drain', type: 'category' }
+    ]
+  },
+  {
+    id: 'lighting',
+    name: 'Light Fixtures',
+    icon: '\u{1F4A1}',
+    phase: 6,
+    leadDays: 21,
+    orderRank: 9,
+    budget: { type: 'percent' },
+    splittable: false,        // one budget for the whole category; add it all up at the end
+    tracking: 'links',
+    stores: ['central-showrooms', 'amazon', 'lowes', 'homedepot'],
+    note: 'The contract prices the electrical fixtures as a percentage of the contract price, covering bulbs, doorbell, flood lights, smoke/CO detectors, fan down rods and the electric fireplace. Central Showrooms in Pharr is the first-choice vendor.',
+    items: [
+      { name: 'Interior Ceiling Fans', type: 'category' },
+      { name: 'Living Room Ceiling Fan', type: 'category' },
+      { name: 'Vanity Light Fixtures', type: 'category' },
+      { name: 'Exterior Decorative Lights', type: 'category' },
+      { name: 'Dining Room Chandelier', type: 'category' },
+      { name: 'Bulbs', type: 'category' }
+    ]
+  },
+  {
+    id: 'mirrors',
+    name: 'Mirrors',
+    icon: '\u{1FA9E}',
+    phase: 6,
+    leadDays: 14,
+    orderRank: 10,
+    budget: { type: 'amount' },
+    splittable: false,
+    tracking: 'links',
+    stores: ['amazon', 'lowes', 'homedepot'],
+    note: 'The contract gives the mirrors one figure for the whole house. Confirm where this belongs in the buying order.',
+    items: [
+      { name: 'Mirrors', type: 'category' }
+    ]
+  }
+];
+
+// ── Stores ───────────────────────────────────────────────────
+// From the "STB - Store Selections Guide" the client receives, plus the
+// two local vendors the office buys from directly. `categories` drives
+// which stores are suggested where; a store with an empty list still
+// shows up in the store directory.
+const STORES = [
+  {
+    id: 'windows-altitude', name: 'Windows Altitude', categories: ['windows'],
+    local: true, firstOption: true, guideCategory: 'Windows',
+    notes: 'Vendor STB buys windows from. They invoice us directly.'
+  },
+  {
+    id: 'joshuas-doors', name: "Joshua's Doors", categories: ['frontdoor', 'garage'],
+    local: true, firstOption: true, guideCategory: 'Doors',
+    notes: 'Vendor STB buys exterior doors from. They invoice us directly.'
+  },
+  {
+    id: 'rodriguez-brownsville', name: 'Rodriguez Tile — Brownsville', categories: ['tile'],
+    guideCategory: 'Tile', address: '3913 N Expressway, Brownsville, TX 78521',
+    contact: 'Zully (personal tour) — +1 (936) 668-9775'
+  },
+  {
+    id: 'rodriguez-pharr', name: 'Rodriguez Tile — Pharr', categories: ['tile'],
+    guideCategory: 'Tile', address: '1120 E Expressway 83, Pharr, TX 78577',
+    contact: 'Melecio (personal tour) — (956) 278-1586'
+  },
+  {
+    id: 'floor-decor', name: 'Floor & Decor', categories: ['tile'], guideCategory: 'Tile'
+  },
+  {
+    id: 'southern-donna', name: 'Southern Stone and Soil — Donna', categories: ['stone'],
+    guideCategory: 'Exterior Stone', address: '3004 E Expressway 83, Donna, TX 78537'
+  },
+  {
+    id: 'southern-sanbenito', name: 'Southern Stone and Soil — San Benito', categories: ['stone'],
+    guideCategory: 'Exterior Stone', address: '2734 E Expressway 83, San Benito, TX 78586'
+  },
+  {
+    id: 'central-showrooms', name: 'Central Showrooms — Pharr', categories: ['plumbing', 'lighting'],
+    firstOption: true, guideCategory: 'Plumbing & Light Fixtures',
+    address: '706 W Ferguson Ave, Pharr, TX 78577',
+    contact: 'Ana & Silvia — reference South Texas Builders 1, LLC',
+    notes: 'First-choice vendor for both plumbing and light fixtures.'
+  },
+  {
+    id: 'amazon', name: 'Amazon',
+    categories: ['hardware', 'doorhardware', 'plumbing', 'lighting', 'mirrors'],
+    guideCategory: 'Online'
+  },
+  {
+    id: 'lowes', name: "Lowe's",
+    categories: ['hardware', 'doorhardware', 'plumbing', 'lighting', 'mirrors'],
+    guideCategory: 'Online / Store'
+  },
+  {
+    id: 'homedepot', name: 'The Home Depot',
+    categories: ['hardware', 'doorhardware', 'plumbing', 'lighting', 'mirrors'],
+    guideCategory: 'Online / Store'
+  },
+  {
+    id: 'tajams-harlingen', name: 'Tajams Marble & Granite — Harlingen', categories: [],
+    guideCategory: 'Granite / Countertops', address: '6701 W Expressway 83, Harlingen, TX 78552',
+    notes: 'In the client store guide for countertops. STB does not order countertops through this tool.'
+  },
+  {
+    id: 'tajams-palmview', name: 'Tajams Marble & Granite — Palmview', categories: [],
+    guideCategory: 'Granite / Countertops', address: '1273 W Palma Vista Dr, Palmview, TX 78572',
+    notes: 'In the client store guide for countertops. STB does not order countertops through this tool.'
+  },
+  {
+    id: 'sherwin-williams', name: 'Sherwin-Williams', categories: [], guideCategory: 'Paint',
+    notes: 'Paint selections are only accepted from Sherwin-Williams. STB does not order paint through this tool.'
+  }
+];
+
+// Construction phases — same list as the weekly progress reports
+const PHASES = [
+  'Pre-Construction',
+  'Foundation',
+  'Framing / Dry-In',
+  'Rough Trades',
+  'Exterior / Floors',
+  'Interior',
+  'Final'
+];
+
+const STATUSES = [
+  { id: 'awaiting-selection', name: 'Waiting on client selection', color: 'gray' },
+  { id: 'ready',              name: 'Ready to order',              color: 'amber' },
+  { id: 'ordered',            name: 'Ordered',                     color: 'blue' },
+  { id: 'in-transit',         name: 'In transit',                  color: 'blue' },
+  { id: 'received',           name: 'Received',                    color: 'green' },
+  { id: 'installed',          name: 'Installed',                   color: 'green' },
+  { id: 'not-applicable',     name: 'Does not apply',              color: 'gray' }
+];
+// ============================================================
+// STB Orders — Budget math and the alert engine
+// ============================================================
+// All the thinking lives here: what the allowance is, what we have
+// actually spent, and what the office needs to be told about.
+
+
+
+const round2 = n => Math.round((Number(n) || 0) * 100) / 100;
+
+// Today's date in local time, not UTC — otherwise after 6pm in Texas
+// the tool thinks it is already tomorrow.
+function today() {
+  const d = new Date();
+  return d.getFullYear() + '-' +
+         String(d.getMonth() + 1).padStart(2, '0') + '-' +
+         String(d.getDate()).padStart(2, '0');
+}
+
+// ── Spend ────────────────────────────────────────────────────
+// A purchase is captured as one total, because the allowance already
+// counts tax and shipping — there is nothing to break out. Entries made
+// before that change stored subtotal + tax + shipping, so those still add up.
+function purchaseTotal(p) {
+  if (p.total !== undefined && p.total !== null && p.total !== '') return round2(p.total);
+  return round2((Number(p.subtotal) || 0) + (Number(p.tax) || 0) + (Number(p.shipping) || 0));
+}
+
+function itemSpend(item) {
+  return round2((item.purchases || []).reduce((s, p) => s + purchaseTotal(p), 0));
+}
+
+function categorySpend(cat) {
+  return round2((cat.items || []).reduce((s, i) => s + itemSpend(i), 0));
+}
+
+// ── Allowance ────────────────────────────────────────────────
+// The Exhibit A allowance schedule uses several different bases, so the
+// tool has to as well:
+//   amount   a flat figure            (Main Entrance Door — $2,500)
+//   percent  a share of the contract  (Windows — 1.5% of the sales price)
+//   perUnit  a rate times a count     (Door handles — $22 each)
+//   perItem  each line has its own    (tile and stone, by the sq ft)
+//   open     nothing captured yet
+// A sq ft line can also carry a cap: the backsplash allowance covers
+// 50 sq ft, so anything past that is on the client no matter what.
+function itemAllowance(item) {
+  const rate = Number(item.rate) || 0;
+
+  if (item.type === 'sqft') {
+    const cap = Number(item.cap) || 0;
+    const sqft = Number(item.sqft) || 0;
+    if (!rate) return null;
+    if (cap) return round2(Math.min(sqft || cap, cap) * rate);
+    if (!sqft) return null;               // not measured off the plans yet
+    return round2(sqft * rate);
+  }
+  if (item.type === 'unit') {
+    const qty = Number(item.qty) || 0;
+    if (!rate || !qty) return null;
+    return round2(rate * qty);
+  }
+  if (item.type === 'amount') return Number(item.amount) > 0 ? round2(item.amount) : null;
+  return null;                            // 'category'
+}
+
+// What the category itself is worth, before any separately priced lines
+function categoryBase(cat, contractPrice) {
+  const budget = cat.budget || {};
+
+  if (budget.type === 'amount') {
+    const a = Number(budget.amount);
+    return a > 0 ? round2(a) : null;
+  }
+  if (budget.type === 'percent') {
+    const pct = Number(budget.percent);
+    const price = Number(contractPrice);
+    if (!pct || !price) return null;      // needs the contract price on the house
+    return round2(price * pct / 100);
+  }
+  if (budget.type === 'perUnit') {
+    const rate = Number(budget.rate), qty = Number(budget.qty);
+    if (!rate || !qty) return null;
+    return round2(rate * qty);
+  }
+  return null;                            // 'perItem' and 'open' carry no base
+}
+
+// A category's allowance is its own base PLUS any line that the contract
+// prices separately. That is how plumbing reads: a percentage for the
+// general fixtures, with the toilets and the water heater on top.
+function categoryAllowance(cat, contractPrice) {
+  const base = categoryBase(cat, contractPrice);
+  let extras = 0, anyExtra = false;
+
+  (cat.items || []).forEach(i => {
+    const a = itemAllowance(i);
+    if (a !== null) { extras += a; anyExtra = true; }
+  });
+
+  if (base === null && !anyExtra) return null;
+  return round2((base || 0) + extras);
+}
+
+// ── Category summary ─────────────────────────────────────────
+function categorySummary(cat, warnPct, contractPrice) {
+  const allowance = categoryAllowance(cat, contractPrice);
+  const spent = categorySpend(cat);
+  const remaining = allowance === null ? null : round2(allowance - spent);
+  const pct = allowance ? Math.round((spent / allowance) * 100) : null;
+
+  let state = 'no-budget';
+  if (cat.notApplicable) state = 'not-applicable';
+  else if (allowance !== null) {
+    if (spent > allowance) state = 'over';
+    else if (pct >= (warnPct || 80)) state = 'close';
+    else state = 'ok';
+  }
+
+  return {
+    allowance, spent, remaining, pct, state,
+    over: state === 'over' ? round2(spent - allowance) : 0
+  };
+}
+
+// ── How urgent is this, given where the house is ──────────────
+function urgencyByPhase(housePhase, categoryPhase) {
+  if (!Number.isInteger(housePhase)) return 'normal';
+  const away = categoryPhase - housePhase;
+  if (away <= 0) return 'critical';   // the house is already at (or past) that phase
+  if (away === 1) return 'urgent';    // next phase up
+  if (away === 2) return 'soon';
+  return 'normal';
+}
+
+const WEIGHT = { critical: 3, urgent: 2, soon: 1, normal: 0 };
+const money = n => '$' + (Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+// ── Alert engine ─────────────────────────────────────────────
+// Which categories have already been put on order for this house.
+// Used by items that wait on another category — the shower heads go out
+// as soon as the windows are ordered, even though the rest of the
+// plumbing fixtures (same allowance) are bought much later.
+function orderedCategories(project) {
+  const done = new Set();
+  (project.categories || []).forEach(cat => {
+    const moving = (cat.items || []).some(i =>
+      ['ordered', 'in-transit', 'received', 'installed'].includes(i.status));
+    if (moving) done.add(cat.id);
+  });
+  return done;
+}
+
+function projectAlerts(project, config) {
+  const warnPct = (config && config.warnPercent) || 80;
+  const alerts = [];
+  const housePhase = Number.isInteger(project.phase) ? project.phase : null;
+  const ordered = orderedCategories(project);
+  const price = project.contractPrice;
+
+  (project.categories || []).forEach(cat => {
+    if (cat.notApplicable) return;
+
+    const base = CATEGORIES.find(c => c.id === cat.id) || {};
+    const catPhase = Number.isInteger(cat.phase) ? cat.phase : base.phase;
+    const urgency = urgencyByPhase(housePhase, catPhase);
+    const sum = categorySummary(cat, warnPct, price);
+    const phaseName = PHASES[catPhase] || ('Phase ' + catPhase);
+
+    const items = cat.items || [];
+    const baseItems = base.items || [];
+    const waitsOnOf = i => i.triggerAfter || (baseItems.find(b => b.name === i.name) || {}).triggerAfter;
+
+    // Items that wait on another category being ordered get their own alert
+    // below, so they are kept out of the ordinary lists to avoid saying the
+    // same thing twice.
+    const triggered = items.filter(i => {
+      const on = waitsOnOf(i);
+      return on && ordered.has(on) &&
+             ['awaiting-selection', 'ready'].includes(i.status) && !i.notApplicable;
+    });
+    const isTriggered = i => triggered.includes(i);
+
+    // Some categories are never picked by the client — STB buys them for
+    // itself (the security cameras watch the site). There is nothing to wait
+    // for there, so anything not ordered simply counts as ready to order.
+    const clientPicks = base.clientSelects !== false;
+
+    const waiting = clientPicks
+      ? items.filter(i => i.status === 'awaiting-selection' && !i.notApplicable && !isTriggered(i))
+      : [];
+    const ready = items.filter(i =>
+      (i.status === 'ready' || (!clientPicks && i.status === 'awaiting-selection')) &&
+      !i.notApplicable && !isTriggered(i));
+    const moving = items.filter(i => ['ordered', 'in-transit'].includes(i.status) && !i.notApplicable);
+
+    // 1. Client has not picked yet — nothing can be ordered
+    if (waiting.length) {
+      alerts.push({
+        type: 'selection',
+        level: urgency === 'normal' ? 'soon' : urgency,
+        category: cat.id,
+        categoryName: base.name || cat.id,
+        title: 'Waiting on the client',
+        detail: waiting.length + ' of ' + items.length + ' items still have no selection. Needed at ' + phaseName + '.',
+        items: waiting.map(i => i.name)
+      });
+    }
+
+    // 2. Picked but not ordered
+    if (ready.length) {
+      alerts.push({
+        type: 'order',
+        level: urgency === 'normal' ? 'soon' : urgency,
+        category: cat.id,
+        categoryName: base.name || cat.id,
+        title: !clientPicks ? 'Reminder — we order this ourselves'
+             : urgency === 'critical' ? 'Order this NOW' : 'Still to order',
+        detail: ready.length + ' item(s) ready to order. Installed at ' + phaseName +
+                '. Lead time about ' + (base.leadDays || 21) + ' days.' +
+                (clientPicks ? '' : ' The client does not pick these — STB buys them.'),
+        items: ready.map(i => i.name)
+      });
+    }
+
+    // 3. Items whose turn came because another category was ordered
+    if (triggered.length) {
+      const trigger = CATEGORIES.find(c => c.id === waitsOnOf(triggered[0])) ||
+                      { name: waitsOnOf(triggered[0]) };
+      const stillWaiting = triggered.filter(i => i.status === 'awaiting-selection');
+      alerts.push({
+        type: 'order',
+        level: 'critical',
+        category: cat.id,
+        categoryName: base.name || cat.id,
+        title: 'The ' + trigger.name.toLowerCase() + ' are ordered — these go next',
+        detail: 'These are bought right after the ' + trigger.name.toLowerCase() +
+                ', and they still come out of the same ' + (base.name || cat.id) + ' allowance.' +
+                (stillWaiting.length ? ' ' + stillWaiting.length + ' of them still need the client to pick.' : ''),
+        items: triggered.map(i => i.name + (i.status === 'awaiting-selection' ? ' (no selection yet)' : ''))
+      });
+    }
+
+    // 4. Ordered but past its ETA
+    const late = moving.filter(i => i.etaDate && i.etaDate < today());
+    if (late.length) {
+      alerts.push({
+        type: 'delivery',
+        level: 'critical',
+        category: cat.id,
+        categoryName: base.name || cat.id,
+        title: 'Delivery is late',
+        detail: late.length + ' order(s) went past their estimated arrival.',
+        items: late.map(i => i.name + (i.etaDate ? ' (expected ' + i.etaDate + ')' : ''))
+      });
+    }
+
+    // 4. Budget
+    if (sum.state === 'over') {
+      alerts.push({
+        type: 'budget',
+        level: 'critical',
+        category: cat.id,
+        categoryName: base.name || cat.id,
+        title: 'Over the allowance',
+        detail: 'Allowance ' + money(sum.allowance) + ' · spent ' + money(sum.spent) +
+                ' · over by ' + money(sum.over) + '. Needs a change order.',
+        over: sum.over
+      });
+    } else if (sum.state === 'close') {
+      alerts.push({
+        type: 'budget',
+        level: 'urgent',
+        category: cat.id,
+        categoryName: base.name || cat.id,
+        title: 'Close to the allowance limit',
+        detail: 'At ' + sum.pct + '% of the allowance. ' + money(sum.remaining) + ' left.'
+      });
+    }
+
+    // 5. Money going out with no allowance on file
+    if (sum.allowance === null && sum.spent > 0) {
+      alerts.push({
+        type: 'budget',
+        level: 'soon',
+        category: cat.id,
+        categoryName: base.name || cat.id,
+        title: 'No allowance on file',
+        detail: money(sum.spent) + ' already spent and this category has no allowance captured, ' +
+                'so there is no way to tell if it is over or under.'
+      });
+    }
+  });
+
+  alerts.sort((a, b) => (WEIGHT[b.level] || 0) - (WEIGHT[a.level] || 0));
+  return alerts;
+}
+
+// ── Whole-project summary for the dashboard ──────────────────
+function projectSummary(project, config) {
+  const warnPct = (config && config.warnPercent) || 80;
+  let allowanceTotal = 0, spentTotal = 0, overTotal = 0;
+  let itemsTotal = 0, pending = 0, received = 0, awaitingSelection = 0;
+
+  (project.categories || []).forEach(cat => {
+    if (cat.notApplicable) return;
+    const base = CATEGORIES.find(c => c.id === cat.id) || {};
+    const clientPicks = base.clientSelects !== false;
+    const s = categorySummary(cat, warnPct, project.contractPrice);
+    if (s.allowance !== null) allowanceTotal += s.allowance;
+    spentTotal += s.spent;
+    overTotal += s.over;
+    (cat.items || []).forEach(i => {
+      if (i.notApplicable || i.status === 'not-applicable') return;
+      itemsTotal++;
+      // Nothing is "waiting on the client" in a category STB buys for itself
+      if (i.status === 'awaiting-selection') { if (clientPicks) awaitingSelection++; pending++; }
+      else if (i.status === 'ready') pending++;
+      else if (['received', 'installed'].includes(i.status)) received++;
+    });
+  });
+
+  const alerts = projectAlerts(project, config);
+  return {
+    allowanceTotal: round2(allowanceTotal),
+    spentTotal: round2(spentTotal),
+    overTotal: round2(overTotal),
+    remainingTotal: round2(allowanceTotal - spentTotal),
+    itemsTotal, pending, received, awaitingSelection,
+    alerts,
+    critical: alerts.filter(a => a.level === 'critical').length,
+    urgent: alerts.filter(a => a.level === 'urgent').length
+  };
+}
+// Normalize for comparison: odd dashes, spacing, case
+function norm(s) {
+  return String(s)
+    .replace(/[‐-―−]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toUpperCase();
+}
+
+// PDF label → our category and item. item:null means "keep it as a category note".
+const MAP = {
+  'WINDOW STYLE':                 { cat: 'windows',      item: 'Windows' },
+  'WINDOW COLOR':                 { cat: 'windows',      item: 'Windows' },
+  'WINDOW GRIDS':                 { cat: 'windows',      item: 'Windows' },
+  'WINDOW VENDOR':                { cat: 'windows',      item: 'Windows' },
+
+  'EXTERIOR STONE':               { cat: 'stone',        item: 'Exterior Stone' },
+  'STONE TYPE':                   { cat: 'stone',        item: 'Exterior Stone' },
+
+  'GARAGE DOOR':                  { cat: 'garage',       item: 'Garage Door' },
+
+  'FLOORING - LIVING AREA':       { cat: 'tile',         item: 'Flooring – Living Area' },
+  'WALL TILE - SHOWERS':          { cat: 'tile',         item: 'Wall Tile – Showers' },
+  'FLOOR TILE - SHOWERS':         { cat: 'tile',         item: 'Floor Tile – Showers' },
+  'NICHE TILE - SHOWERS':         { cat: 'tile',         item: 'Niche Tile – Showers' },
+  'TILE EDGE TRIM':               { cat: 'tile',         item: 'Tile Edge Trim' },
+  'BACKSPLASH - KITCHEN ONLY':    { cat: 'tile',         item: 'Backsplash – Kitchen Only' },
+  'SHOWER TILE (PREVIOUS FORMAT)':{ cat: 'tile',         item: null },
+  'SHOWER FLOOR FINISH':          { cat: 'tile',         item: null },
+
+  'BORE TYPE':                    { cat: 'frontdoor',    item: 'Main Entrance Door' },
+  'GLASS TYPE':                   { cat: 'frontdoor',    item: 'Main Entrance Door' },
+  'HINGE / THRESHOLD':            { cat: 'frontdoor',    item: 'Main Entrance Door' },
+  'FRONT DOOR STYLE':             { cat: 'frontdoor',    item: 'Main Entrance Door' },
+  'DOOR TYPE':                    { cat: 'frontdoor',    item: 'Main Entrance Door' },
+  'REAR / PATIO DOOR':            { cat: 'frontdoor',    item: 'Exterior Rear Door' },
+
+  'CABINET HARDWARE':             { cat: 'hardware',     item: 'Cabinet Handles / Pulls' },
+  'CABINET DIRECTION':            { cat: 'hardware',     item: 'Cabinet Handles / Pulls' },
+  'CABINET PULLS':                { cat: 'hardware',     item: 'Cabinet Handles / Pulls' },
+  'CABINET KNOBS':                { cat: 'hardware',     item: 'Cabinet Knobs' },
+  'COUNTERTOP HARDWARE':          { cat: 'hardware',     item: 'Countertop Hardware' },
+
+  'DOOR HANDLES / KNOBS':         { cat: 'doorhardware', item: 'Interior Door Handles / Knobs' },
+  'DOOR HANDLES':                 { cat: 'doorhardware', item: 'Interior Door Handles / Knobs' },
+  'DOOR KNOBS':                   { cat: 'doorhardware', item: 'Interior Door Handles / Knobs' },
+  'INTERIOR DOOR HARDWARE':       { cat: 'doorhardware', item: 'Interior Door Handles / Knobs' },
+  'INTERIOR HINGE COLOR':         { cat: 'doorhardware', item: 'Interior Hinges' },
+  'DOOR STOPS':                   { cat: 'doorhardware', item: 'Door Stops' },
+
+  'WATER HEATER':                 { cat: 'plumbing',     item: 'Water Heater' },
+  'SHOWER KITS':                  { cat: 'plumbing',     item: 'Shower Kits / Shower Heads' },
+  'SHOWER HEADS':                 { cat: 'plumbing',     item: 'Shower Kits / Shower Heads' },
+  'VANITY SINK FAUCETS':          { cat: 'plumbing',     item: 'Vanity Sink Faucets' },
+  'BATH ACCESSORIES':             { cat: 'plumbing',     item: 'Bath Accessories' },
+  'TOILETS':                      { cat: 'plumbing',     item: 'Toilets' },
+  'SHOWER DRAIN':                 { cat: 'plumbing',     item: 'Shower Drain' },
+  'KITCHEN SINK FAUCET':          { cat: 'plumbing',     item: 'Kitchen Sink Faucet' },
+  'GARBAGE DISPOSAL':             { cat: 'plumbing',     item: 'Garbage Disposal' },
+  'POT FILLER':                   { cat: 'plumbing',     item: 'Pot Filler' },
+  'KITCHEN SINK':                 { cat: 'plumbing',     item: 'Kitchen Sink' },
+  'KITCHEN SINK DRAIN':           { cat: 'plumbing',     item: 'Kitchen Sink Drain' },
+  'VANITY SINK':                  { cat: 'plumbing',     item: 'Vanity Sink' },
+  'VANITY SINK DRAIN':            { cat: 'plumbing',     item: 'Vanity Sink Drain' },
+  'EXTRA ITEMS / NOTES':          { cat: 'plumbing',     item: null },
+
+  'BULB COLOR TEMPERATURE':       { cat: 'lighting',     item: 'Bulbs' },
+  'INTERIOR CEILING FANS':        { cat: 'lighting',     item: 'Interior Ceiling Fans' },
+  'LIVING ROOM CEILING FAN':      { cat: 'lighting',     item: 'Living Room Ceiling Fan' },
+  'VANITY LIGHT FIXTURES':        { cat: 'lighting',     item: 'Vanity Light Fixtures' },
+  'EXTERIOR DECORATIVE LIGHTS':   { cat: 'lighting',     item: 'Exterior Decorative Lights' },
+  'DINING ROOM CHANDELIER':       { cat: 'lighting',     item: 'Dining Room Chandelier' },
+
+  'MIRRORS':                      { cat: 'mirrors',      item: 'Mirrors' },
+  'BATHROOM MIRRORS':             { cat: 'mirrors',      item: 'Mirrors' }
+};
+
+const HEADER = ['CLIENT', 'PROJECT', 'ADDRESS', 'SQUARE FOOTAGE', 'SELECTIONS CAPTURED', 'STATUS'];
+
+// Page footer the portal stamps on every sheet
+const FOOTER_URL = /^https?:\/\/\S+\/package\/\S+$/i;
+
+function isJunk(line) {
+  const l = line.trim();
+  if (!l) return true;
+  if (/STB Client Portal/i.test(l)) return true;
+  if (/^\d{1,2}\/\d{1,2}\/\d{2,4},/.test(l)) return true;
+  if (/^Scan (for|the)/i.test(l)) return true;
+  if (/^Field reference only/i.test(l)) return true;
+  if (/^Confirm final products/i.test(l)) return true;
+  if (/^selections team\.$/i.test(l)) return true;
+  if (/^No client selections fall under/i.test(l)) return true;
+  return false;
+}
+
+// Section titles. A label's value stops here, otherwise it would drag
+// in the heading of whatever comes next.
+const SECTIONS = [
+  'SITE, FOUNDATION & PERMITS', 'FRAMING, ROOFING & WINDOWS', 'ROOF SHINGLES',
+  'ROOFING - METAL', 'ROOF FRAMING - CEILING DESIGN', 'WINDOWS VENDOR',
+  'EXTERIOR PAINT & MEP ROUGH-IN', 'EXTERIOR PAINTING',
+  'EXTERIOR MATERIALS, FLOORING & TILE', 'EXTERIOR MATERIALS', 'FLOORING & TILE',
+  'CABINETS, TRIM, PAINT, COUNTERTOPS & DOORS', 'CABINETS & VANITIES',
+  'TRIM, DOORS & SHELVING', 'INTERIOR PAINT / STAIN', 'COUNTER TOPS', 'FRONT DOORS',
+  'FINALS - FIXTURES, HARDWARE & CLEAN-UP', 'PLUMBING FINAL / FIXTURES',
+  'ELECTRICAL FINAL / FIXTURES', 'HARDWARE / MIRRORS'
+];
+
+function isBreak(l) {
+  const t = norm(l);
+  if (/^PHASE \d/.test(t)) return true;
+  if (/^PRE & PHASE/.test(t)) return true;
+  return SECTIONS.includes(t);
+}
+
+// A LABEL is a short all-caps line. At least 3 letters, so a chopped
+// piece of a link (like "B/315413218") is not mistaken for one.
+function looksLikeLabel(l) {
+  const t = l.trim();
+  if (!t || t.length > 60) return false;
+  if (/[a-z]/.test(t)) return false;
+  return (t.match(/[A-Z]/g) || []).length >= 3;
+}
+
+// The PDF wraps long links across two lines. Glue them back together.
+function joinLinks(values) {
+  const out = [];
+  values.forEach(v => {
+    const prev = out[out.length - 1];
+    const isContinuation = prev && /^https?:\/\//i.test(prev) &&
+                           !/\s/.test(v) && !/^https?:\/\//i.test(v);
+    if (isContinuation) out[out.length - 1] = prev + v;
+    else out.push(v);
+  });
+  return out;
+}
+
+// Split the raw text into one chunk per printed page
+function splitPages(text) {
+  const pages = [];
+  let current = [];
+  text.split('\n').forEach(raw => {
+    const line = raw.trim();
+    if (FOOTER_URL.test(line)) { pages.push(current); current = []; return; }
+    if (!isJunk(line)) current.push(line);
+  });
+  if (current.length) pages.push(current);
+  return pages;
+}
+
+function parseText(text) {
+  const pages = splitPages(text);
+  const info = {};
+  const selections = {};        // { catId: { items: {name: {text, links[]}}, notes: [] } }
+  const notApplicable = [];
+  const categoryPages = {};     // { catId: [page numbers] }
+
+  function store(catId, itemName, label, values, pageNo) {
+    const links = values.filter(v => /^https?:\/\//i.test(v));
+    const texts = values.filter(v => !/^https?:\/\//i.test(v));
+    const cat = selections[catId] || (selections[catId] = { items: {}, notes: [] });
+
+    if (!categoryPages[catId]) categoryPages[catId] = [];
+    if (!categoryPages[catId].includes(pageNo)) categoryPages[catId].push(pageNo);
+
+    if (!itemName) {
+      if (texts.length) cat.notes.push(label + ': ' + texts.join(' · '));
+      links.forEach(l => cat.notes.push(l));
+      return;
+    }
+    const it = cat.items[itemName] || (cat.items[itemName] = { parts: [], links: [], labels: [] });
+    if (texts.length) it.parts.push({ label, text: texts.join(' · ') });
+    it.links = it.links.concat(links);
+    it.labels.push(label);
+  }
+
+  pages.forEach((lines, idx) => {
+    const pageNo = idx + 1;
+    for (let i = 0; i < lines.length; i++) {
+      if (!looksLikeLabel(lines[i])) continue;
+      const label = norm(lines[i]);
+
+      const raw = [];
+      let j = i + 1;
+      while (j < lines.length && !looksLikeLabel(lines[j]) && !isBreak(lines[j])) {
+        raw.push(lines[j]);
+        j++;
+      }
+      const values = joinLinks(raw);
+
+      if (HEADER.includes(label)) { info[label] = values[0] || ''; continue; }
+
+      const target = MAP[label];
+      if (!target) continue;
+
+      // "No Garage Door" / "No Metal Roofing Applicable"
+      if (/^no\s+(garage door|metal roofing)/i.test(values.join(' '))) {
+        if (!notApplicable.includes(target.cat)) notApplicable.push(target.cat);
+        continue;
+      }
+      store(target.cat, target.item, label, values, pageNo);
+    }
+  });
+
+  // Build the final wording. One label reads on its own ("Stackstone brown");
+  // several labels feeding the same item get named so it still makes sense
+  // ("BORE TYPE: Double Bore · GLASS TYPE: Reflective Silver").
+  Object.values(selections).forEach(cat => {
+    Object.values(cat.items).forEach(it => {
+      it.text = it.parts.length === 1
+        ? it.parts[0].text
+        : it.parts.map(p => p.label + ': ' + p.text).join(' · ');
+      delete it.parts;
+    });
+  });
+
+  const sqftText = info['SQUARE FOOTAGE'] || '';
+  const sqft = Number((sqftText.match(/[\d,]+/) || ['0'])[0].replace(/,/g, '')) || null;
+
+  return {
+    client:  info['CLIENT'] || '',
+    project: info['PROJECT'] || '',
+    address: info['ADDRESS'] || '',
+    sqft,
+    captured: Number(info['SELECTIONS CAPTURED']) || null,
+    status: info['STATUS'] || '',
+    selections,
+    notApplicable,
+    categoryPages
+  };
+}
+
+
+function newId(prefix) {
+  return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+
+
+// Every store the office can pick from: the ones in the client store
+// guide plus whatever has been added by hand.
+function allStores(data) {
+  return STORES.concat((data.config.customStores || []).map(s => ({ ...s, custom: true })));
+}
+
+
+// Builds the 10 standard categories for a new house
+function newCategories() {
+  return CATEGORIES.map(c => ({
+    id: c.id,
+    phase: c.phase,
+    orderRank: c.orderRank,
+    notApplicable: false,
+    budget: JSON.parse(JSON.stringify(c.budget)),
+    notes: '',
+    photos: [],
+    items: c.items.map(i => ({
+      id: newId('i'),
+      name: i.name,
+      type: i.type,
+      rate: i.rate || null,
+      cap: i.cap || null,      // some sq ft allowances only cover so many feet
+      sqft: null,
+      qty: null,
+      amount: null,
+      orderRank: i.orderRank || null,
+      triggerAfter: i.triggerAfter || null,   // e.g. shower heads follow the windows order
+      selection: '',
+      links: [],
+      photos: [],
+      // Categories the client never picks (security cameras) start ready to
+      // order — there is no selection to wait for.
+      status: c.clientSelects === false ? 'ready' : 'awaiting-selection',
+      store: '',
+      orderNo: '',
+      tracking: '',
+      orderDate: '',
+      etaDate: '',
+      receivedDate: '',
+      notes: '',
+      purchases: []
+    }))
+  }));
+}
+
+
+const findProject  = (data, id) => data.projects.find(p => p.id === id);
+const findCategory = (proj, id) => (proj.categories || []).find(c => c.id === id);
+const findItem     = (cat, id)  => (cat.items || []).find(i => i.id === id);
+
+
+// ── Applying what the PDFs said ──────────────────────────────
+// Selections: fills in what the client picked, the links and the photos.
+function applySelections(project, parsed) {
+  let applied = 0;
+
+  Object.entries(parsed.selections || {}).forEach(([catId, info]) => {
+    const cat = findCategory(project, catId);
+    if (!cat) return;
+
+    if (info.notes && info.notes.length) {
+      const extra = info.notes.join('\n');
+      cat.notes = cat.notes ? cat.notes + '\n' + extra : extra;
+    }
+
+    Object.entries(info.items || {}).forEach(([itemName, sel]) => {
+      const item = (cat.items || []).find(i => i.name === itemName);
+      if (!item) return;
+      const hasSomething = (sel.text && sel.text.trim()) || (sel.links && sel.links.length);
+      if (!hasSomething) return;
+      item.selection = sel.text || item.selection;
+      item.links = Array.from(new Set((item.links || []).concat(sel.links || [])));
+      if (item.status === 'awaiting-selection') item.status = 'ready';
+      applied++;
+    });
+  });
+
+  // Photos land on the category; they get pinned to an item from the screen
+  Object.entries(parsed.photoUrls || {}).forEach(([catId, urls]) => {
+    const cat = findCategory(project, catId);
+    if (!cat) return;
+    cat.photos = Array.from(new Set((cat.photos || []).concat(urls)));
+  });
+
+  (parsed.notApplicable || []).forEach(catId => {
+    const cat = findCategory(project, catId);
+    if (cat) cat.notApplicable = true;
+  });
+
+  if (parsed.fileUrl) {
+    project.files = project.files || {};
+    project.files.selections = parsed.fileUrl;
+  }
+  return applied;
+}
+
+// Allowances are captured by hand — Jacqueline checks every figure against
+// the signed contract herself. This saves the whole sheet in one go.
+function saveAllowances(project, categories) {
+  let saved = 0;
+  (categories || []).forEach(entry => {
+    const cat = findCategory(project, entry.id);
+    if (!cat) return;
+
+    if (entry.type) cat.budget.type = entry.type;
+    if (entry.type === 'amount') {
+      cat.budget.amount = Number(entry.amount) || 0;
+      if (cat.budget.amount) saved++;
+    }
+    if (entry.type === 'percent') {
+      cat.budget.percent = Number(entry.percent) || 0;
+      if (cat.budget.percent) saved++;
+    }
+    if (entry.type === 'perUnit') {
+      cat.budget.rate = Number(entry.rate) || 0;
+      cat.budget.qty = Number(entry.qty) || 0;
+      if (cat.budget.rate && cat.budget.qty) saved++;
+    }
+
+    (entry.items || []).forEach(row => {
+      const item = findItem(cat, row.id);
+      if (!item) return;
+      if (row.rate !== undefined) item.rate = row.rate === '' || row.rate === null ? null : Number(row.rate);
+      if (row.sqft !== undefined) item.sqft = row.sqft === '' || row.sqft === null ? null : Number(row.sqft);
+      if (row.cap !== undefined) item.cap = row.cap === '' || row.cap === null ? null : Number(row.cap);
+      if (row.qty !== undefined) item.qty = row.qty === '' || row.qty === null ? null : Number(row.qty);
+      if (row.amount !== undefined) item.amount = row.amount === '' || row.amount === null ? null : Number(row.amount);
+      if (row.type) item.type = row.type;
+      if (item.rate || item.amount) saved++;
+    });
+  });
+  return saved;
+}
+
+
+const ITEM_TEXT = ['name', 'selection', 'status', 'store', 'orderNo', 'tracking',
+                   'orderDate', 'etaDate', 'receivedDate', 'notes', 'type'];
+
+
+// ── Small helpers ────────────────────────────────────────────
+class HttpError extends Error { constructor(status, msg) { super(msg); this.status = status; } }
+const hdr = extra => Object.assign({ apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY }, extra || {});
+const cleanName = s => String(s || 'file').replace(/[^a-zA-Z0-9._-]/g, '-');
+const codeOf = s => (String(s || '').match(/\((\d+)\)\s*$/) || [])[1] || '';
+const famOf = s => String(s || '').replace(/\s*\(\d+\)\s*$/, '').trim().toLowerCase();
+
+async function sha256Hex(text) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf), b => b.toString(16).padStart(2, '0')).join('');
+}
+const keyHashOf = k => sha256Hex('stb-orders:' + k);
+
+// ── Cloud rows ───────────────────────────────────────────────
+function emptyData() {
+  return { config: { warnPercent: 80, company: 'South Texas Builders', customStores: [] }, projects: [] };
+}
+function normalize(d) {
+  d = d && typeof d === 'object' ? d : emptyData();
+  d.config = d.config && typeof d.config === 'object' ? d.config : {};
+  d.config.customStores = Array.isArray(d.config.customStores) ? d.config.customStores : [];
+  if (!d.config.warnPercent) d.config.warnPercent = 80;
+  d.projects = Array.isArray(d.projects) ? d.projects : [];
+  return d;
+}
+async function readRow(id) {
+  const url = SUPABASE_URL + '/rest/v1/' + SUPABASE_TABLE + '?id=eq.' + encodeURIComponent(id) + '&select=data,updated_at';
+  const res = await fetch(url, { headers: hdr() });
+  if (!res.ok) throw new HttpError(503, 'Could not read from the cloud (' + res.status + ')');
+  const rows = await res.json();
+  if (!rows || !rows[0]) return null;
+  let obj = null;
+  try { obj = JSON.parse((rows[0].data && rows[0].data.value) || ''); } catch (e) {}
+  if (!obj || typeof obj !== 'object') return null;
+  return { obj, updated_at: rows[0].updated_at };
+}
+async function createRow(id, obj) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/' + SUPABASE_TABLE, {
+    method: 'POST',
+    headers: hdr({ 'Content-Type': 'application/json', Prefer: 'return=representation' }),
+    body: JSON.stringify({ id, data: { value: JSON.stringify(obj) }, updated_at: new Date().toISOString() })
+  });
+  if (res.status === 409) return null;                    // another device created it first
+  if (!res.ok) throw new HttpError(503, 'Could not create the record in the cloud (' + res.status + ')');
+  const rows = await res.json().catch(() => []);
+  return rows[0] ? rows[0].updated_at : new Date().toISOString();
+}
+/* Always read the newest copy, apply the change, write with compare-and-set;
+   if someone saved in between, retry on top of their copy. */
+async function casSave(rowId, mutator, seed) {
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const row = await readRow(rowId);
+    if (!row) {
+      if (!seed) throw new HttpError(404, 'That record does not exist in the cloud yet.');
+      const obj = seed(); const result = mutator(obj);
+      const tok = await createRow(rowId, obj);
+      if (tok === null) continue;
+      CACHE = null; return result;
+    }
+    const obj = row.obj; const result = mutator(obj);
+    const cond = SUPABASE_URL + '/rest/v1/' + SUPABASE_TABLE + '?id=eq.' + encodeURIComponent(rowId) +
+      '&updated_at=eq.' + encodeURIComponent(row.updated_at);
+    const res = await fetch(cond, {
+      method: 'PATCH',
+      headers: hdr({ 'Content-Type': 'application/json', Prefer: 'return=representation' }),
+      body: JSON.stringify({ data: { value: JSON.stringify(obj) }, updated_at: new Date().toISOString() })
+    });
+    if (!res.ok) throw new HttpError(503, 'Could not save to the cloud (' + res.status + ')');
+    const rows = await res.json().catch(() => []);
+    if (rows && rows.length) { CACHE = null; return result; }
+    // empty list = someone saved between our read and write → retry
+  }
+  throw new HttpError(503, 'The cloud is very busy — try again in a moment.');
+}
+const mutate = fn => casSave(ROW_ID, d => { normalize(d); return fn(d); }, emptyData);
+
+let CACHE = null;                                          // reads are reused for 2 seconds
+async function readData() {
+  if (CACHE && Date.now() - CACHE.t < 2000) return CACHE.d;
+  const row = await readRow(ROW_ID);
+  const d = normalize(row ? row.obj : emptyData());
+  CACHE = { t: Date.now(), d };
+  return d;
+}
+
+// ── Files (Supabase Storage) ─────────────────────────────────
+async function uploadFile(path, body, type) {
+  const res = await fetch(SUPABASE_URL + '/storage/v1/object/' + BUCKET + '/' + path, {
+    method: 'POST', headers: hdr({ 'Content-Type': type, 'x-upsert': 'true' }), body
+  });
+  if (!res.ok) { let t = ''; try { t = await res.text(); } catch (e) {} throw new HttpError(400, 'The file could not be uploaded. ' + t); }
+  return SUPABASE_URL + '/storage/v1/object/public/' + BUCKET + '/' + path;
+}
+function compressImage(fileOrBlob, max) {
+  max = max || 1600;
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(fileOrBlob);
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      if (w > max || h > max) { const k = Math.min(max / w, max / h); w = Math.round(w * k); h = Math.round(h * k); }
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h); ctx.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      c.toBlob(b => b ? resolve(b) : reject(new Error('Could not process the image.')), 'image/jpeg', 0.85);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read the image.')); };
+    img.src = url;
+  });
+}
+const isImageName = n => /\.(jpe?g|png|gif|webp)$/i.test(n || '');
+async function uploadUserFile(file, folder) {
+  const stamp = Date.now();
+  if ((file.type || '').startsWith('image/') || isImageName(file.name)) {
+    const blob = await compressImage(file);
+    return uploadFile('ordenes/' + folder + '/' + stamp + '_' + cleanName(file.name.replace(/\.[^.]+$/, '')) + '.jpg', blob, 'image/jpeg');
+  }
+  return uploadFile('ordenes/' + folder + '/' + stamp + '_' + cleanName(file.name), file, file.type || 'application/octet-stream');
+}
+
+// ── Routes ───────────────────────────────────────────────────
+const ROUTES = [];
+function route(method, pattern, fn) {
+  const names = (pattern.match(/:[a-zA-Z]+/g) || []).map(s => s.slice(1));
+  ROUTES.push({ method, names, fn, re: new RegExp('^' + pattern.replace(/:[a-zA-Z]+/g, '([^/]+)') + '$') });
+}
+const need = (v, status, msg) => { if (!v) throw new HttpError(status, msg); return v; };
+
+route('GET', '/api/catalog', async () => {
+  const data = await readData();
+  return { categories: CATEGORIES, stores: allStores(data), phases: PHASES, statuses: STATUSES };
+});
+
+route('GET', '/api/data', async () => {
+  const data = await readData();
+  const projects = data.projects.map(p => ({
+    ...p,
+    summary: projectSummary(p, data.config),
+    categories: (p.categories || []).map(c => ({ ...c, summary: categorySummary(c, data.config.warnPercent, p.contractPrice) }))
+  }));
+  return { config: { warnPercent: data.config.warnPercent, company: data.config.company, customStores: data.config.customStores }, projects };
+});
+
+route('POST', '/api/config', async (_, b) => {
+  const newHash = b.key && String(b.key).trim().length >= 4 ? await keyHashOf(String(b.key).trim()) : null;
+  await mutate(data => {
+    if (b.warnPercent) data.config.warnPercent = Math.max(1, Math.min(100, Number(b.warnPercent)));
+    if (newHash) { data.config.keyHash = newHash; delete data.config.key; }
+  });
+  if (newHash) { try { localStorage.setItem(ACCESS_LS, newHash); } catch (e) {} }
+  return { ok: true };
+});
+
+// Stores added by hand
+route('POST', '/api/stores', (_, b) => mutate(data => {
+  const name = String(b.name || '').trim();
+  if (!name) throw new HttpError(400, 'The store needs a name.');
+  if (allStores(data).some(s => s.name.toLowerCase() === name.toLowerCase())) throw new HttpError(400, 'That store is already on the list.');
+  const store = {
+    id: newId('store'), name, categories: Array.isArray(b.categories) ? b.categories : [],
+    address: b.address || '', contact: b.contact || '', notes: b.notes || '',
+    guideCategory: b.guideCategory || 'Added by the office'
+  };
+  data.config.customStores.push(store);
+  return store;
+}));
+route('PUT', '/api/stores/:id', (p, b) => mutate(data => {
+  const store = need(data.config.customStores.find(s => s.id === p.id), 404, 'Only stores added by hand can be edited.');
+  ['name', 'address', 'contact', 'notes'].forEach(k => { if (b[k] !== undefined) store[k] = String(b[k]).trim(); });
+  if (Array.isArray(b.categories)) store.categories = b.categories;
+  return store;
+}));
+route('DELETE', '/api/stores/:id', (p) => mutate(data => {
+  const before = data.config.customStores.length;
+  data.config.customStores = data.config.customStores.filter(s => s.id !== p.id);
+  if (data.config.customStores.length === before) throw new HttpError(404, 'Only stores added by hand can be removed.');
+  return { ok: true };
+}));
+
+// Houses
+route('POST', '/api/projects', (_, b) => mutate(data => {
+  const parsed = b.selections || null;
+  const name = String(b.name || (parsed && parsed.project) || '').replace(/\s*Residence\s*$/i, '').trim();
+  if (!name) throw new HttpError(400, 'The house needs a name.');
+  const project = {
+    id: newId('proj'), name,
+    client: b.client || (parsed && parsed.client) || '',
+    address: b.address || (parsed && parsed.address) || '',
+    sqft: Number(b.sqft) || (parsed && parsed.sqft) || null,
+    contractPrice: Number(b.contractPrice) || null,
+    phase: Number.isInteger(b.phase) ? b.phase : 0,
+    reportsId: b.reportsId || '',
+    active: true, created: new Date().toISOString(),
+    files: {}, categories: newCategories(), changeOrders: []
+  };
+  const appliedSelections = parsed ? applySelections(project, parsed) : 0;
+  if (b.contractUrl) { project.files = project.files || {}; project.files.contract = b.contractUrl; }
+  data.projects.push(project);
+  return { ...project, appliedSelections };
+}));
+route('PUT', '/api/projects/:id', (p, b) => mutate(data => {
+  const project = need(findProject(data, p.id), 404, 'House not found.');
+  ['name', 'client', 'address', 'reportsId'].forEach(k => { if (b[k] !== undefined) project[k] = b[k]; });
+  if (b.sqft !== undefined) project.sqft = Number(b.sqft) || null;
+  if (b.contractPrice !== undefined) project.contractPrice = Number(b.contractPrice) || null;
+  if (b.phase !== undefined) project.phase = Number(b.phase);
+  if (b.active !== undefined) project.active = !!b.active;
+  if (b.contractUrl) { project.files = project.files || {}; project.files.contract = b.contractUrl; }
+  return project;
+}));
+route('DELETE', '/api/projects/:id', (p) => mutate(data => {
+  data.projects = data.projects.filter(x => x.id !== p.id);
+  return { ok: true };
+}));
+route('POST', '/api/projects/:id/apply-selections', (p, b) => mutate(data => {
+  const project = need(findProject(data, p.id), 404, 'House not found.');
+  if (!b.selections) throw new HttpError(400, 'Nothing to apply.');
+  const parsed = b.selections;
+  if (parsed.client && !project.client) project.client = parsed.client;
+  if (parsed.address && !project.address) project.address = parsed.address;
+  if (parsed.sqft && !project.sqft) project.sqft = parsed.sqft;
+  const applied = applySelections(project, parsed);
+  return { ok: true, applied, notApplicable: parsed.notApplicable || [] };
+}));
+route('POST', '/api/projects/:id/allowances', (p, b) => mutate(data => {
+  const project = need(findProject(data, p.id), 404, 'House not found.');
+  if (b.contractPrice !== undefined) project.contractPrice = Number(b.contractPrice) || null;
+  const saved = saveAllowances(project, b.categories);
+  return {
+    ok: true, saved, summary: projectSummary(project, data.config),
+    categories: project.categories.map(c => ({ id: c.id, summary: categorySummary(c, data.config.warnPercent, project.contractPrice) }))
+  };
+}));
+
+// Categories and items
+route('PUT', '/api/projects/:id/categories/:catId', (p, b) => mutate(data => {
+  const project = need(findProject(data, p.id), 404, 'House not found.');
+  const cat = need(findCategory(project, p.catId), 404, 'Category not found.');
+  if (b.notApplicable !== undefined) cat.notApplicable = !!b.notApplicable;
+  if (b.notes !== undefined) cat.notes = b.notes;
+  if (b.phase !== undefined) cat.phase = Number(b.phase);
+  if (b.orderRank !== undefined) cat.orderRank = Number(b.orderRank) || null;
+  if (b.budget) {
+    if (b.budget.type) cat.budget.type = b.budget.type;
+    if (b.budget.amount !== undefined) cat.budget.amount = Number(b.budget.amount) || 0;
+  }
+  if (Array.isArray(b.photos)) cat.photos = b.photos;
+  return { ok: true, summary: categorySummary(cat, data.config.warnPercent, project.contractPrice) };
+}));
+route('PUT', '/api/projects/:id/categories/:catId/items/:itemId', (p, b) => mutate(data => {
+  const project = need(findProject(data, p.id), 404, 'House not found.');
+  const cat = need(findCategory(project, p.catId), 404, 'Category not found.');
+  const item = need(findItem(cat, p.itemId), 404, 'Item not found.');
+  ITEM_TEXT.forEach(k => { if (b[k] !== undefined) item[k] = b[k]; });
+  ['sqft', 'qty', 'cap', 'rate', 'amount', 'orderRank'].forEach(k => {
+    if (b[k] !== undefined) item[k] = (b[k] === '' || b[k] === null) ? null : Number(b[k]);
+  });
+  if (b.links !== undefined) item.links = (b.links || []).filter(Boolean);
+  if (b.photos !== undefined) item.photos = (b.photos || []).filter(Boolean);
+  if (b.notApplicable !== undefined) item.notApplicable = !!b.notApplicable;
+  return { ok: true, item, summary: categorySummary(cat, data.config.warnPercent, project.contractPrice) };
+}));
+route('POST', '/api/projects/:id/categories/:catId/items', (p, b) => mutate(data => {
+  const project = need(findProject(data, p.id), 404, 'House not found.');
+  const cat = need(findCategory(project, p.catId), 404, 'Category not found.');
+  if (!b.name) throw new HttpError(400, 'The item needs a name.');
+  const item = {
+    id: newId('i'), name: String(b.name).trim(), type: b.type || 'category',
+    rate: b.rate ? Number(b.rate) : null, sqft: b.sqft ? Number(b.sqft) : null,
+    amount: b.amount ? Number(b.amount) : null, orderRank: b.orderRank ? Number(b.orderRank) : null,
+    selection: b.selection || '', links: b.links || [], photos: [],
+    status: b.status || 'awaiting-selection',
+    store: '', orderNo: '', tracking: '', orderDate: '', etaDate: '', receivedDate: '', notes: '', purchases: []
+  };
+  cat.items.push(item);
+  return item;
+}));
+route('DELETE', '/api/projects/:id/categories/:catId/items/:itemId', (p) => mutate(data => {
+  const project = findProject(data, p.id);
+  const cat = need(project && findCategory(project, p.catId), 404, 'Not found.');
+  cat.items = cat.items.filter(i => i.id !== p.itemId);
+  return { ok: true };
+}));
+
+// Purchases and vendor invoices
+route('POST', '/api/projects/:id/categories/:catId/items/:itemId/purchases', (p, b) => mutate(data => {
+  const project = findProject(data, p.id);
+  const cat = project && findCategory(project, p.catId);
+  const item = need(cat && findItem(cat, p.itemId), 404, 'Item not found.');
+  const perSqft = Number(b.pricePerSqft) || 0;
+  const sqftBought = Number(b.sqftBought) || 0;
+  const total = Number(b.total) || round2(perSqft * sqftBought);
+  const purchase = {
+    id: newId('pu'), date: b.date || today(), description: b.description || '',
+    store: b.store || item.store || '', total: round2(total),
+    pricePerSqft: perSqft || null, sqftBought: sqftBought || null,
+    orderNo: b.orderNo || '', receipt: b.receipt || '', isInvoice: !!b.isInvoice
+  };
+  item.purchases.push(purchase);
+  if (['awaiting-selection', 'ready'].includes(item.status)) {
+    item.status = 'ordered';
+    if (!item.orderDate) item.orderDate = purchase.date;
+  }
+  if (purchase.store && !item.store) item.store = purchase.store;
+  if (purchase.orderNo && !item.orderNo) item.orderNo = purchase.orderNo;
+  return { ok: true, purchase, summary: categorySummary(cat, data.config.warnPercent, project.contractPrice) };
+}));
+route('DELETE', '/api/projects/:id/categories/:catId/items/:itemId/purchases/:pid', (p) => mutate(data => {
+  const project = findProject(data, p.id);
+  const cat = project && findCategory(project, p.catId);
+  const item = need(cat && findItem(cat, p.itemId), 404, 'Item not found.');
+  item.purchases = item.purchases.filter(x => x.id !== p.pid);
+  return { ok: true, summary: categorySummary(cat, data.config.warnPercent, project.contractPrice) };
+}));
+
+// Uploads (receipts, invoices, contract) — the form sends receipt / photo / contract
+route('POST', '/api/upload', async (_, fd) => {
+  const file = fd.get('receipt') || fd.get('photo') || fd.get('contract');
+  if (!file || !file.name) throw new HttpError(400, 'No file came through.');
+  const folder = fd.get('photo') ? 'photos' : fd.get('contract') ? 'contracts' : 'receipts';
+  if (file.size > 25 * 1024 * 1024) throw new HttpError(400, 'That file is too big (25 MB max).');
+  return { ok: true, url: await uploadUserFile(file, folder) };
+});
+
+// Change orders
+route('POST', '/api/projects/:id/change-orders', (p, b) => mutate(data => {
+  const project = need(findProject(data, p.id), 404, 'House not found.');
+  const cat = need(findCategory(project, b.category), 404, 'Category not found.');
+  const s = categorySummary(cat, data.config.warnPercent, project.contractPrice);
+  const base = CATEGORIES.find(c => c.id === cat.id) || {};
+  const co = {
+    id: newId('co'), category: cat.id, categoryName: base.name || cat.id, date: today(),
+    allowance: s.allowance, spent: s.spent, amount: s.over || round2(b.amount),
+    description: b.description || '', status: 'pending'
+  };
+  project.changeOrders = project.changeOrders || [];
+  project.changeOrders.push(co);
+  return co;
+}));
+route('PUT', '/api/projects/:id/change-orders/:coId', (p, b) => mutate(data => {
+  const project = need(findProject(data, p.id), 404, 'House not found.');
+  const co = need((project.changeOrders || []).find(c => c.id === p.coId), 404, 'Change order not found.');
+  ['status', 'description'].forEach(k => { if (b[k] !== undefined) co[k] = b[k]; });
+  if (b.amount !== undefined) co.amount = round2(b.amount);
+  return co;
+}));
+route('DELETE', '/api/projects/:id/change-orders/:coId', (p) => mutate(data => {
+  const project = need(findProject(data, p.id), 404, 'House not found.');
+  project.changeOrders = (project.changeOrders || []).filter(c => c.id !== p.coId);
+  return { ok: true };
+}));
+
+/* Send a change order to STB Cobros: it appears there as an unsigned single-payment
+   change order (30 days after signing), linked back by id so it cannot be sent twice. */
+route('POST', '/api/projects/:id/change-orders/:coId/send-to-cobros', async (p) => {
+  const data = await readData();
+  const proj = need(findProject(data, p.id), 404, 'House not found.');
+  const co = need((proj.changeOrders || []).find(c => c.id === p.coId), 404, 'Change order not found.');
+  if (co.cobrosCoId) throw new HttpError(400, 'This change order was already sent to Cobros.');
+  const cobrosId = newId('co');
+  const code = codeOf(proj.name), fam = famOf(proj.name);
+  const due = new Date(); due.setDate(due.getDate() + 30);
+  const dueIso = due.getFullYear() + '-' + String(due.getMonth() + 1).padStart(2, '0') + '-' + String(due.getDate()).padStart(2, '0');
+  await casSave(COBROS_ROW, obj => {
+    const list = Array.isArray(obj.proyectos) ? obj.proyectos : [];
+    const cp = list.find(x => famOf(x.familia) === fam && (!code || !x.numero || String(x.numero) === code));
+    if (!cp) throw new HttpError(404, 'STB Cobros has no project for ' + proj.name + '. Create it there first, then send again.');
+    cp.changeOrders = cp.changeOrders || [];
+    cp.changeOrders.push({
+      id: cobrosId, descripcion: co.description || ('Over the allowance on ' + co.categoryName),
+      monto: round2(co.amount), fechaFirma: '', invoiceFile: '',
+      plan: { tipo: 'una', plazoDias: 30 }, cuotas: [{ num: 1, fecha: dueIso, monto: round2(co.amount) }], pagos: [],
+      creadoPor: 'Orders', creado: new Date().toISOString(), origen: 'orders', ordenesCoId: co.id
+    });
+  });
+  await mutate(d => {
+    const pr = findProject(d, p.id); const c = pr && (pr.changeOrders || []).find(x => x.id === p.coId);
+    if (c) { c.status = 'sent'; c.cobrosCoId = cobrosId; c.sentAt = new Date().toISOString(); }
+  });
+  return { ok: true };
+});
+
+// ── Construction phase from the scheduling board ─────────────
+// The board's phases (Pre Phase … Phase 6) are the same seven steps as PHASES,
+// so a house's phase is simply its position in that list.
+const BOARD_PHASES = ['Pre Phase', 'Phase 1', 'Phase 2', 'Phase 3', 'Phase 4', 'Phase 5', 'Phase 6'];
+let BOARD_CACHE = null;
+async function readBoards() {
+  if (BOARD_CACHE && Date.now() - BOARD_CACHE.t < 60000) return BOARD_CACHE.list;
+  const list = [];
+  for (const [id, area] of BOARD_ROWS) {
+    let row = null; try { row = await readRow(id); } catch (e) {}
+    if (row && Array.isArray(row.obj.projects)) row.obj.projects.forEach(p => list.push({
+      id: p.id, name: p.name || '', code: String(p.code || ''), address: p.address || '', area,
+      phase: Math.max(0, BOARD_PHASES.indexOf(p.phase || 'Pre Phase'))
+    }));
+  }
+  BOARD_CACHE = { t: Date.now(), list };
+  return list;
+}
+route('GET', '/api/reports-clients', async () => {
+  const list = await readBoards();
+  return {
+    ok: list.length > 0,
+    clients: list.map(b => ({ id: b.id, name: b.name + (b.area === 'alice' ? ' · Alice' : ''), address: b.address, phase: b.phase, progress: null, active: true }))
+  };
+});
+route('POST', '/api/sync-phases', async () => {
+  BOARD_CACHE = null;
+  const boards = await readBoards();
+  if (!boards.length) throw new HttpError(400, 'Could not read the scheduling board right now. Phases can still be set by hand.');
+  const res = await mutate(data => {
+    let changed = 0, linked = 0; const conflicts = [], unmatched = [];
+    data.projects.forEach(p => {
+      let b = p.reportsId ? boards.find(x => x.id === p.reportsId) : null;
+      if (!b) {
+        const code = codeOf(p.name), fam = famOf(p.name);
+        const cand = code ? boards.filter(x => x.code === code || codeOf(x.name) === code) : [];
+        const exact = cand.find(x => famOf(x.name) === fam) || (!code ? boards.find(x => famOf(x.name) === fam) : null);
+        if (exact) { b = exact; p.reportsId = exact.id; linked++; }
+        else if (cand.length) conflicts.push(p.name + ' is #' + code + ' here, but #' + code + ' on the board is ' + cand[0].name);
+        else unmatched.push(p.name);
+      }
+      if (b && Number.isInteger(b.phase) && b.phase !== p.phase) { p.phase = b.phase; changed++; }
+    });
+    return { changed, linked, conflicts, unmatched };
+  });
+  return { ok: true, ...res };
+});
+
+// ── Reading the client's selections PDF, right in the browser ─
+// Same rules as the old server (parseText above); only the way the text and the
+// pictures are pulled out of the PDF changed: pdf.js instead of Node libraries.
+let PDFJS = null;
+async function loadPdfJs() {
+  if (PDFJS) return PDFJS;
+  if (!window.pdfjsLib) {
+    await new Promise((res, rej) => {
+      const s = document.createElement('script'); s.src = 'lib/pdf.min.js';
+      s.onload = res; s.onerror = () => rej(new HttpError(400, 'Could not load the PDF reader. Check the connection and try again.'));
+      document.head.appendChild(s);
+    });
+  }
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'lib/pdf.worker.min.js';
+  PDFJS = window.pdfjsLib;
+  return PDFJS;
+}
+async function pool(items, n, fn) {
+  let i = 0;
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => {
+    while (i < items.length) { const idx = i++; await fn(items[idx], idx); }
+  }));
+}
+function pdfObj(page, id) {
+  return new Promise(res => {
+    const store = String(id).startsWith('g_') ? page.commonObjs : page.objs;
+    const t = setTimeout(() => res(null), 8000);
+    try { store.get(id, o => { clearTimeout(t); res(o); }); } catch (e) { clearTimeout(t); res(null); }
+  });
+}
+// A decoded PDF image (raw pixels or a bitmap) → a compressed JPEG blob
+async function pdfImageToBlob(img, minSide) {
+  const w = img && img.width, h = img && img.height;
+  if (!w || !h || (w < minSide && h < minSide)) return null;
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
+  if (img.bitmap) ctx.drawImage(img.bitmap, 0, 0);
+  else if (img.data) {
+    const id = ctx.createImageData(w, h), d = id.data, s = img.data, px = w * h;
+    if (s.length === px * 4) d.set(s);
+    else if (s.length === px * 3) { for (let i = 0, j = 0; i < px; i++) { d[j++] = s[i * 3]; d[j++] = s[i * 3 + 1]; d[j++] = s[i * 3 + 2]; d[j++] = 255; } }
+    else if (s.length === px) { for (let i = 0, j = 0; i < px; i++) { d[j++] = s[i]; d[j++] = s[i]; d[j++] = s[i]; d[j++] = 255; } }
+    else {                                             // 1-bit packed rows
+      const rb = Math.ceil(w / 8);
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        const v = ((s[y * rb + (x >> 3)] >> (7 - (x & 7))) & 1) ? 255 : 0, j = (y * w + x) * 4;
+        d[j] = d[j + 1] = d[j + 2] = v; d[j + 3] = 255;
+      }
+    }
+    ctx.putImageData(id, 0, 0);
+  } else return null;
+  let out = c;
+  const MAX = 1400;
+  if (w > MAX || h > MAX) {
+    const k = Math.min(MAX / w, MAX / h); out = document.createElement('canvas');
+    out.width = Math.round(w * k); out.height = Math.round(h * k);
+    out.getContext('2d').drawImage(c, 0, 0, out.width, out.height);
+  }
+  return new Promise(res => out.toBlob(b => res(b), 'image/jpeg', 0.85));
+}
+async function pdfPageImages(pdfjs, page, minSide) {
+  const ops = await page.getOperatorList(), OPS = pdfjs.OPS, out = [], seen = new Set();
+  for (let i = 0; i < ops.fnArray.length; i++) {
+    const fn = ops.fnArray[i]; let img = null;
+    if (fn === OPS.paintImageXObject || fn === OPS.paintJpegXObject) {
+      const id = ops.argsArray[i][0];
+      if (seen.has(id)) continue; seen.add(id);
+      img = await pdfObj(page, id);
+    } else if (fn === OPS.paintInlineImageXObject) img = ops.argsArray[i][0];
+    if (!img) continue;
+    let blob = null; try { blob = await pdfImageToBlob(img, minSide); } catch (e) {}
+    if (blob) out.push(blob);
+  }
+  return out;
+}
+async function readPdf(file) {
+  const pdfjs = await loadPdfJs();
+  const doc = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+  const texts = [], byPage = [];
+  for (let n = 1; n <= doc.numPages; n++) {
+    const page = await doc.getPage(n);
+    const tc = await page.getTextContent({ normalizeWhitespace: false, disableCombineTextItems: false });
+    let lastY, text = '';
+    for (const it of tc.items) {                       // a new line whenever the vertical position changes
+      if (lastY === it.transform[5] || !lastY) text += it.str; else text += '\n' + it.str;
+      lastY = it.transform[5];
+    }
+    texts.push(text);
+    let imgs = []; try { imgs = await pdfPageImages(pdfjs, page, 200); } catch (e) {}
+    byPage.push({ page: n, images: imgs });
+  }
+  const parsed = parseText(texts.join('\n\n'));
+  parsed.pages = doc.numPages;
+  return { parsed, byPage };
+}
+route('POST', '/api/read-selections', async (_, fd) => {
+  const file = fd.get('pdf');
+  if (!file || !file.name) throw new HttpError(400, 'No PDF came through.');
+  if (file.size > 40 * 1024 * 1024) throw new HttpError(400, 'That PDF is too big (40 MB max).');
+  let parsed, byPage;
+  try { ({ parsed, byPage } = await readPdf(file)); }
+  catch (e) { throw new HttpError(400, 'Could not read that PDF: ' + (e.message || e)); }
+
+  // Photos for each category come from the pages that category appears on (page 1 is the cover)
+  const batch = newId('sel').replace('sel_', '');
+  const jobs = [];
+  Object.entries(parsed.categoryPages).forEach(([catId, pageNos]) => {
+    let i = 0;
+    pageNos.filter(n => n > 1).forEach(n => {
+      const pg = byPage.find(p => p.page === n);
+      (pg ? pg.images : []).forEach(blob => jobs.push({ catId, blob, n: ++i }));
+    });
+  });
+  const photoUrls = {};
+  await pool(jobs, 4, async j => {
+    try {
+      const url = await uploadFile('ordenes/selections/' + batch + '/' + j.catId + '-' + j.n + '.jpg', j.blob, 'image/jpeg');
+      (photoUrls[j.catId] = photoUrls[j.catId] || []).push({ n: j.n, url });
+    } catch (e) { /* one photo failing should not lose the rest */ }
+  });
+  Object.keys(photoUrls).forEach(k => { photoUrls[k] = photoUrls[k].sort((a, b) => a.n - b.n).map(x => x.url); });
+
+  let fileUrl = '';
+  try { fileUrl = await uploadFile('ordenes/selections/' + batch + '_' + cleanName(file.name), file, 'application/pdf'); } catch (e) {}
+  if (!parsed.client && !parsed.address && !Object.keys(parsed.selections).length) {
+    window.toast && window.toast('That PDF did not look like a selections package. Nothing was recognized.');
+  }
+  return { ok: true, ...parsed, photoUrls, fileUrl };
+});
+
+// ── Moving the data over from the old desktop tool (one time) ──
+// Choose the old STB-Ordenes folder; its houses and photos are copied to the cloud.
+window.importOldTool = async function (fileList, progress) {
+  const files = Array.from(fileList);
+  const byRel = {};
+  files.forEach(f => { byRel[(f.webkitRelativePath || f.name).replace(/\\/g, '/')] = f; });
+  const jsonRel = Object.keys(byRel).find(k => /(^|\/)data\/orders\.json$/.test(k));
+  if (!jsonRel) throw new HttpError(400, 'Choose the STB-Ordenes folder (the one with data/orders.json inside).');
+  const root = jsonRel.slice(0, jsonRel.length - 'data/orders.json'.length);
+  let old;
+  try { old = JSON.parse(await byRel[jsonRel].text()); } catch (e) { throw new HttpError(400, 'orders.json could not be read.'); }
+  old.config = old.config || {}; old.projects = Array.isArray(old.projects) ? old.projects : [];
+
+  // Houses that are already in the cloud are skipped, and so are their photos (no re-uploading)
+  const have = await readData();
+  const isDup = p => have.projects.some(x => x.id === p.id || (x.name === p.name && (x.address || '') === (p.address || '')));
+  const fresh = old.projects.filter(p => !isDup(p));
+  const refs = new Set();
+  (function walk(n) {
+    if (typeof n === 'string') { if (n.startsWith('/uploads/')) refs.add(n); }
+    else if (Array.isArray(n)) n.forEach(walk);
+    else if (n && typeof n === 'object') Object.values(n).forEach(walk);
+  })(fresh);
+
+  const list = Array.from(refs), map = {}; let done = 0, missing = 0;
+  await pool(list, 4, async url => {
+    const f = byRel[root + url.replace(/^\//, '')];
+    if (!f) missing++;
+    else {
+      try {
+        let body = f, name = url.replace(/^\/uploads\//, '');
+        let type = f.type || (/\.png$/i.test(url) ? 'image/png' : /\.jpe?g$/i.test(url) ? 'image/jpeg' : /\.pdf$/i.test(url) ? 'application/pdf' : 'application/octet-stream');
+        if (isImageName(url) && f.size > 300 * 1024) { body = await compressImage(f); type = 'image/jpeg'; name = name.replace(/\.[^.]+$/, '') + '.jpg'; }
+        map[url] = await uploadFile('ordenes/' + name.split('/').map(cleanName).join('/'), body, type);
+      } catch (e) { missing++; }
+    }
+    done++; if (progress) progress(done, list.length);
+  });
+
+  // Point every reference at the new cloud address; drop the ones whose file was not in the folder
+  const isUp = s => typeof s === 'string' && s.startsWith('/uploads/');
+  (function clean(n) {
+    if (Array.isArray(n)) {
+      for (let i = n.length - 1; i >= 0; i--) {
+        if (isUp(n[i])) { if (map[n[i]]) n[i] = map[n[i]]; else n.splice(i, 1); } else clean(n[i]);
+      }
+    } else if (n && typeof n === 'object') {
+      Object.keys(n).forEach(k => { if (isUp(n[k])) n[k] = map[n[k]] || ''; else clean(n[k]); });
+    }
+  })(fresh);
+
+  const keyHash = old.config.key ? await keyHashOf(String(old.config.key)) : null;   // the key is stored hashed, never as text
+  const result = await mutate(data => {
+    let added = 0, skipped = 0;
+    if (!data.config.keyHash && keyHash) data.config.keyHash = keyHash;
+    if (old.config.warnPercent) data.config.warnPercent = Number(old.config.warnPercent) || data.config.warnPercent;
+    (old.config.customStores || []).forEach(s => {
+      if (!data.config.customStores.some(x => x.id === s.id || String(x.name).toLowerCase() === String(s.name).toLowerCase())) data.config.customStores.push(s);
+    });
+    old.projects.forEach(p => {
+      const dup = data.projects.some(x => x.id === p.id || (x.name === p.name && (x.address || '') === (p.address || '')));
+      if (dup) { skipped++; return; }
+      p.reportsId = '';            // the old link pointed at the weekly-reports tool; "Sync phases" re-links to the board
+      data.projects.push(p); added++;
+    });
+    return { added, skipped };
+  });
+  return { ...result, uploaded: list.length - missing, missing };
+};
+
+window.downloadOrdersBackup = async function () {
+  const d = await readData();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' }));
+  a.download = 'stb-orders-backup-' + today() + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+};
+
+
+// ── The api() the screens call ───────────────────────────────
+async function api(url, options) {
+  options = options || {};
+  const method = (options.method || 'GET').toUpperCase();
+  const path = String(url).split('?')[0];
+  let body = options.body;
+  if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = {}; } }
+  const r = ROUTES.find(x => x.method === method && x.re.test(path));
+  if (!r) throw new Error('Unknown request ' + method + ' ' + path);
+  const m = path.match(r.re); const params = {};
+  r.names.forEach((n, i) => { params[n] = decodeURIComponent(m[i + 1]); });
+  try { return await r.fn(params, body || {}); }
+  catch (e) { window.toast && window.toast(e.message || 'Something went wrong'); throw e; }
+}
+window.api = api;
+
+// ── Access gate + start ──────────────────────────────────────
+async function currentKeyHash() {
+  const d = await readData();
+  return d.config.keyHash || await keyHashOf(DEFAULT_KEY);
+}
+async function gateOk() {
+  let saved = ''; try { saved = localStorage.getItem(ACCESS_LS) || ''; } catch (e) {}
+  return saved && saved === await currentKeyHash();
+}
+window.orderGate = async function (e) {
+  e.preventDefault();
+  const el = document.getElementById('gateKey');
+  const h = await keyHashOf(el.value);
+  if (h === await currentKeyHash()) {
+    try { localStorage.setItem(ACCESS_LS, h); } catch (err) {}
+    document.getElementById('gate').style.display = 'none';
+    window.load();
+  } else {
+    document.getElementById('gateErr').style.display = 'block'; el.value = ''; el.focus();
+  }
+};
+window.bootOrders = async function () {
+  try {
+    if (await gateOk()) { document.getElementById('gate').style.display = 'none'; await window.load(); }
+    else { document.getElementById('gate').style.display = 'flex'; document.getElementById('gateKey').focus(); }
+  } catch (e) {
+    document.getElementById('gateMsg').textContent = '⚠ Could not connect to the cloud. Check the internet and reload.';
+    document.getElementById('gateMsg').style.display = 'block';
+  }
+};
+window.orderSignOut = function () { try { localStorage.removeItem(ACCESS_LS); } catch (e) {} location.reload(); };
+
+window.OrdersEngine = { parseText, readData, casSave, mutate, api, uploadFile, compressImage, CATEGORIES, PHASES, keyHashOf };
+})();
+
+</script>
+<script>
+// ── State ────────────────────────────────────────────────────
+const S = { catalog: null, data: null, view: 'alerts', houseId: null, reports: [] };
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const fmt = n => '$' + (Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmt0 = n => '$' + Math.round(Number(n) || 0).toLocaleString('en-US');
+const catBase = id => (S.catalog.categories.find(c => c.id === id) || { name: id, icon: '📦', phase: 0, leadDays: 21, stores: [], items: [] });
+const statusInfo = id => (S.catalog.statuses.find(s => s.id === id) || { name: id, color: 'gray' });
+const storeById = id => (S.catalog.stores.find(s => s.id === id) || null);
+const house = () => (S.data.projects.find(p => p.id === S.houseId) || null);
+const today = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); };
+
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('on'), 2800);
+}
+
+const apiJSON = (url, method, body) => api(url, {
+  method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {})
+});
+
+// ── Load ─────────────────────────────────────────────────────
+async function load() {
+  S.catalog = await api('/api/catalog');
+  S.data = await api('/api/data');
+  try { const r = await api('/api/reports-clients'); S.reports = r.clients || []; } catch (_) { S.reports = []; }
+  render();
+}
+
+function go(view) { S.view = view; S.houseId = null; render(); window.scrollTo(0, 0); }
+
+function render() {
+  ['alerts', 'sequence', 'houses', 'stores'].forEach(v =>
+    $('tab-' + v).classList.toggle('on', S.view === v || (v === 'houses' && S.view === 'house')));
+
+  const active = S.data.projects.filter(p => p.active !== false);
+  const total = active.reduce((s, p) => s + p.summary.critical + p.summary.urgent, 0);
+  $('badge-alerts').textContent = total;
+  $('badge-alerts').style.display = total ? '' : 'none';
+
+  if (S.view === 'house' && house()) $('view').innerHTML = viewHouse(house());
+  else if (S.view === 'sequence') $('view').innerHTML = viewSequence(active);
+  else if (S.view === 'houses') $('view').innerHTML = viewHouses(active);
+  else if (S.view === 'stores') $('view').innerHTML = viewStores();
+  else $('view').innerHTML = viewAlerts(active);
+}
+
+// ── Alerts ───────────────────────────────────────────────────
+const ALERT_ICON = { selection: '✋', order: '🛒', delivery: '🚚', budget: '💵' };
+const LEVEL_TXT = { critical: 'Critical', urgent: 'Urgent', soon: 'Coming up' };
+const LEVEL_CHIP = { critical: 'red', urgent: 'amber', soon: 'blue' };
+
+function viewAlerts(houses) {
+  if (!houses.length) return viewNoHouses();
+
+  let critical = 0, urgent = 0, toOrder = 0, over = 0, waiting = 0;
+  houses.forEach(p => {
+    critical += p.summary.critical; urgent += p.summary.urgent;
+    over += p.summary.overTotal; waiting += p.summary.awaitingSelection;
+    toOrder += p.summary.pending - p.summary.awaitingSelection;
+  });
+
+  let html = '<div class="dash">' +
+    card('Critical alerts', critical, 'Deal with these today', critical ? 'c-red' : 'c-green') +
+    card('Urgent', urgent, 'The next phase needs them', urgent ? 'c-amber' : 'c-green') +
+    card('Still to order', toOrder, 'Picked, not ordered yet', toOrder ? 'c-amber' : 'c-green') +
+    card('Waiting on clients', waiting, 'They have not decided', waiting ? 'c-blue' : 'c-green') +
+    card('Over allowance', fmt0(over), 'Change order pending', over ? 'c-red' : 'c-green') +
+    '</div>';
+
+  const withAlerts = houses.filter(p => p.summary.alerts.length);
+  if (!withAlerts.length) {
+    return html + '<div class="empty"><div class="em">✅</div>' +
+      '<div style="font-size:17px;font-weight:600;color:#2e7d4f">All caught up</div>' +
+      '<div style="margin-top:6px">Nothing left to order and no allowance is over.</div></div>';
+  }
+
+  withAlerts.sort((a, b) => (b.summary.critical - a.summary.critical) || (b.summary.urgent - a.summary.urgent));
+
+  withAlerts.forEach(p => {
+    const worst = p.summary.critical ? 'critical' : (p.summary.urgent ? 'urgent' : 'soon');
+    html += '<div class="card n-' + worst + '">' +
+      '<div class="house-head" onclick="openHouse(\'' + p.id + '\')">' +
+        '<div><div class="house-name">' + esc(p.name) + '</div>' +
+        '<div class="house-addr">' + esc(p.address || 'No address') + '</div>' +
+        '<div class="chips"><span class="chip blue">' + esc(S.catalog.phases[p.phase] || 'No phase') + '</span>' +
+        (p.summary.overTotal ? '<span class="chip red">Over allowance ' + fmt0(p.summary.overTotal) + '</span>' : '') +
+        '</div></div>' +
+        '<div class="house-nums">' +
+          num('Allowance', fmt0(p.summary.allowanceTotal)) +
+          num('Spent', fmt0(p.summary.spentTotal)) +
+          num('Alerts', p.summary.alerts.length) +
+        '</div>' +
+      '</div>';
+
+    p.summary.alerts.forEach(a => {
+      html += '<div class="alert" onclick="openHouse(\'' + p.id + '\')">' +
+        '<div class="alert-icon">' + (ALERT_ICON[a.type] || '•') + '</div>' +
+        '<div class="alert-body">' +
+          '<div class="alert-title">' + esc(a.title) +
+            '<span class="chip ' + LEVEL_CHIP[a.level] + '">' + (LEVEL_TXT[a.level] || a.level) + '</span>' +
+            '<span class="chip gray">' + esc(a.categoryName) + '</span></div>' +
+          '<div class="alert-detail">' + esc(a.detail) + '</div>' +
+          (a.items && a.items.length
+            ? '<div class="alert-items">• ' + a.items.map(esc).join('<br>• ') + '</div>' : '') +
+        '</div></div>';
+    });
+    html += '</div>';
+  });
+  return html;
+}
+
+const card = (t, v, d, cls) =>
+  '<div class="dash-card ' + (cls || '') + '"><div class="dt">' + t + '</div>' +
+  '<div class="dv">' + v + '</div><div class="dd">' + d + '</div></div>';
+const num = (t, v) => '<div class="house-num"><div class="t">' + t + '</div><div class="v">' + v + '</div></div>';
+
+function viewNoHouses() {
+  return '<div class="empty"><div class="em">🏠</div>' +
+    '<div style="font-size:18px;font-weight:600;color:#13233d">No houses yet</div>' +
+    '<div style="margin-top:8px;max-width:500px;margin-left:auto;margin-right:auto;line-height:1.6">' +
+    'Start a house and hand it the client\'s selection package PDF. The tool reads the address, the ' +
+    'square footage, what the client picked, the product links and the showroom photos. ' +
+    'Allowances are typed in afterwards from the signed contract.</div>' +
+    '<div style="margin-top:20px"><button class="btn btn-red" onclick="openNewHouse()">+ New house</button></div></div>';
+}
+
+// ── Order sequence ───────────────────────────────────────────
+// The buying order the office follows, and which houses are behind on it.
+function sequenceRows() {
+  const rows = S.catalog.categories.map(cat => ({ rank: cat.orderRank, catId: cat.id, label: cat.name }));
+  return rows.sort((a, b) => a.rank - b.rank);
+}
+
+// Items that ride on another category's order — the shower heads go out as
+// soon as the windows do, without leaving the plumbing allowance.
+function followUps(catId) {
+  const out = [];
+  S.catalog.categories.forEach(cat => {
+    (cat.items || []).forEach(i => {
+      if (i.triggerAfter === catId) out.push({ category: cat, item: i });
+    });
+  });
+  return out;
+}
+
+function viewSequence(houses) {
+  let html = '<div class="notice blue">This is the order the office buys things in. ' +
+    'Each step shows the houses that still have something to order at that step — ' +
+    'red means the house is already at (or past) the phase where it gets installed.</div>';
+
+  if (!houses.length) return html + viewNoHouses();
+
+  sequenceRows().forEach(row => {
+    const base = catBase(row.catId);
+    const pending = [];
+    houses.forEach(p => {
+      const cat = (p.categories || []).find(c => c.id === row.catId);
+      if (!cat || cat.notApplicable) return;
+      const items = (cat.items || []).filter(i =>
+        !i.notApplicable && i.status !== 'not-applicable' &&
+        ['awaiting-selection', 'ready'].includes(i.status));
+      if (!items.length) return;
+      const late = p.phase >= (cat.phase != null ? cat.phase : base.phase);
+      pending.push({ project: p, items, late });
+    });
+
+    const late = pending.some(x => x.late);
+    html += '<div class="card ' + (pending.length ? (late ? 'n-critical' : 'n-urgent') : 'n-ok') + '">' +
+      '<div class="house-head" style="cursor:default;padding:15px 22px">' +
+        '<div style="display:flex;gap:12px;align-items:center">' +
+          '<span class="rank">' + row.rank + '</span>' +
+          '<div><div class="cat-name">' + base.icon + ' ' + esc(row.label) +
+          (base.clientSelects === false ? ' <span class="chip blue">we buy this — no client selection</span>' : '') + '</div>' +
+          '<div class="cat-sub">Installed at ' + esc(S.catalog.phases[base.phase]) +
+          ' · lead time about ' + base.leadDays + ' days</div></div>' +
+        '</div>' +
+        '<div class="house-nums">' + num('Houses pending', pending.length) + '</div>' +
+      '</div>';
+
+    followUps(row.catId).forEach(f => {
+      html += '<div style="padding:11px 22px;font-size:13px;background:#fff8e8;' +
+        'border-top:1px solid var(--border);color:var(--amber-text)">↳ <b>As soon as the ' +
+        esc(base.name.toLowerCase()) + ' are ordered:</b> order the ' + esc(f.item.name) +
+        ' (stays inside the ' + esc(f.category.name) + ' allowance).</div>';
+    });
+
+    if (pending.length) {
+      html += '<table class="items"><tr><th>House</th><th>Phase now</th><th>Waiting on</th></tr>';
+      pending.forEach(x => {
+        html += '<tr class="row" onclick="openHouse(\'' + x.project.id + '\')">' +
+          '<td class="i-name">' + esc(x.project.name) + '</td>' +
+          '<td><span class="chip ' + (x.late ? 'red' : 'blue') + '">' +
+            esc(S.catalog.phases[x.project.phase] || '—') + (x.late ? ' · late' : '') + '</span></td>' +
+          '<td>' + x.items.map(i =>
+            '<span class="chip ' + statusInfo(i.status).color + '">' + esc(i.name) + '</span>').join(' ') +
+          '</td></tr>';
+      });
+      html += '</table>';
+    }
+    html += '</div>';
+  });
+  return html;
+}
+
+// ── Houses ───────────────────────────────────────────────────
+function viewHouses(houses) {
+  if (!houses.length) return viewNoHouses();
+  let html = '<div class="section-title">Active houses</div>';
+  houses.forEach(p => {
+    const s = p.summary;
+    const worst = s.critical ? 'critical' : (s.urgent ? 'urgent' : (s.pending ? 'soon' : 'ok'));
+    html += '<div class="card n-' + worst + '"><div class="house-head" onclick="openHouse(\'' + p.id + '\')">' +
+      '<div><div class="house-name">' + esc(p.name) + '</div>' +
+      '<div class="house-addr">' + esc(p.address || 'No address') +
+        (p.sqft ? ' · ' + p.sqft.toLocaleString('en-US') + ' sqft' : '') + '</div>' +
+      '<div class="chips"><span class="chip blue">' + esc(S.catalog.phases[p.phase] || 'No phase') + '</span>' +
+        (s.critical ? '<span class="chip red">' + s.critical + ' critical</span>' : '') +
+        (s.pending ? '<span class="chip amber">' + s.pending + ' pending</span>' : '<span class="chip green">All ordered</span>') +
+      '</div></div>' +
+      '<div class="house-nums">' +
+        num('Allowance', fmt0(s.allowanceTotal)) +
+        num('Spent', fmt0(s.spentTotal)) +
+        num('Left', fmt0(s.remainingTotal)) +
+        num('Received', s.received + '/' + s.itemsTotal) +
+      '</div></div></div>';
+  });
+  return html;
+}
+
+// ── One house ────────────────────────────────────────────────
+function openHouse(id) { S.houseId = id; S.view = 'house'; render(); window.scrollTo(0, 0); }
+
+function viewHouse(p) {
+  const s = p.summary;
+  let html = '<button class="back" onclick="go(\'houses\')">← All houses</button>';
+
+  html += '<div class="card"><div class="house-head" style="cursor:default">' +
+    '<div><div class="house-name">' + esc(p.name) + '</div>' +
+    '<div class="house-addr">' + esc(p.address || 'No address') +
+      (p.sqft ? ' · ' + p.sqft.toLocaleString('en-US') + ' sqft' : '') +
+      (p.contractPrice ? ' · contract ' + fmt0(p.contractPrice) : '') +
+      (p.client ? ' · ' + esc(p.client) : '') + '</div>' +
+    '<div class="chips"><span class="chip blue">' + esc(S.catalog.phases[p.phase] || 'No phase') + '</span>' +
+      (p.files && p.files.selections ? '<a class="chip green" href="' + esc(p.files.selections) + '" target="_blank">Selections PDF</a>' : '') +
+      (p.files && p.files.contract ? '<a class="chip green" href="' + esc(p.files.contract) + '" target="_blank">Contract PDF</a>' : '') +
+    '</div></div>' +
+    '<div class="house-nums">' +
+      num('Allowance', fmt0(s.allowanceTotal)) +
+      num('Spent', fmt0(s.spentTotal)) +
+      num('Left', fmt0(s.remainingTotal)) +
+    '</div></div>' +
+    '<div style="padding:0 24px 18px;display:flex;gap:9px;flex-wrap:wrap">' +
+      '<button class="btn-sm" onclick="openEditHouse()">Edit house</button>' +
+      '<button class="btn-sm" onclick="openImportSelections()">Load selections PDF</button>' +
+      '<button class="btn-sm" onclick="openAllowances()">Set allowances</button>' +
+      '<button class="btn-sm" onclick="deleteHouse()">Delete house</button>' +
+    '</div></div>';
+
+  html += '<div class="section-title">Categories, in ordering order</div>';
+  const cats = (p.categories || []).slice().sort((a, b) =>
+    (a.orderRank || catBase(a.id).orderRank || 99) - (b.orderRank || catBase(b.id).orderRank || 99));
+  cats.forEach(cat => { html += categoryCard(p, cat); });
+
+  const cos = p.changeOrders || [];
+  html += '<div class="section-title">Change orders</div>';
+  if (!cos.length) {
+    html += '<div class="card" style="padding:18px 24px;color:#667085;font-size:13.5px">' +
+      'No change orders yet. When a category goes over its allowance the button to create one shows up there.</div>';
+  } else {
+    html += '<div class="card" style="border-left-color:var(--red)"><table class="items">' +
+      '<tr><th>Date</th><th>Category</th><th>Allowance</th><th>Spent</th><th>To bill</th><th>Status</th><th></th></tr>';
+    cos.forEach(co => {
+      html += '<tr><td>' + esc(co.date) + '</td><td class="i-name">' + esc(co.categoryName) + '</td>' +
+        '<td>' + (co.allowance == null ? '—' : fmt(co.allowance)) + '</td><td>' + fmt(co.spent) + '</td>' +
+        '<td class="num" style="color:var(--red)">' + fmt(co.amount) + '</td>' +
+        '<td><select class="btn-sm" onchange="setCOStatus(\'' + co.id + '\', this.value)">' +
+          [['pending','Pending'],['sent','Sent to Cobros'],['collected','Collected']].map(o =>
+            '<option value="' + o[0] + '"' + (co.status === o[0] ? ' selected' : '') + '>' + o[1] + '</option>').join('') +
+        '</select></td>' +
+        '<td>' + (co.cobrosCoId ? '<span class="chip green">In Cobros</span> ' :
+          '<button class="btn-sm" onclick="sendCO(\'' + co.id + '\')">Send to Cobros</button> ') +
+        '<button class="btn-sm" onclick="copyCO(\'' + co.id + '\')">Copy</button> ' +
+        '<button class="btn-sm" onclick="deleteCO(\'' + co.id + '\')">✕</button></td></tr>';
+    });
+    html += '</table></div>';
+  }
+  return html;
+}
+
+function categoryCard(p, cat) {
+  const base = catBase(cat.id);
+  const sum = cat.summary;
+  const items = cat.items || [];
+  const done = items.filter(i => ['received', 'installed'].includes(i.status)).length;
+  const rank = cat.orderRank || base.orderRank;
+
+  let budget = '';
+  if (cat.notApplicable) {
+    budget = '<div class="line muted">Does not apply to this house</div>';
+  } else if (sum.allowance === null) {
+    budget = '<div class="line muted">No allowance captured</div>' +
+             '<div class="line" style="margin-top:3px">Spent <b>' + fmt(sum.spent) + '</b></div>';
+  } else {
+    const pct = Math.min(100, sum.pct || 0);
+    const cls = sum.state === 'over' ? 'over' : (sum.state === 'close' ? 'close' : '');
+    const basis = cat.budget.type === 'percent' ? cat.budget.percent + '% of the contract price'
+                : cat.budget.type === 'perUnit' ? fmt(cat.budget.rate) + ' × ' + (cat.budget.qty || 0)
+                : '';
+    budget = '<div class="line"><b>' + fmt(sum.spent) + '</b> of ' + fmt(sum.allowance) +
+      (basis ? '<div style="font-size:11px;font-weight:400;color:var(--gray)">' + esc(basis) + '</div>' : '') + '</div>' +
+      '<div class="bar"><i class="' + cls + '" style="width:' + pct + '%"></i></div>' +
+      '<div class="line muted" style="margin-top:4px;font-size:11.5px">' +
+        (sum.state === 'over'
+          ? '<span style="color:var(--red)">Over by ' + fmt(sum.over) + '</span>'
+          : fmt(sum.remaining) + ' left') + '</div>';
+  }
+
+  let html = '<div class="cat-card s-' + sum.state + '">' +
+    '<div class="cat-head" onclick="toggleCat(\'' + cat.id + '\')">' +
+      '<div class="cat-icon">' + base.icon + '</div>' +
+      '<div><div class="cat-name"><span class="rank">' + rank + '</span> ' + esc(base.name) +
+        (base.clientSelects === false ? ' <span class="chip blue">we buy this — no client selection</span>' : '') + '</div>' +
+        '<div class="cat-sub">Installed at ' + esc(S.catalog.phases[cat.phase] || '—') +
+        ' · lead ~' + (base.leadDays || 21) + ' days · ' + done + '/' + items.length + ' received</div></div>' +
+      '<div class="cat-budget">' + budget + '</div>' +
+    '</div>' +
+    '<div id="cat-' + cat.id + '" style="display:none">';
+
+  if (base.note) html += '<div style="padding:11px 20px;font-size:12.5px;color:#667085;background:#f7f9fb;border-top:1px solid var(--border)">ℹ️ ' + esc(base.note) + '</div>';
+  if (cat.notes) html += '<div style="padding:11px 20px;font-size:12.5px;color:#48566e;background:#fffdf5;border-top:1px solid var(--border);white-space:pre-wrap">📝 ' + esc(cat.notes) + '</div>';
+
+  const stores = (base.stores || []).map(id => storeById(id)).filter(Boolean);
+  if (stores.length) {
+    html += '<div style="padding:11px 20px;font-size:12.5px;background:#fbfcfe;border-top:1px solid var(--border)">🏬 <b>Where we buy it:</b> ' +
+      stores.map(s => esc(s.name) + (s.firstOption ? ' <span class="chip green">first choice</span>' : '')).join(' · ') + '</div>';
+  }
+
+  html += '<table class="items"><tr><th></th><th>Item</th><th>Status</th><th>Allowance</th><th>Spent</th><th>Store / order</th><th>Arrives</th></tr>';
+  items.forEach(item => {
+    const spent = (item.purchases || []).reduce((s, c) => s + purchaseTotalUI(c), 0);
+    const st = statusInfo(item.status);
+    let allow = '<span class="muted">—</span>';
+    if (item.type === 'sqft') {
+      const billable = item.cap ? Math.min(item.sqft || item.cap, item.cap) : item.sqft;
+      allow = billable && item.rate
+        ? '<span class="num">' + fmt(billable * item.rate) + '</span><div class="i-sel">' +
+          billable + ' sqft × ' + fmt(item.rate) +
+          (item.cap ? ' (covers ' + item.cap + ' sqft)' : '') + '</div>'
+        : '<span style="color:var(--amber-text);font-weight:600">Needs sqft</span>' +
+          (item.rate ? '<div class="i-sel">' + fmt(item.rate) + ' / sqft</div>' : '');
+    } else if (item.type === 'unit') {
+      allow = item.rate && item.qty
+        ? '<span class="num">' + fmt(item.rate * item.qty) + '</span><div class="i-sel">' +
+          item.qty + ' × ' + fmt(item.rate) + '</div>'
+        : '<span style="color:var(--amber-text);font-weight:600">Needs a count</span>';
+    } else if (item.type === 'amount' && item.amount) {
+      allow = '<span class="num">' + fmt(item.amount) + '</span>';
+    } else if (item.type === 'category') {
+      allow = '<span class="muted">category total</span>';
+    }
+    const links = (item.links || []).map((l, i) =>
+      '<a href="' + esc(l) + '" target="_blank" onclick="event.stopPropagation()">link ' + (i + 1) + '</a>').join(' · ');
+    const thumb = (item.photos || [])[0];
+
+    html += '<tr class="row" onclick="openItem(\'' + cat.id + '\',\'' + item.id + '\')">' +
+      '<td>' + (thumb ? '<img class="thumb" src="' + esc(thumb) + '">' : '') + '</td>' +
+      '<td><div class="i-name">' + esc(item.name) +
+        (item.triggerAfter
+          ? ' <span class="chip amber">right after the ' + esc(catBase(item.triggerAfter).name.toLowerCase()) + '</span>'
+          : '') + '</div>' +
+        (item.selection ? '<div class="i-sel">' + esc(item.selection) + '</div>' : '') +
+        (links ? '<div class="i-sel">' + links + '</div>' : '') + '</td>' +
+      '<td><span class="chip ' + st.color + '">' + esc(st.name) + '</span></td>' +
+      '<td>' + allow + '</td>' +
+      '<td>' + (spent ? '<span class="num">' + fmt(spent) + '</span>' : '<span class="muted">—</span>') + '</td>' +
+      '<td>' + (item.store ? esc(item.store) : '<span class="muted">—</span>') +
+        (item.orderNo ? '<div class="i-sel">#' + esc(item.orderNo) + '</div>' : '') + '</td>' +
+      '<td>' + (item.receivedDate ? '<span style="color:var(--green);font-weight:600">' + esc(item.receivedDate) + '</span>'
+              : item.etaDate ? esc(item.etaDate) : '<span class="muted">—</span>') + '</td></tr>';
+  });
+  html += '</table>';
+
+  if ((cat.photos || []).length) {
+    html += '<div class="gallery"><div style="width:100%;font-size:11px;letter-spacing:1px;' +
+      'text-transform:uppercase;color:var(--gray);font-weight:700;margin-bottom:2px">' +
+      'Photos from the selections PDF — click one to pin it to an item</div>';
+    cat.photos.forEach(url => {
+      html += '<img src="' + esc(url) + '" onclick="pinPhoto(\'' + cat.id + '\',\'' + esc(url) + '\')">';
+    });
+    html += '</div>';
+  }
+
+  html += '<div style="padding:13px 20px;display:flex;gap:9px;flex-wrap:wrap;border-top:1px solid #f0f2f6">' +
+    '<button class="btn-sm" onclick="openNewItem(\'' + cat.id + '\')">+ Add item</button>' +
+    '<button class="btn-sm" onclick="openEditCategory(\'' + cat.id + '\')">Edit allowance</button>' +
+    '<button class="btn-sm" onclick="setNotApplicable(\'' + cat.id + '\',' + (!cat.notApplicable) + ')">' +
+      (cat.notApplicable ? 'It does apply here' : 'Does not apply here') + '</button>' +
+    (sum.state === 'over'
+      ? '<button class="btn btn-red" style="padding:7px 14px;font-size:12px" onclick="makeCO(\'' + cat.id + '\')">Create change order ' + fmt(sum.over) + '</button>'
+      : '') +
+    '</div></div></div>';
+  return html;
+}
+
+function toggleCat(catId) {
+  const el = $('cat-' + catId);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+// ── Modal plumbing ───────────────────────────────────────────
+function modal(title, body, foot, wide) {
+  $('modal').className = 'modal' + (wide ? ' wide' : '');
+  $('modal').innerHTML =
+    '<div class="modal-head"><h2 class="oswald">' + title + '</h2>' +
+    '<button class="close" onclick="closeModal()">×</button></div>' +
+    '<div class="modal-body">' + body + '</div>' +
+    (foot ? '<div class="modal-foot">' + foot + '</div>' : '');
+  $('modalBg').classList.add('on');
+}
+function closeModal() { $('modalBg').classList.remove('on'); }
+$('modalBg').addEventListener('click', e => { if (e.target === $('modalBg')) closeModal(); });
+const val = id => ($(id) ? $(id).value : undefined);
+
+// ── Item ─────────────────────────────────────────────────────
+let CUR = null;   // { catId, itemId }
+
+function storeOptions(catId, selected) {
+  const base = catBase(catId);
+  const suggested = (base.stores || []).map(id => storeById(id)).filter(Boolean);
+  const others = S.catalog.stores.filter(s => !suggested.some(x => x.id === s.id));
+  const opt = s => '<option value="' + esc(s.name) + '"' + (selected === s.name ? ' selected' : '') + '>' +
+    esc(s.name) + (s.firstOption ? ' ★' : '') + '</option>';
+  let html = '<option value="">— No store yet —</option>';
+  if (suggested.length) html += '<optgroup label="Where we buy this">' + suggested.map(opt).join('') + '</optgroup>';
+  html += '<optgroup label="All stores">' + others.map(opt).join('') + '</optgroup>';
+  // A store typed straight in stays selectable
+  if (selected && !S.catalog.stores.some(s => s.name === selected))
+    html += '<option value="' + esc(selected) + '" selected>' + esc(selected) + '</option>';
+  return html;
+}
+
+// What an allowance line is worth, worked out the same way the server does
+function itemAllowanceUI(item) {
+  const rate = Number(item.rate) || 0;
+  if (item.type === 'sqft') {
+    const cap = Number(item.cap) || 0;
+    const sqft = Number(item.sqft) || 0;
+    if (!rate) return null;
+    if (cap) return rate * Math.min(sqft || cap, cap);
+    return sqft ? rate * sqft : null;
+  }
+  if (item.type === 'unit') {
+    const qty = Number(item.qty) || 0;
+    return rate && qty ? rate * qty : null;
+  }
+  if (item.type === 'amount') return Number(item.amount) > 0 ? Number(item.amount) : null;
+  return null;                                  // shared with the category
+}
+
+function openItem(catId, itemId) {
+  const p = house();
+  const cat = p.categories.find(c => c.id === catId);
+  const item = cat.items.find(i => i.id === itemId);
+  CUR = { catId, itemId };
+  const base = catBase(catId);
+
+  // How this category is bought decides what the purchase form asks for:
+  //   invoice / generic → the vendor bills us: no product links
+  //   links            → the client picks it online: keep the links
+  //   sqft             → bought by the square foot: price per sqft and how many
+  const mode = base.tracking || 'generic';
+  const showLinks = mode === 'links';
+  const bySqft = mode === 'sqft';
+  const isInvoice = mode === 'invoice';
+
+  const statusOpts = S.catalog.statuses
+    .filter(s => base.clientSelects !== false || s.id !== 'awaiting-selection')
+    .map(s => '<option value="' + s.id + '"' + (item.status === s.id ? ' selected' : '') + '>' + s.name + '</option>')
+    .join('');
+
+  // The allowance is set on the "Set allowances" sheet, so here it is only shown
+  const allowance = itemAllowanceUI(item);
+  let allowanceLine;
+  if (item.type === 'category') {
+    allowanceLine = 'This line shares the <b>' + esc(base.name) + '</b> allowance — nothing of its own.';
+  } else if (allowance === null) {
+    allowanceLine = 'This line has its own allowance, but the figure is not captured yet.';
+  } else {
+    allowanceLine = 'Allowance for this line: <b>' + fmt(allowance) + '</b>' +
+      (item.type === 'sqft' && item.rate ? ' &nbsp;·&nbsp; ' + fmt(item.rate) + ' / sqft' : '') +
+      (item.type === 'unit' && item.rate ? ' &nbsp;·&nbsp; ' + fmt(item.rate) + ' each × ' + (item.qty || 0) : '');
+  }
+  const allowanceBox = '<div class="notice blue">' + allowanceLine +
+    '<br><span style="font-size:12px">Allowances are set on the "Set allowances" sheet for the whole house.</span></div>';
+
+  const purchases = item.purchases || [];
+  const spent = purchases.reduce((s, c) => s + purchaseTotalUI(c), 0);
+
+  let purchasesHTML = '<table class="items" style="margin-top:6px">' +
+    '<tr><th>Date</th><th>What was bought</th><th>Vendor</th>' +
+    (bySqft ? '<th>Sqft</th><th>$ / sqft</th>' : '') +
+    '<th>Total</th><th></th></tr>';
+  if (!purchases.length) {
+    purchasesHTML += '<tr><td colspan="' + (bySqft ? 7 : 5) + '" class="muted" style="padding:14px">' +
+      'Nothing recorded yet.</td></tr>';
+  } else {
+    purchases.forEach(c => {
+      purchasesHTML += '<tr><td>' + esc(c.date) + '</td>' +
+        '<td>' + esc(c.description || '—') +
+          (c.receipt ? ' <a href="' + esc(c.receipt) + '" target="_blank">file</a>' : '') + '</td>' +
+        '<td>' + esc(c.store || '—') + '</td>' +
+        (bySqft ? '<td>' + (c.sqftBought || '<span class="muted">—</span>') + '</td>' +
+                  '<td>' + (c.pricePerSqft ? fmt(c.pricePerSqft) : '<span class="muted">—</span>') + '</td>' : '') +
+        '<td class="num">' + fmt(purchaseTotalUI(c)) + '</td>' +
+        '<td><button class="btn-sm" onclick="deletePurchase(\'' + c.id + '\')">&times;</button></td></tr>';
+    });
+    purchasesHTML += '<tr><td colspan="' + (bySqft ? 5 : 3) + '" style="text-align:right;font-weight:700">Total spent</td>' +
+      '<td class="num">' + fmt(spent) + '</td><td></td></tr>';
+  }
+  purchasesHTML += '</table>';
+
+  // Photos pulled from the selections PDF, ready to pin to this line
+  let photosHTML = '';
+  const gallery = cat.photos || [];
+  if (gallery.length) {
+    photosHTML = '<div class="section-title" style="margin-top:6px">Photos</div>' +
+      '<div class="gallery" style="border:1px solid var(--border);border-radius:11px;background:#fbfcfe">' +
+      '<div style="width:100%;font-size:12px;color:var(--gray);margin-bottom:4px">' +
+      'Click a photo to pin it to this line (green = pinned).</div>' +
+      gallery.map(url => '<img class="' + ((item.photos || []).includes(url) ? 'picked' : '') +
+        '" src="' + esc(url) + '" onclick="togglePhoto(\'' + esc(url) + '\', this)">').join('') + '</div>';
+  }
+
+  const body =
+    '<div class="field"><label>What the client picked</label>' +
+      '<textarea id="f-selection">' + esc(item.selection) + '</textarea></div>' +
+    (showLinks
+      ? '<div class="field"><label>Product links (one per line)</label>' +
+        '<textarea id="f-links" placeholder="https://www.homedepot.com/...">' +
+        esc((item.links || []).join('\n')) + '</textarea></div>'
+      : '') +
+    allowanceBox +
+    '<div class="row2"><div class="field"><label>Status</label><select id="f-status">' + statusOpts + '</select></div>' +
+      '<div class="field"><label>Vendor</label><select id="f-store">' + storeOptions(catId, item.store) + '</select>' +
+      '<div style="margin-top:6px"><button class="btn-sm" onclick="openNewStore()">+ Add a vendor</button></div></div></div>' +
+    '<div class="row3"><div class="field"><label>Ordered on</label>' +
+      '<input type="date" id="f-orderDate" value="' + esc(item.orderDate) + '"></div>' +
+      '<div class="field"><label>Expected</label><input type="date" id="f-etaDate" value="' + esc(item.etaDate) + '"></div>' +
+      '<div class="field"><label>Received on</label><input type="date" id="f-receivedDate" value="' + esc(item.receivedDate) + '"></div></div>' +
+    '<div class="field"><label>Notes</label><textarea id="f-notes">' + esc(item.notes) + '</textarea></div>' +
+    photosHTML +
+
+    '<div class="section-title" style="margin-top:8px">' +
+      (isInvoice ? 'Vendor invoices' : 'Purchases') + '</div>' + purchasesHTML +
+
+    '<div class="gray-box" style="margin-top:14px">' +
+      '<div style="font-weight:700;margin-bottom:11px;font-size:13px">' +
+        (isInvoice ? 'Add a vendor invoice' : 'Add a purchase') + '</div>' +
+      (isInvoice
+        ? '<div class="notice blue" style="margin-bottom:12px">Upload the invoice from ' +
+          esc((base.stores || []).map(id => (storeById(id) || {}).name).filter(Boolean).join(' / ')) +
+          ' and put the billed total in. The tool checks it against the allowance.</div>'
+        : '') +
+      (bySqft
+        ? '<div class="notice blue" style="margin-bottom:12px">Put in what was actually paid per square ' +
+          'foot and how many square feet this house takes of it — the tool multiplies them. These are the ' +
+          'sqft of tile, flooring or stone, <b>not</b> the square footage of the house.</div>'
+        : '') +
+
+      '<div class="row3"><div class="field"><label>Date ordered</label>' +
+        '<input type="date" id="c-date" value="' + today() + '"></div>' +
+        '<div class="field"><label>Vendor</label><select id="c-store">' + storeOptions(catId, item.store) + '</select></div>' +
+        '<div class="field"><label>' + (isInvoice ? 'Invoice #' : 'Order #') + '</label>' +
+          '<input type="text" id="c-orderNo"></div></div>' +
+
+      '<div class="field"><label>What was bought</label>' +
+        '<input type="text" id="c-description" placeholder="e.g. 4 matte black ceiling fans"></div>' +
+
+      (bySqft
+        ? '<div class="row3"><div class="field"><label>Price paid per sqft</label>' +
+            '<input type="number" step="0.01" id="c-persqft" oninput="syncSqftTotal()"></div>' +
+          '<div class="field"><label>Sqft this house takes</label>' +
+            '<input type="number" step="0.01" id="c-sqft" oninput="syncSqftTotal()"></div>' +
+          '<div class="field"><label>Total</label>' +
+            '<input type="number" step="0.01" id="c-total"></div></div>'
+        : '<div class="field" style="max-width:260px"><label>Total</label>' +
+          '<input type="number" step="0.01" id="c-total"></div>') +
+
+      '<div class="field"><label>' + (isInvoice ? 'Invoice file' : 'Receipt') + ' (photo or PDF, optional)</label>' +
+        '<input type="file" id="c-receipt" accept="image/*,application/pdf"></div>' +
+      '<button class="btn btn-green" onclick="addPurchase(' + (isInvoice ? 'true' : 'false') + ')">' +
+        (isInvoice ? 'Add invoice' : 'Add purchase') + '</button></div>';
+
+  modal(esc(item.name) + ' <span style="font-size:13px;color:#8fa0bb;font-family:Inter">· ' + esc(base.name) + '</span>',
+    body,
+    '<button class="btn-sm" onclick="deleteItem()">Delete line</button>' +
+    '<button class="btn-sm" onclick="closeModal()">Cancel</button>' +
+    '<button class="btn btn-navy" onclick="saveItem()">Save</button>', true);
+}
+
+// Older entries were captured as subtotal + tax + shipping; new ones carry one total
+function purchaseTotalUI(c) {
+  if (c.total !== undefined && c.total !== null && c.total !== '') return Number(c.total) || 0;
+  return (Number(c.subtotal) || 0) + (Number(c.tax) || 0) + (Number(c.shipping) || 0);
+}
+
+// Sqft categories: price per sqft × sqft fills the total in
+function syncSqftTotal() {
+  const rate = Number(val('c-persqft')) || 0;
+  const sqft = Number(val('c-sqft')) || 0;
+  if (rate && sqft && $('c-total')) $('c-total').value = Math.round(rate * sqft * 100) / 100;
+}
+
+let PHOTO_PICK = null;   // photos chosen inside the open modal
+
+function togglePhoto(url, el) {
+  const p = house();
+  const cat = p.categories.find(c => c.id === CUR.catId);
+  const item = cat.items.find(i => i.id === CUR.itemId);
+  if (!PHOTO_PICK) PHOTO_PICK = (item.photos || []).slice();
+  const i = PHOTO_PICK.indexOf(url);
+  if (i === -1) PHOTO_PICK.push(url); else PHOTO_PICK.splice(i, 1);
+  el.classList.toggle('picked');
+}
+
+async function saveItem() {
+  const body = {
+    selection: val('f-selection'),
+    status: val('f-status'), store: val('f-store'),
+    orderDate: val('f-orderDate'), etaDate: val('f-etaDate'), receivedDate: val('f-receivedDate'),
+    notes: val('f-notes')
+  };
+  if ($('f-links')) body.links = (val('f-links') || '').split('\n').map(s => s.trim()).filter(Boolean);
+  if (PHOTO_PICK) body.photos = PHOTO_PICK;
+
+  await apiJSON('/api/projects/' + S.houseId + '/categories/' + CUR.catId + '/items/' + CUR.itemId, 'PUT', body);
+  PHOTO_PICK = null;
+  closeModal(); await load(); openHouse(S.houseId); toast('Saved');
+}
+
+async function addPurchase(isInvoice) {
+  const total = Number(val('c-total')) || 0;
+  if (!total) { toast('Put the total in'); return; }
+
+  let receipt = '';
+  const file = $('c-receipt').files[0];
+  if (file) {
+    const fd = new FormData(); fd.append('receipt', file);
+    const up = await api('/api/upload', { method: 'POST', body: fd });
+    receipt = up.url;
+  }
+  await apiJSON('/api/projects/' + S.houseId + '/categories/' + CUR.catId + '/items/' + CUR.itemId + '/purchases', 'POST', {
+    date: val('c-date'), description: val('c-description'), store: val('c-store'),
+    orderNo: val('c-orderNo'), total, receipt, isInvoice,
+    pricePerSqft: val('c-persqft'), sqftBought: val('c-sqft')
+  });
+  const keep = CUR; PHOTO_PICK = null;
+  await load(); openItem(keep.catId, keep.itemId);
+  toast(isInvoice ? 'Invoice recorded' : 'Purchase recorded');
+}
+
+async function deletePurchase(pid) {
+  if (!confirm('Delete this entry?')) return;
+  await api('/api/projects/' + S.houseId + '/categories/' + CUR.catId + '/items/' + CUR.itemId + '/purchases/' + pid,
+    { method: 'DELETE' });
+  const keep = CUR; PHOTO_PICK = null;
+  await load(); openItem(keep.catId, keep.itemId);
+}
+
+async function deleteItem() {
+  if (!confirm('Delete this item and everything recorded on it?')) return;
+  await api('/api/projects/' + S.houseId + '/categories/' + CUR.catId + '/items/' + CUR.itemId, { method: 'DELETE' });
+  closeModal(); await load(); openHouse(S.houseId); toast('Item deleted');
+}
+
+// Pin a gallery photo straight to an item
+function pinPhoto(catId, url) {
+  const cat = house().categories.find(c => c.id === catId);
+  modal('Pin this photo',
+    '<div style="text-align:center;margin-bottom:16px"><img src="' + esc(url) +
+      '" style="max-width:100%;max-height:340px;border-radius:11px;border:1px solid var(--border)"></div>' +
+    '<div class="field"><label>Which item is this?</label><select id="pin-item">' +
+      cat.items.map(i => '<option value="' + i.id + '">' + esc(i.name) + '</option>').join('') +
+    '</select></div>',
+    '<button class="btn-sm" onclick="closeModal()">Cancel</button>' +
+    '<button class="btn btn-navy" onclick="doPin(\'' + catId + '\',\'' + esc(url) + '\')">Pin photo</button>');
+}
+
+async function doPin(catId, url) {
+  const itemId = val('pin-item');
+  const cat = house().categories.find(c => c.id === catId);
+  const item = cat.items.find(i => i.id === itemId);
+  const photos = Array.from(new Set((item.photos || []).concat([url])));
+  await apiJSON('/api/projects/' + S.houseId + '/categories/' + catId + '/items/' + itemId, 'PUT', { photos });
+  closeModal(); await load(); openHouse(S.houseId); toast('Photo pinned');
+}
+
+// ── New item ─────────────────────────────────────────────────
+function openNewItem(catId) {
+  modal('Add an item to ' + esc(catBase(catId).name),
+    '<div class="field"><label>Item name</label>' +
+      '<input type="text" id="ni-name" placeholder="e.g. Patio ceiling fan" autofocus></div>' +
+    '<div class="field"><label>How is it budgeted?</label><select id="ni-type">' +
+      '<option value="category">Comes out of the category allowance</option>' +
+      '<option value="sqft">Has a $/sqft rate</option>' +
+      '<option value="amount">Has its own dollar allowance</option></select></div>' +
+    '<div class="row2"><div class="field"><label>Rate per sqft (if any)</label>' +
+      '<input type="number" step="0.01" id="ni-rate"></div>' +
+      '<div class="field"><label>Dollar allowance (if any)</label><input type="number" step="0.01" id="ni-amount"></div></div>' +
+    '<div class="field"><label>Order position (optional)</label>' +
+      '<input type="number" id="ni-rank" placeholder="Leave blank to follow the category"></div>',
+    '<button class="btn-sm" onclick="closeModal()">Cancel</button>' +
+    '<button class="btn btn-navy" onclick="createItem(\'' + catId + '\')">Add</button>');
+}
+
+async function createItem(catId) {
+  const name = val('ni-name');
+  if (!name) { toast('Give the item a name'); return; }
+  await apiJSON('/api/projects/' + S.houseId + '/categories/' + catId + '/items', 'POST', {
+    name, type: val('ni-type'), rate: val('ni-rate'), amount: val('ni-amount'), orderRank: val('ni-rank')
+  });
+  closeModal(); await load(); openHouse(S.houseId); toggleCat(catId); toast('Item added');
+}
+
+// ── Edit a category's allowance ──────────────────────────────
+function openEditCategory(catId) {
+  const cat = house().categories.find(c => c.id === catId);
+  const base = catBase(catId);
+  const types = [
+    ['amount', 'One dollar amount for the category'],
+    ['perItem', 'Per item / per sqft'],
+    ['open', 'Not defined yet']
+  ];
+  modal('Allowance — ' + esc(base.name),
+    (base.note ? '<div class="notice blue">' + esc(base.note) + '</div>' : '') +
+    '<div class="field"><label>How the allowance works</label><select id="ec-type" onchange="toggleCatAmount()">' +
+      types.map(t => '<option value="' + t[0] + '"' + (cat.budget.type === t[0] ? ' selected' : '') + '>' + t[1] + '</option>').join('') +
+      '</select></div>' +
+    '<div class="field" id="ec-amount-box"><label>Allowance amount</label>' +
+      '<input type="number" step="0.01" id="ec-amount" value="' + (cat.budget.amount || '') + '"></div>' +
+    '<div class="row2"><div class="field"><label>Installed at which phase</label><select id="ec-phase">' +
+      S.catalog.phases.map((f, i) => '<option value="' + i + '"' + (cat.phase === i ? ' selected' : '') + '>' + f + '</option>').join('') +
+      '</select></div>' +
+      '<div class="field"><label>Order position</label>' +
+        '<input type="number" id="ec-rank" value="' + (cat.orderRank || base.orderRank || '') + '"></div></div>' +
+    '<div class="field"><label>Category notes</label><textarea id="ec-notes">' + esc(cat.notes || '') + '</textarea></div>',
+    '<button class="btn-sm" onclick="closeModal()">Cancel</button>' +
+    '<button class="btn btn-navy" onclick="saveCategory(\'' + catId + '\')">Save</button>');
+  toggleCatAmount();
+}
+function toggleCatAmount() {
+  $('ec-amount-box').style.display = val('ec-type') === 'amount' ? 'block' : 'none';
+}
+async function saveCategory(catId) {
+  await apiJSON('/api/projects/' + S.houseId + '/categories/' + catId, 'PUT', {
+    budget: { type: val('ec-type'), amount: val('ec-amount') },
+    phase: val('ec-phase'), orderRank: val('ec-rank'), notes: val('ec-notes')
+  });
+  closeModal(); await load(); openHouse(S.houseId); toggleCat(catId); toast('Allowance updated');
+}
+
+async function setNotApplicable(catId, value) {
+  await apiJSON('/api/projects/' + S.houseId + '/categories/' + catId, 'PUT', { notApplicable: value });
+  await load(); openHouse(S.houseId);
+  toast(value ? 'Marked as not applicable' : 'Category turned back on');
+}
+
+// ── New house wizard ─────────────────────────────────────────
+let WIZ = { selections: null, contract: null };
+
+function houseFields(p) {
+  p = p || {};
+  const opts = ['<option value="">— Do not link —</option>'].concat(
+    S.reports.map(c => '<option value="' + c.id + '"' + (p.reportsId === c.id ? ' selected' : '') + '>' +
+      esc(c.name) + ' (' + (S.catalog.phases[c.phase] || '?') + ')</option>')).join('');
+  return '<div class="row2"><div class="field"><label>House name</label>' +
+      '<input type="text" id="h-name" value="' + esc(p.name || '') + '"></div>' +
+    '<div class="field"><label>Client</label><input type="text" id="h-client" value="' + esc(p.client || '') + '"></div></div>' +
+    '<div class="field"><label>Address</label><input type="text" id="h-address" value="' + esc(p.address || '') + '"></div>' +
+    '<div class="row2"><div class="field"><label>Square footage</label>' +
+      '<input type="number" id="h-sqft" value="' + (p.sqft || '') + '"></div>' +
+      '<div class="field"><label>Total contract price</label>' +
+        '<input type="number" step="0.01" id="h-price" value="' + (p.contractPrice || '') + '"></div></div>' +
+    '<div class="row2"><div class="field"><label>Construction phase right now</label><select id="h-phase">' +
+        S.catalog.phases.map((f, i) => '<option value="' + i + '"' + (p.phase === i ? ' selected' : '') + '>' + f + '</option>').join('') +
+      '</select></div>' +
+      '<div class="field"></div></div>' +
+    (S.reports.length
+      ? '<div class="field"><label>Link to the scheduling board (pulls the phase automatically)</label>' +
+        '<select id="h-reports">' + opts + '</select></div>'
+      : '');
+}
+
+function openNewHouse() {
+  WIZ = { selections: null, contract: null };
+  modal('New house',
+    '<div class="notice blue">Attach the <b>selections package</b> and the tool fills the house in for you: ' +
+      'what the client picked, the product links and the showroom photos. It is optional — you can start ' +
+      'empty and load it later. The allowances are typed in from the signed contract on the next screen.</div>' +
+    houseFields() +
+    '<div class="field"><label>Selections PDF</label><input type="file" id="h-sel-pdf" accept="application/pdf"></div>' +
+    '<div id="h-result"></div>',
+    '<button class="btn-sm" onclick="closeModal()">Cancel</button>' +
+    '<button class="btn btn-red" id="h-btn" onclick="readHousePDFs()">Read the PDF</button>', true);
+}
+
+async function readHousePDFs() {
+  const selFile = $('h-sel-pdf').files[0];
+  if (!selFile) { createHouse(); return; }
+
+  $('h-btn').disabled = true; $('h-btn').textContent = 'Reading...';
+
+  const fd = new FormData(); fd.append('pdf', selFile);
+  try { WIZ.selections = await api('/api/read-selections', { method: 'POST', body: fd }); }
+  catch (_) { $('h-btn').disabled = false; $('h-btn').textContent = 'Read the PDF'; return; }
+
+  if (!val('h-name') && WIZ.selections.project) $('h-name').value = WIZ.selections.project.replace(/\s*Residence\s*$/i, '');
+  if (!val('h-client')) $('h-client').value = WIZ.selections.client || '';
+  if (!val('h-address')) $('h-address').value = WIZ.selections.address || '';
+  if (!val('h-sqft')) $('h-sqft').value = WIZ.selections.sqft || '';
+
+  $('h-result').innerHTML = selectionsSummary(WIZ.selections);
+  $('h-btn').disabled = false;
+  $('h-btn').textContent = 'Create the house';
+  $('h-btn').setAttribute('onclick', 'createHouse()');
+}
+
+function selectionsSummary(sel) {
+  let html = '<div class="gray-box" style="margin-top:6px">' +
+    '<div style="font-weight:700;margin-bottom:8px">From the selections PDF</div>' +
+    '<div style="font-size:13.5px;line-height:1.8">' +
+    '<b>Client:</b> ' + esc(sel.client || '—') + '<br>' +
+    '<b>Address:</b> ' + esc(sel.address || '—') + '<br>' +
+    '<b>Square footage:</b> ' + (sel.sqft ? sel.sqft.toLocaleString('en-US') + ' sqft' : '—') + '</div>' +
+    '<div style="margin-top:12px;font-weight:700">What we order</div><div style="font-size:13px;line-height:1.8">';
+  Object.entries(sel.selections || {}).forEach(([catId, info]) => {
+    const picked = Object.values(info.items).filter(i => i.text || i.links.length).length;
+    const total = Object.keys(info.items).length;
+    const photos = (sel.photoUrls[catId] || []).length;
+    html += catBase(catId).icon + ' <b>' + esc(catBase(catId).name) + '</b>: ' + picked + ' of ' + total +
+      ' picked' + (photos ? ' · ' + photos + ' photos' : '') + '<br>';
+  });
+  html += '</div>';
+  if ((sel.notApplicable || []).length) {
+    html += '<div style="margin-top:10px;font-size:13px;color:var(--amber-text)">⚠️ Not applicable on this house: ' +
+      sel.notApplicable.map(c => esc(catBase(c).name)).join(', ') + '</div>';
+  }
+  return html + '</div>';
+}
+
+async function createHouse() {
+  const name = val('h-name');
+  if (!name && !(WIZ.selections && WIZ.selections.project)) { toast('Give the house a name'); return; }
+  const created = await apiJSON('/api/projects', 'POST', {
+    name, client: val('h-client'), address: val('h-address'), sqft: val('h-sqft'),
+    contractPrice: val('h-price'),
+    phase: Number(val('h-phase')), reportsId: val('h-reports') || '',
+    selections: WIZ.selections
+  });
+  closeModal(); await load(); openHouse(created.id);
+  toast('House created · ' + created.appliedSelections + ' selections loaded');
+}
+
+// ── The allowance sheet — every figure typed in by hand ──────
+// One screen for the whole house, straight off the signed contract.
+// The five bases the signed Exhibit A actually uses
+const ITEM_BASES = [
+  ['category', 'Shared with the category'],
+  ['amount',   'Its own amount'],
+  ['unit',     '$ each'],
+  ['sqft',     '$ per sqft']
+];
+
+// The five bases the signed Exhibit A actually uses
+const BUDGET_TYPES = [
+  ['amount',  'One amount for the whole category'],
+  ['percent', 'A % of the contract price'],
+  ['perUnit', 'A rate times a count (e.g. $22 per door)'],
+  ['perItem', 'No single figure — each line below has its own'],
+  ['open',    'Not defined yet']
+];
+
+const SHARE_TEXT = {
+  amount:  'Everything in this category shares this one amount — whatever is spent on any of it comes out of the same pot.',
+  percent: 'Everything in this category shares what that percentage works out to.',
+  perUnit: 'Everything in this category shares what that rate times the count works out to.',
+  perItem: 'This category has no figure of its own — only the lines listed below.',
+  open:    'No allowance captured for this category yet.'
+};
+
+// Values live here while the sheet is open, so lines can be added to or
+// taken out of the split without losing what has been typed.
+let DRAFT = {};
+
+function initDraft(project) {
+  DRAFT = {};
+  (project.categories || []).forEach(cat => (cat.items || []).forEach(i => {
+    const basis = i.type || 'category';
+    DRAFT[i.id] = {
+      basis,
+      value: basis === 'amount' ? (i.amount == null ? '' : i.amount) : (i.rate == null ? '' : i.rate),
+      count: basis === 'unit' ? (i.qty == null ? '' : i.qty) : (i.sqft == null ? '' : i.sqft),
+      cap: i.cap == null ? '' : i.cap
+    };
+  }));
+}
+
+const draftOf = id => (DRAFT[id] || (DRAFT[id] = { basis: 'category', value: '', count: '', cap: '' }));
+function draftSet(id, field, v) { draftOf(id)[field] = v; refreshPercents(); }
+
+// A line is "split out" when the contract gives it its own price
+const isSplit = id => draftOf(id).basis !== 'category';
+const splitItems = cat => (cat.items || []).filter(i => isSplit(i.id));
+
+function openAllowances() {
+  const p = house();
+  initDraft(p);
+
+  let html = '<div class="notice blue">Type the figures straight off the signed contract. ' +
+    'Nothing here is guessed — what you enter is exactly what the alerts compare against, and ' +
+    'tax and shipping count toward it.<br><br>' +
+    'Most categories are one pot of money for everything in them: put in the one figure and you ' +
+    'are done. Only pull a line out on its own when the contract gives that line its own price — ' +
+    'like the toilets by the piece, or the water heater.</div>';
+
+  html += '<div class="gray-box"><div class="row2">' +
+    '<div class="field" style="margin-bottom:0"><label>Total contract price</label>' +
+      '<input type="number" step="0.01" id="al-price" value="' + (p.contractPrice || '') +
+      '" oninput="refreshPercents()"></div>' +
+    '<div class="field" style="margin-bottom:0"><label>Attach the signed contract (reference only)</label>' +
+      '<input type="file" id="al-contract" accept="application/pdf">' +
+      (p.files && p.files.contract
+        ? '<div style="margin-top:6px"><a href="' + esc(p.files.contract) + '" target="_blank">open the one on file</a></div>'
+        : '') + '</div>' +
+    '</div><div style="font-size:12px;color:var(--gray);margin-top:9px">' +
+    'The percentage allowances are worked out from this number.</div></div>';
+
+  (p.categories || []).slice()
+    .sort((a, b) => (a.orderRank || 99) - (b.orderRank || 99))
+    .forEach(cat => {
+      const base = catBase(cat.id);
+      const b = cat.budget || {};
+      const type = b.type || 'open';
+
+      html += '<div class="gray-box">' +
+        '<div style="display:flex;gap:11px;align-items:center;flex-wrap:wrap;margin-bottom:11px">' +
+          '<span class="rank">' + (cat.orderRank || base.orderRank) + '</span>' +
+          '<div class="cat-name" style="font-size:16px">' + base.icon + ' ' + esc(base.name) + '</div>' +
+          (cat.notApplicable ? '<span class="chip gray">does not apply here</span>' : '') +
+        '</div>' +
+        '<div class="field" style="margin-bottom:11px"><label>How it is budgeted</label>' +
+          '<select id="al-t-' + cat.id + '" onchange="allowanceRows(\'' + cat.id + '\')">' +
+          BUDGET_TYPES
+            .filter(t => base.splittable !== false || t[0] !== 'perItem')
+            .map(t => '<option value="' + t[0] + '"' + (type === t[0] ? ' selected' : '') + '>' +
+              t[1] + '</option>').join('') + '</select></div>' +
+
+        '<div class="field" id="al-amt-' + cat.id + '" style="margin-bottom:0"><label>Allowance amount</label>' +
+          '<input type="number" step="0.01" id="al-a-' + cat.id + '" value="' + (b.amount || '') + '"></div>' +
+
+        '<div class="row2" id="al-pct-' + cat.id + '">' +
+          '<div class="field" style="margin-bottom:0"><label>Percent of the contract price</label>' +
+            '<input type="number" step="0.01" id="al-p-' + cat.id + '" value="' + (b.percent || '') +
+            '" oninput="refreshPercents()"></div>' +
+          '<div class="field" style="margin-bottom:0"><label>Works out to</label>' +
+            '<div id="al-pv-' + cat.id + '" style="padding:10px 0;font-family:Oswald;font-size:20px;font-weight:600"></div></div>' +
+        '</div>' +
+
+        '<div class="row3" id="al-unit-' + cat.id + '">' +
+          '<div class="field" style="margin-bottom:0"><label>Rate each</label>' +
+            '<input type="number" step="0.01" id="al-ur-' + cat.id + '" value="' + (b.rate || '') +
+            '" oninput="refreshPercents()"></div>' +
+          '<div class="field" style="margin-bottom:0"><label>How many</label>' +
+            '<input type="number" step="1" id="al-uq-' + cat.id + '" value="' + (b.qty || '') +
+            '" oninput="refreshPercents()"></div>' +
+          '<div class="field" style="margin-bottom:0"><label>Works out to</label>' +
+            '<div id="al-uv-' + cat.id + '" style="padding:10px 0;font-family:Oswald;font-size:20px;font-weight:600"></div></div>' +
+        '</div>' +
+
+        '<div style="font-size:12.5px;color:var(--gray);margin-top:10px" id="al-sharetext-' + cat.id + '"></div>' +
+        '<div id="al-split-' + cat.id + '"></div>' +
+
+        (base.note ? '<div style="font-size:12px;color:var(--gray);margin-top:9px">&#8505;&#65039; ' + esc(base.note) + '</div>' : '') +
+      '</div>';
+    });
+
+  modal('Allowances — ' + esc(p.name), html,
+    '<button class="btn-sm" onclick="closeModal()">Cancel</button>' +
+    '<button class="btn btn-navy" onclick="saveAllowances()">Save all allowances</button>', true);
+
+  (p.categories || []).forEach(cat => allowanceRows(cat.id));
+}
+
+// The lines the contract prices on their own — only those, never the full list
+function renderSplit(catId) {
+  const box = $('al-split-' + catId);
+  if (!box) return;
+  const cat = (house().categories || []).find(c => c.id === catId);
+  const base = catBase(catId);
+
+  if (!cat || base.splittable === false) { box.innerHTML = ''; return; }
+
+  const split = splitItems(cat);
+  const rest = (cat.items || []).filter(i => !isSplit(i.id));
+
+  let html = '';
+  if (split.length) {
+    html += '<div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gray);' +
+      'font-weight:700;margin:14px 0 6px">Lines the contract prices on their own</div>' +
+      '<table class="items"><tr><th>Line</th><th>Basis</th><th>Rate / amount</th>' +
+      '<th>How many / sqft</th><th>Covers up to</th><th>Allowance</th><th></th></tr>';
+
+    split.forEach(i => {
+      const d = draftOf(i.id);
+      const needsCount = d.basis === 'unit' || d.basis === 'sqft';
+      html += '<tr><td class="i-name">' + esc(i.name) + '</td>' +
+        '<td><select onchange="draftBasis(\'' + catId + '\',\'' + i.id + '\',this.value)">' +
+          ITEM_BASES.map(t => '<option value="' + t[0] + '"' + (d.basis === t[0] ? ' selected' : '') + '>' +
+            t[1] + '</option>').join('') + '</select></td>' +
+        '<td><input type="number" step="0.01" value="' + d.value +
+          '" oninput="draftSet(\'' + i.id + '\',\'value\',this.value)" style="width:95px"></td>' +
+        '<td>' + (needsCount
+          ? '<input type="number" step="0.01" value="' + d.count +
+            '" oninput="draftSet(\'' + i.id + '\',\'count\',this.value)" style="width:95px">'
+          : '<span class="muted">—</span>') + '</td>' +
+        '<td>' + (d.basis === 'sqft'
+          ? '<input type="number" step="0.01" value="' + d.cap + '" placeholder="no cap"' +
+            ' oninput="draftSet(\'' + i.id + '\',\'cap\',this.value)" style="width:90px">'
+          : '<span class="muted">—</span>') + '</td>' +
+        '<td class="num" id="al-iv-' + i.id + '"></td>' +
+        '<td><button class="btn-sm" onclick="draftBasis(\'' + catId + '\',\'' + i.id + '\',\'category\')"' +
+          ' title="Put it back in the shared pot">&times;</button></td></tr>';
+    });
+    html += '</table>';
+  }
+
+  if (rest.length) {
+    html += '<div style="margin-top:' + (split.length ? '10px' : '8px') + ';display:flex;gap:8px;' +
+      'align-items:center;flex-wrap:wrap;font-size:12.5px;color:var(--gray)">' +
+      'Does the contract price one of these on its own? ' +
+      '<select id="al-add-' + catId + '" style="width:auto;min-width:210px">' +
+        rest.map(i => '<option value="' + i.id + '">' + esc(i.name) + '</option>').join('') +
+      '</select>' +
+      '<button class="btn-sm" onclick="addSplit(\'' + catId + '\')">Give it its own price</button></div>';
+  }
+
+  box.innerHTML = html;
+  refreshPercents();
+}
+
+function draftBasis(catId, itemId, basis) {
+  const d = draftOf(itemId);
+  d.basis = basis;
+  if (basis === 'category') { d.value = ''; d.count = ''; d.cap = ''; }
+  renderSplit(catId);
+}
+
+function addSplit(catId) {
+  const id = val('al-add-' + catId);
+  if (!id) return;
+  draftOf(id).basis = 'amount';
+  renderSplit(catId);
+}
+
+// Show only the inputs that matter for the chosen basis
+function allowanceRows(catId) {
+  const type = val('al-t-' + catId);
+  const show = (id, on) => { const el = $(id); if (el) el.style.display = on ? '' : 'none'; };
+  show('al-amt-' + catId, type === 'amount');
+  show('al-pct-' + catId, type === 'percent');
+  show('al-unit-' + catId, type === 'perUnit');
+
+  const text = $('al-sharetext-' + catId);
+  if (text) text.textContent = SHARE_TEXT[type] || '';
+
+  renderSplit(catId);
+}
+
+// Live math, so every figure can be checked against the contract on screen
+function refreshPercents() {
+  const price = Number(val('al-price')) || 0;
+  (house().categories || []).forEach(cat => {
+    const pv = $('al-pv-' + cat.id);
+    if (pv) {
+      const pct = Number(val('al-p-' + cat.id)) || 0;
+      pv.innerHTML = (pct && price) ? fmt(price * pct / 100)
+        : '<span style="color:var(--amber-text);font-size:14px">needs both numbers</span>';
+    }
+    const uv = $('al-uv-' + cat.id);
+    if (uv) {
+      const rate = Number(val('al-ur-' + cat.id)) || 0;
+      const qty = Number(val('al-uq-' + cat.id)) || 0;
+      uv.innerHTML = (rate && qty) ? fmt(rate * qty)
+        : '<span style="color:var(--amber-text);font-size:14px">needs both numbers</span>';
+    }
+    (cat.items || []).forEach(i => {
+      const cell = $('al-iv-' + i.id);
+      if (!cell) return;
+      const d = draftOf(i.id);
+      const value = Number(d.value) || 0;
+      const count = Number(d.count) || 0;
+      const cap = Number(d.cap) || 0;
+      let total = 0;
+      if (d.basis === 'amount') total = value;
+      else if (d.basis === 'unit') total = value * count;
+      else if (d.basis === 'sqft') total = value * (cap ? Math.min(count || cap, cap) : count);
+      cell.innerHTML = total ? fmt(total) : '<span class="muted">—</span>';
+    });
+  });
+}
+
+async function saveAllowances() {
+  const p = house();
+
+  const file = $('al-contract').files[0];
+  if (file) {
+    const fd = new FormData(); fd.append('contract', file);
+    const up = await api('/api/upload', { method: 'POST', body: fd });
+    await apiJSON('/api/projects/' + S.houseId, 'PUT', { contractUrl: up.url });
+  }
+
+  const categories = (p.categories || []).map(cat => ({
+    id: cat.id,
+    type: val('al-t-' + cat.id),
+    amount: val('al-a-' + cat.id),
+    percent: val('al-p-' + cat.id),
+    rate: val('al-ur-' + cat.id),
+    qty: val('al-uq-' + cat.id),
+    items: (cat.items || []).map(i => {
+      const d = draftOf(i.id);
+      const row = { id: i.id, type: d.basis, rate: '', amount: '', sqft: '', qty: '', cap: '' };
+      if (d.basis === 'amount') row.amount = d.value;
+      if (d.basis === 'unit') { row.rate = d.value; row.qty = d.count; }
+      if (d.basis === 'sqft') { row.rate = d.value; row.sqft = d.count; row.cap = d.cap; }
+      return row;
+    })
+  }));
+
+  const r = await apiJSON('/api/projects/' + S.houseId + '/allowances', 'POST', {
+    contractPrice: val('al-price'), categories
+  });
+  closeModal(); await load(); openHouse(S.houseId);
+  toast('Allowances saved · house total ' + fmt(r.summary.allowanceTotal));
+}
+
+// ── Load PDFs into a house that already exists ───────────────
+function openImportSelections() {
+  WIZ.selections = null;
+  modal('Load the selections PDF',
+    '<div class="notice blue">Fills in what the client picked, the product links and the showroom photos. ' +
+      'Anything already captured by hand is kept.</div>' +
+    '<div class="field"><label>Selections PDF</label><input type="file" id="is-pdf" accept="application/pdf"></div>' +
+    '<div id="is-result"></div>',
+    '<button class="btn-sm" onclick="closeModal()">Cancel</button>' +
+    '<button class="btn btn-red" id="is-btn" onclick="readSelectionsOnly()">Read PDF</button>', true);
+}
+
+async function readSelectionsOnly() {
+  const file = $('is-pdf').files[0];
+  if (!file) { toast('Pick the PDF first'); return; }
+  $('is-btn').disabled = true; $('is-btn').textContent = 'Reading...';
+  const fd = new FormData(); fd.append('pdf', file);
+  try { WIZ.selections = await api('/api/read-selections', { method: 'POST', body: fd }); }
+  catch (_) { $('is-btn').disabled = false; $('is-btn').textContent = 'Read PDF'; return; }
+  $('is-result').innerHTML = selectionsSummary(WIZ.selections);
+  $('is-btn').disabled = false;
+  $('is-btn').textContent = 'Apply to this house';
+  $('is-btn').setAttribute('onclick', 'applySelections()');
+}
+
+async function applySelections() {
+  const r = await apiJSON('/api/projects/' + S.houseId + '/apply-selections', 'POST', { selections: WIZ.selections });
+  closeModal(); await load(); openHouse(S.houseId);
+  toast(r.applied + ' selections loaded');
+}
+
+
+// ── Edit / delete a house ────────────────────────────────────
+function openEditHouse() {
+  modal('Edit house', houseFields(house()),
+    '<button class="btn-sm" onclick="closeModal()">Cancel</button>' +
+    '<button class="btn btn-navy" onclick="saveHouse()">Save</button>');
+}
+async function saveHouse() {
+  await apiJSON('/api/projects/' + S.houseId, 'PUT', {
+    name: val('h-name'), client: val('h-client'), address: val('h-address'),
+    sqft: val('h-sqft'), contractPrice: val('h-price'),
+    phase: Number(val('h-phase')), reportsId: val('h-reports') || ''
+  });
+  closeModal(); await load(); openHouse(S.houseId); toast('House updated');
+}
+async function deleteHouse() {
+  if (!confirm('Delete this house with all its items and purchases? This cannot be undone.')) return;
+  await api('/api/projects/' + S.houseId, { method: 'DELETE' });
+  await load(); go('houses'); toast('House deleted');
+}
+
+// ── Stores ───────────────────────────────────────────────────
+function viewStores() {
+  const groups = {};
+  S.catalog.stores.forEach(s => {
+    const g = s.guideCategory || 'Other';
+    (groups[g] = groups[g] || []).push(s);
+  });
+
+  let html = '<div class="notice blue">These come from the store guide the client receives, plus the ' +
+    'vendors the office buys from directly. Add anything else you use with the button below.</div>' +
+    '<div style="margin-bottom:18px"><button class="btn btn-red" onclick="openNewStore()">+ Add a store or vendor</button></div>';
+
+  Object.keys(groups).sort().forEach(g => {
+    html += '<div class="section-title">' + esc(g) + '</div>';
+    groups[g].forEach(s => {
+      const cats = (s.categories || []).map(c => catBase(c).name).filter(Boolean);
+      html += '<div class="store-card' + (s.firstOption ? ' first' : '') + '">' +
+        '<div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">' +
+        '<div style="flex:1;min-width:240px">' +
+          '<div class="store-name">' + esc(s.name) +
+            (s.firstOption ? ' <span class="chip green">first choice</span>' : '') +
+            (s.custom ? ' <span class="chip blue">added by the office</span>' : '') + '</div>' +
+          (s.address ? '<div class="store-line">📍 ' + esc(s.address) + '</div>' : '') +
+          (s.contact ? '<div class="store-line">📞 ' + esc(s.contact) + '</div>' : '') +
+          (s.notes ? '<div class="store-line">' + esc(s.notes) + '</div>' : '') +
+          (cats.length ? '<div class="chips">' + cats.map(c => '<span class="chip">' + esc(c) + '</span>').join('') + '</div>' : '') +
+        '</div>' +
+        (s.custom ? '<div style="display:flex;gap:7px">' +
+          '<button class="btn-sm" onclick="openEditStore(\'' + s.id + '\')">Edit</button>' +
+          '<button class="btn-sm" onclick="deleteStore(\'' + s.id + '\')">Delete</button></div>' : '') +
+        '</div></div>';
+    });
+  });
+  return html;
+}
+
+function storeForm(s) {
+  s = s || {};
+  return '<div class="field"><label>Store or vendor name</label>' +
+      '<input type="text" id="st-name" value="' + esc(s.name || '') + '" autofocus></div>' +
+    '<div class="field"><label>Address</label><input type="text" id="st-address" value="' + esc(s.address || '') + '"></div>' +
+    '<div class="field"><label>Contact (name, phone, reference)</label>' +
+      '<input type="text" id="st-contact" value="' + esc(s.contact || '') + '"></div>' +
+    '<div class="field"><label>Notes</label><textarea id="st-notes">' + esc(s.notes || '') + '</textarea></div>' +
+    '<div class="field"><label>What do we buy here? (suggests it on those categories)</label>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:10px">' +
+      S.catalog.categories.map(c =>
+        '<label style="display:flex;align-items:center;gap:6px;text-transform:none;letter-spacing:0;font-size:13px;font-weight:500;color:#33415c">' +
+        '<input type="checkbox" id="st-c-' + c.id + '" style="width:auto"' +
+        ((s.categories || []).includes(c.id) ? ' checked' : '') + '> ' + esc(c.name) + '</label>').join('') +
+      '</div></div>';
+}
+
+function pickedStoreCats() {
+  return S.catalog.categories.filter(c => $('st-c-' + c.id) && $('st-c-' + c.id).checked).map(c => c.id);
+}
+
+function openNewStore() {
+  modal('Add a store or vendor', storeForm(),
+    '<button class="btn-sm" onclick="closeModal()">Cancel</button>' +
+    '<button class="btn btn-navy" onclick="createStore()">Add</button>');
+}
+async function createStore() {
+  const name = val('st-name');
+  if (!name) { toast('Give the store a name'); return; }
+  await apiJSON('/api/stores', 'POST', {
+    name, address: val('st-address'), contact: val('st-contact'),
+    notes: val('st-notes'), categories: pickedStoreCats()
+  });
+  closeModal(); await load();
+  if (S.view === 'house' && S.houseId) openHouse(S.houseId);
+  toast('Store added');
+}
+
+function openEditStore(id) {
+  const s = storeById(id);
+  modal('Edit ' + esc(s.name), storeForm(s),
+    '<button class="btn-sm" onclick="closeModal()">Cancel</button>' +
+    '<button class="btn btn-navy" onclick="saveStore(\'' + id + '\')">Save</button>');
+}
+async function saveStore(id) {
+  await apiJSON('/api/stores/' + id, 'PUT', {
+    name: val('st-name'), address: val('st-address'), contact: val('st-contact'),
+    notes: val('st-notes'), categories: pickedStoreCats()
+  });
+  closeModal(); await load(); toast('Store updated');
+}
+async function deleteStore(id) {
+  if (!confirm('Remove this store from the list?')) return;
+  await api('/api/stores/' + id, { method: 'DELETE' });
+  await load(); toast('Store removed');
+}
+
+// ── Phase sync ───────────────────────────────────────────────
+async function syncPhases() {
+  try {
+    const r = await apiJSON('/api/sync-phases', 'POST', {});
+    await load();
+    const bits = [];
+    if (r.changed) bits.push(r.changed + ' house(s) moved phase');
+    if (r.linked) bits.push(r.linked + ' linked to the board');
+    toast(bits.length ? bits.join(' · ') : 'Every phase was already up to date');
+    const notes = [];
+    (r.conflicts || []).forEach(c => notes.push('⚠ ' + c));
+    if ((r.unmatched || []).length) notes.push('Not found on the scheduling board: ' + r.unmatched.join(', '));
+    if (notes.length) modal('Sync phases — please check',
+      '<div class="notice blue" style="line-height:1.8">' + notes.map(esc).join('<br>') + '</div>',
+      '<button class="btn btn-navy" onclick="closeModal()">OK</button>');
+  } catch (_) { /* the message already showed */ }
+}
+
+// ── Change orders ────────────────────────────────────────────
+async function makeCO(catId) {
+  const cat = house().categories.find(c => c.id === catId);
+  if (!confirm('Create a change order for ' + fmt(cat.summary.over) + ' on ' + catBase(catId).name + '?')) return;
+  await apiJSON('/api/projects/' + S.houseId + '/change-orders', 'POST', {
+    category: catId, description: 'Over the allowance on ' + catBase(catId).name
+  });
+  await load(); openHouse(S.houseId);
+  toast('Change order created. Pass it to STB Cobros for signature and billing.');
+}
+async function setCOStatus(coId, status) {
+  await apiJSON('/api/projects/' + S.houseId + '/change-orders/' + coId, 'PUT', { status });
+  await load(); openHouse(S.houseId);
+}
+async function deleteCO(coId) {
+  if (!confirm('Delete this change order?')) return;
+  await api('/api/projects/' + S.houseId + '/change-orders/' + coId, { method: 'DELETE' });
+  await load(); openHouse(S.houseId);
+}
+function copyCO(coId) {
+  const p = house();
+  const co = p.changeOrders.find(c => c.id === coId);
+  const text =
+    'CHANGE ORDER — ' + p.name + '\n' +
+    (p.address ? p.address + '\n' : '') +
+    'Date: ' + co.date + '\n\n' +
+    'Item: ' + co.categoryName + ' above the contract allowance.\n' +
+    'Exhibit A allowance: ' + fmt(co.allowance || 0) + '\n' +
+    'Actual cost (tax and shipping included): ' + fmt(co.spent) + '\n' +
+    'Amount to bill the client: ' + fmt(co.amount);
+  navigator.clipboard.writeText(text)
+    .then(() => toast('Copied. Or use Send to Cobros'))
+    .catch(() => toast('Could not copy'));
+}
+
+// ── Settings ─────────────────────────────────────────────────
+function openSettings() {
+  modal('Settings',
+    '<div class="field"><label>Warn when a category reaches this % of its allowance</label>' +
+      '<input type="number" id="cf-warn" value="' + (S.data.config.warnPercent || 80) + '" min="1" max="100"></div>' +
+    '<div class="field"><label>Change the access key (leave blank to keep it)</label>' +
+      '<input type="password" id="cf-key" placeholder="At least 4 characters"></div>' +
+    '<div class="notice blue">Construction phases come from the scheduling board. Each house is matched by its number ' +
+      '(for example 113) and family name; press <b>Sync phases</b> to update all of them (' + S.reports.length + ' houses on the board).</div>' +
+    '<div class="set-sec"><h4>Backup</h4>' +
+      '<button class="btn-sm" onclick="downloadOrdersBackup()">Download a backup file</button></div>' +
+    '<div class="set-sec"><h4>Bring over the old desktop tool</h4>' +
+      '<div class="notice blue">One time only. Choose the old <b>STB-Ordenes</b> folder; its houses, allowances, orders and photos are copied to the cloud. ' +
+      'Houses already here are skipped.</div>' +
+      '<input type="file" id="imp-folder" webkitdirectory multiple>' +
+      '<div style="margin-top:10px"><button class="btn-sm" id="imp-btn" onclick="runImport()">Import from the folder</button></div>' +
+      '<div id="imp-status"></div></div>',
+    '<button class="btn-sm" onclick="closeModal()">Cancel</button>' +
+    '<button class="btn btn-navy" onclick="saveSettings()">Save</button>');
+}
+async function runImport() {
+  const input = $('imp-folder');
+  if (!input.files.length) { toast('Choose the STB-Ordenes folder first'); return; }
+  const st = $('imp-status'); $('imp-btn').disabled = true; st.textContent = 'Reading the folder…';
+  try {
+    const r = await importOldTool(input.files, (d, t) => { st.textContent = 'Copying photos… ' + d + ' of ' + t; });
+    st.innerHTML = '✅ <b>' + r.added + '</b> house(s) added' + (r.skipped ? ' · ' + r.skipped + ' already here' : '') +
+      ' · ' + r.uploaded + ' files copied' + (r.missing ? ' · ' + r.missing + ' file(s) were not in the folder' : '');
+    await load(); toast('Import finished');
+  } catch (e) { st.textContent = '⚠ ' + (e.message || e); }
+  finally { $('imp-btn').disabled = false; }
+}
+async function sendCO(coId) {
+  if (!confirm('Send this change order to STB Cobros? It will show up there ready to be signed and billed.')) return;
+  try {
+    await apiJSON('/api/projects/' + S.houseId + '/change-orders/' + coId + '/send-to-cobros', 'POST', {});
+    await load(); openHouse(S.houseId); toast('Sent to Cobros');
+  } catch (_) { /* the message already showed */ }
+}
+async function saveSettings() {
+  const body = { warnPercent: val('cf-warn') };
+  if (val('cf-key')) body.key = val('cf-key');
+  await apiJSON('/api/config', 'POST', body);
+  closeModal(); await load(); toast('Settings saved');
+}
+
+bootOrders();
+</script>
+</body>
+</html>

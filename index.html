@@ -790,6 +790,7 @@
     <button class="tbtn" id="openHistory"><span class="ic">🗂</span> Completed Houses</button>
     <button class="tbtn" id="openBackup"><span class="ic">💾</span> Backup</button>
     <button class="tbtn" id="openChangeOrders"><span class="ic">🧾</span> Change Orders</button>
+    <button class="tbtn" id="openOrders"><span class="ic">🛒</span> Orders</button>
   </div>
 
   <div class="stats">
@@ -4216,6 +4217,9 @@ document.getElementById('openBackup').addEventListener('click',function(){
    (the page itself asks for the code and remembers it per device). */
 document.getElementById('openChangeOrders').addEventListener('click',function(){
   window.open('change-orders.html','_blank');
+});
+document.getElementById('openOrders').addEventListener('click',function(){
+  window.open('ordenes.html','_blank');
 });
 function backupPayload(){
   captureDailyReport();
