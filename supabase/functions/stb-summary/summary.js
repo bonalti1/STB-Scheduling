@@ -18,21 +18,80 @@ function taskState(p, phase, text) {
   if (saved && typeof saved === 'object') {
     let status = saved.status || (saved.today ? 'today' : saved.scheduled ? 'scheduled' : '');
     if (saved.done && !status) status = 'done';
-    return { done: !!saved.done, status, sub: saved.sub || '', note: saved.note || '' };
+    return { done: !!saved.done, status, sub: saved.sub || '', note: saved.note || '', undo: undoInfo(saved) };
   }
   return { done: !!saved, status: saved ? 'done' : '', sub: '', note: '' };
+}
+/* From the activity log: when a task was checked off and by whom. */
+function completedBy(board, p, phase, text) {
+  const log = (board && board.dailyLog) || {};
+  let hit = null;
+  Object.keys(log).sort().forEach((day) => (log[day] || []).forEach((e) => {
+    if (e.projectId === p.id && e.type === 'task' && (e.phase || '') === phase && (e.task || '') === text && e.toDone) hit = e;
+  }));
+  return hit ? { at: hit.at, by: hit.by || undefined } : undefined;
 }
 function nextPhase(phase) { const i = PHASES.indexOf(phase); return i >= 0 && i < PHASES.length - 1 ? PHASES[i + 1] : ''; }
 function daysBetween(a, b) { if (!a || !b) return null; return Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000); }
 
-function phaseBlock(p, phase) {
+function phaseBlock(board, p, phase) {
   const tasks = visibleTasks(p, phase).map((text) => ({ text, ...taskState(p, phase, text) }));
   return {
     phase,
     done: tasks.filter((t) => t.done).length,
     total: tasks.length,
-    tasks: tasks.map((t) => ({ text: t.text, done: t.done, status: t.status || undefined, sub: t.sub || undefined, note: t.note || undefined }))
+    tasks: tasks.map((t) => {
+      const c = t.done ? completedBy(board, p, phase, t.text) : undefined;
+      return { text: t.text, done: t.done, status: t.status || undefined, sub: t.sub || undefined, note: t.note || undefined,
+        completedAt: c && c.at, completedBy: c && c.by, undo: t.undo };
+    })
   };
+}
+
+/* Activity feed: every recorded action (who / when / what) for the last N days. The board
+   logs checkbox and status changes, task deletions, delays, house removals/completions/
+   restores, today's tasks, document uploads and address edits. */
+export function activityFeed(board, area, days = 14, today = isoToday()) {
+  const log = (board && board.dailyLog) || {};
+  const from = new Date(today + 'T00:00:00'); from.setDate(from.getDate() - Math.max(0, days - 1));
+  const fromIso = from.toISOString().slice(0, 10);
+  const rows = [];
+  Object.keys(log).filter((d) => d >= fromIso && d <= today).sort().forEach((day) => {
+    (log[day] || []).forEach((e) => {
+      const what = describeEntry(e);
+      rows.push({ area, day, at: e.at || undefined, by: e.by || undefined, project: e.projectName, phase: e.phase || undefined, type: e.type || 'activity', task: e.task || undefined, action: what, note: e.note || undefined });
+    });
+  });
+  return rows.sort((a, b) => String(a.at || a.day).localeCompare(String(b.at || b.day)));
+}
+function describeEntry(e) {
+  const t = e.type || 'activity';
+  if (t === 'task') {
+    if (e.toStatus === 'deleted') return 'deleted task';
+    if (e.toDone && !e.fromDone) return 'checked off';
+    if (!e.toDone && e.fromDone) return 'un-checked' + (e.note ? '' : '');
+    if (e.toStatus && e.toStatus !== e.fromStatus) return 'status → ' + e.toStatus;
+    return 'updated task';
+  }
+  if (t === 'delay') return e.toStatus === 'resolved' ? 'delay resolved' : 'delay added';
+  if (t === 'project') return { removed: 'house removed from board', completed: 'house moved to Completed', restored: 'house restored to board', address: 'address changed' }[e.toStatus] || 'house updated';
+  if (t === 'daytask') return "today's task " + (e.toStatus || 'updated');
+  if (t === 'document') return (e.task || 'document') + ' uploaded';
+  return e.toStatus || 'activity';
+}
+/* Who un-checked a completed task and why (stored on the task itself). */
+function undoInfo(st) {
+  return st && st.undoAt ? { undoAt: st.undoAt, undoBy: st.undoBy || undefined, undoReason: st.undoReason || undefined } : undefined;
+}
+
+export function summarizeCompleted(list, today = isoToday()) {
+  return (Array.isArray(list) ? list : []).map((c) => ({
+    area: c.area === 'alice' ? 'alice' : 'main', name: c.project && c.project.name, code: c.project && c.project.code || undefined,
+    address: c.project && c.project.address || undefined, completedAt: c.completedAt, completedBy: c.completedBy || undefined
+  }));
+}
+export function summarizeLessons(list) {
+  return (Array.isArray(list) ? list : []).map((l) => ({ project: l.project || undefined, phase: l.phase || undefined, issue: l.issue, owner: l.owner || undefined, rootCause: l.root || undefined, prevention: l.prevent || undefined, system: l.system || undefined, source: l.source || undefined, at: l.at || l.createdAt || undefined }));
 }
 
 export function summarizeBoard(board, area, today = isoToday()) {
@@ -54,6 +113,7 @@ export function summarizeBoard(board, area, today = isoToday()) {
     const removed = p.dayTasksRemoved || {};
     const todaysTasks = (p.dayTasks || []).filter((t) => t && t.id && !removed[t.id] && (!t.done || t.doneOn === today)).map((t) => ({
       text: t.text, done: !!t.done, by: t.by || undefined, added: t.added || undefined,
+      doneOn: t.done ? t.doneOn || undefined : undefined, doneBy: t.done ? t.doneBy || undefined : undefined,
       daysOpen: t.done ? 0 : Math.max(0, daysBetween(t.added, today) || 0)
     }));
     const phase = p.phase || 'Pre Phase';
@@ -70,8 +130,9 @@ export function summarizeBoard(board, area, today = isoToday()) {
       openDelays: delays.filter((d) => d.status !== 'Resolved'),
       resolvedDelays: delays.filter((d) => d.status === 'Resolved').length,
       todaysTasks,
-      currentPhaseChecklist: phaseBlock(p, phase),
-      nextPhase: nextPhase(phase) ? phaseBlock(p, nextPhase(phase)) : undefined,
+      currentPhaseChecklist: phaseBlock(board, p, phase),
+      nextPhase: nextPhase(phase) ? phaseBlock(board, p, nextPhase(phase)) : undefined,
+      allPhases: PHASES.map((ph) => { const b = phaseBlock(board, p, ph); return { phase: ph, done: b.done, total: b.total }; }),
       links: { render: p.renderImage || undefined, blueprint: p.blueprintUrl || undefined, windstorm: p.windstormUrl || undefined, selections: p.selectionsUrl || undefined }
     };
   });
@@ -150,6 +211,17 @@ export function digest(summary) {
       const pend = p.currentPhaseChecklist.tasks.filter((t) => !t.done).slice(0, 6).map((t) => t.text);
       if (pend.length) L.push(`   Still pending in ${p.currentPhase}: ${pend.join('; ')}${p.currentPhaseChecklist.total - p.currentPhaseChecklist.done > 6 ? '; …' : ''}`);
     }
+  }
+  if (summary.activity && summary.activity.length) {
+    L.push('', `== ACTIVITY · last ${summary.activityDays} days · ${summary.activity.length} entries ==`);
+    for (const a of summary.activity.slice(-80)) {
+      const when = a.at ? a.at.replace('T', ' ').slice(0, 16) : a.day;
+      L.push(`${when} · ${a.by || '?'} · ${a.project}${a.phase ? ' · ' + a.phase : ''} · ${a.action}${a.task ? ': ' + a.task : ''}${a.note ? ' (' + a.note + ')' : ''}`);
+    }
+  }
+  if (summary.completedHouses && summary.completedHouses.length) {
+    L.push('', `== COMPLETED HOUSES · ${summary.completedHouses.length} ==`);
+    for (const h of summary.completedHouses) L.push(`• ${h.name}${h.code ? ' (' + h.code + ')' : ''} · ${h.area} · completed ${String(h.completedAt).slice(0, 10)}${h.completedBy ? ' by ' + h.completedBy : ''}`);
   }
   if (summary.changeOrders) {
     const c = summary.changeOrders;

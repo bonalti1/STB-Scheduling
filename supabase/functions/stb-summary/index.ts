@@ -6,9 +6,9 @@
 //
 // It only ever SELECTs. The caller never gets a database key, only this token, so a bot
 // holding the token cannot change anything on the board or in Cobros.
-import { summarizeBoard, summarizeCobros, digest } from './summary.js';
+import { summarizeBoard, summarizeCobros, activityFeed, summarizeCompleted, summarizeLessons, digest } from './summary.js';
 
-const ROWS = { main: 'stb_board_v1', alice: 'stb_board_alice_v1', cobros: 'stb_change_orders_v1' };
+const ROWS = { main: 'stb_board_v1', alice: 'stb_board_alice_v1', cobros: 'stb_change_orders_v1', completed: 'stb_completed_v1', lessons: 'stb_lessons_v1' };
 
 async function readRow(id: string) {
   const url = `${Deno.env.get('SUPABASE_URL')}/rest/v1/stb_app_state?id=eq.${encodeURIComponent(id)}&select=data,updated_at`;
@@ -32,23 +32,35 @@ Deno.serve(async (req) => {
 
   const area = (u.searchParams.get('area') ?? 'all').toLowerCase();
   const wantCobros = (u.searchParams.get('cobros') ?? '1') !== '0';
-  const areas = area === 'all' ? ['main', 'alice'] : [area].filter((a) => a in ROWS && a !== 'cobros');
+  const activityDays = Math.min(365, Math.max(0, parseInt(u.searchParams.get('days') ?? '14') || 0));
+  const areas = area === 'all' ? ['main', 'alice'] : [area].filter((a) => a === 'main' || a === 'alice');
   if (!areas.length) return new Response('area must be main, alice or all', { status: 400, headers: cors });
 
   try {
     const today = new Date().toISOString().slice(0, 10);
     const boards = [];
+    let activity: unknown[] = [];
     for (const a of areas) {
       const row = await readRow(ROWS[a as 'main' | 'alice']);
-      const s = summarizeBoard(row?.value ?? { projects: [] }, a, today);
-      boards.push({ ...s, updatedAt: row?.updatedAt ?? null });
+      const value = row?.value ?? { projects: [] };
+      boards.push({ ...summarizeBoard(value, a, today), updatedAt: row?.updatedAt ?? null });
+      if (activityDays > 0) activity = activity.concat(activityFeed(value, a, activityDays, today));
     }
+    activity.sort((x: any, y: any) => String(x.at || x.day).localeCompare(String(y.at || y.day)));
+    const completedRow = await readRow(ROWS.completed);
+    const lessonsRow = await readRow(ROWS.lessons);
     let changeOrders = undefined;
     if (wantCobros) {
       const row = await readRow(ROWS.cobros);
       changeOrders = { ...summarizeCobros(row?.value ?? { proyectos: [] }, today), updatedAt: row?.updatedAt ?? null };
     }
-    const summary = { generatedAt: new Date().toISOString(), boards, changeOrders };
+    const summary = {
+      generatedAt: new Date().toISOString(), boards,
+      activityDays, activity,
+      completedHouses: summarizeCompleted(completedRow?.value ?? [], today),
+      lessonsLearned: summarizeLessons(lessonsRow?.value ?? []),
+      changeOrders
+    };
     if ((u.searchParams.get('format') ?? 'json') === 'text') {
       return new Response(digest(summary), { headers: { ...cors, 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } });
     }

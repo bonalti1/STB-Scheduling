@@ -22,7 +22,18 @@ Test it in a browser with the token. You should see JSON with `boards` and `chan
 - The URL above (with the token). Nothing else: no Supabase key, no dashboard login, no Netlify.
 - Tell it: `GET` only. `?format=text` returns a plain-text digest that reads well for an LLM;
   the default returns JSON. `?area=main`, `?area=alice`, `?cobros=0` narrow the result.
+- `?days=14` (default) controls how much activity history comes back (0–365). The activity
+  feed lists every recorded action with who and when: tasks checked/un-checked (with the
+  undo reason), status changes, task deletions, delays, houses removed/completed/restored,
+  today's tasks added/done/removed, document uploads, address edits. Each checked task also
+  carries `completedAt` / `completedBy`. Completed houses and Lessons Learned are included.
 - Daily: have the bot call the URL once a morning. On demand: it can call it any time.
+
+## Does a Netlify deploy affect the bot?
+
+No. The bot reads the database, not the web page. Deploying new HTML never changes its
+access. Only two things ever need attention: the checklist copy (below) when phases/tasks
+change, and the function itself if the data format changes (both live in this repo).
 
 ## Keeping it in sync
 

@@ -1666,6 +1666,7 @@ function fmtShortDay(iso){
 function addDayTask(p,text){
   text=String(text||'').trim(); if(!text) return false;
   dayTasksOf(p).push({id:uid(),text:text,by:currentUserName()||'',added:(board&&board.dayDate)||isoToday(),done:false,doneOn:''});
+  logDailyActivity(p,{type:'daytask',task:text,toStatus:'added',note:"Today's task added"});
   return true;
 }
 function isoToday(){
@@ -1854,6 +1855,7 @@ function handleRenderUpload(p,file,input){
   toast('Uploading render...');
   uploadRenderImage(p,file).then(function(url){
     p.renderImage=url;
+    logDailyActivity(p,{type:'document',task:'Render',toStatus:'uploaded'});
     p.renderUpdatedAt=new Date().toISOString();
     queueSave(); render(); toast('Render uploaded');
   }).catch(function(err){
@@ -1894,6 +1896,7 @@ function handleDocUpload(p,file,input,kind){
   toast('Uploading '+k.label+'...');
   uploadProjectPdf(p,file,kind).then(function(url){
     p[k.url]=url;
+    logDailyActivity(p,{type:'document',task:k.label,toStatus:'uploaded',note:(file.name||'')});
     p[k.name]=file.name||k.label+'.pdf';
     p[k.at]=new Date().toISOString();
     queueSave(); render(); toast(k.label+' uploaded');
@@ -1922,6 +1925,7 @@ function handleBlueprintUpload(p,file,input){
   toast('Uploading blueprint...');
   uploadBlueprintPdf(p,file).then(function(url){
     p.blueprintUrl=url;
+    logDailyActivity(p,{type:'document',task:'Blueprint',toStatus:'uploaded',note:(file.name||'')});
     p.blueprintName=file.name||'Blueprint.pdf';
     p.blueprintUpdatedAt=new Date().toISOString();
     queueSave(); render(); toast('Blueprint uploaded');
@@ -2940,6 +2944,7 @@ document.getElementById('projectList').addEventListener('click',function(e){
   }
   if(act==='delproj'){
     if(confirm('Remove project \u201C'+p.name+'\u201D from the board?')){
+      logDailyActivity(p,{type:'project',toStatus:'removed',note:'House removed from the board'});
       board.projects=board.projects.filter(function(x){return x.id!==pid;});
       // record the intentional removal so the server trigger / merge won't restore it
       board.removedProjectIds=Array.isArray(board.removedProjectIds)?board.removedProjectIds:[];
@@ -2962,7 +2967,8 @@ document.getElementById('projectList').addEventListener('click',function(e){
     var liDel=t.closest('.daytask'); var delId=liDel&&liDel.dataset.dtid;
     var task=dayTasksOf(p).find(function(x){ return x.id===delId; });
     if(task && confirm('Remove this task?\n\n'+task.text)){
-      dayTasksRemovedOf(p)[delId]=true;
+      dayTasksRemovedOf(p)[delId]={by:currentUserName()||'',at:new Date().toISOString()};
+      logDailyActivity(p,{type:'daytask',task:task.text,toStatus:'removed',note:"Today's task removed"});
       queueSave(); render(); toast('Task removed');
     }
     return;
@@ -3013,6 +3019,7 @@ document.getElementById('projectList').addEventListener('click',function(e){
     var nextAddr=prompt('Project address (used for the Google Maps link)',p.address||'');
     if(nextAddr===null) return;
     p.address=String(nextAddr).trim();
+    logDailyActivity(p,{type:'project',toStatus:'address',note:p.address?'Address set: '+p.address:'Address cleared'});
     queueSave(); render(); toast(p.address?'Address updated':'Address cleared');
     return;
   }
@@ -3027,9 +3034,11 @@ document.getElementById('projectList').addEventListener('click',function(e){
       'Move \u201C'+p.name+'\u201D to Completed Houses?' :
       'Move \u201C'+p.name+'\u201D to Completed Houses?\n\nNot all checks are done yet \u2014 you can still move it.';
     if(confirm(msg)){
+      logDailyActivity(p,{type:'project',toStatus:'completed',note:canCompleteProject(p)?'Moved to Completed Houses':'Moved to Completed Houses (checklist not finished)'});
       if(!completed.some(function(c){ return c.project && c.project.id===pid; })){
         completed.unshift({
           completedAt:new Date().toISOString(),
+          completedBy:currentUserName()||'',
           area:BOARD_AREA,
           project:JSON.parse(JSON.stringify(p))
         });
@@ -3235,6 +3244,7 @@ document.getElementById('projectList').addEventListener('change',function(e){
       tDt.done=!!e.target.checked;
       tDt.doneOn=tDt.done?((board&&board.dayDate)||isoToday()):'';
       tDt.doneBy=tDt.done?(currentUserName()||''):'';
+      logDailyActivity(pDt,{type:'daytask',task:tDt.text,toStatus:tDt.done?'done':'reopened',toDone:tDt.done,note:tDt.done?"Today's task checked off":"Today's task re-opened"});
       queueSave(); render();
     }
     return;
@@ -4563,6 +4573,7 @@ document.getElementById('historyBody').addEventListener('click',function(e){
     if(Array.isArray(board.removedProjectIds)){
       board.removedProjectIds=board.removedProjectIds.filter(function(x){ return x!==done.project.id && x!==proj.id; });
     }
+    logDailyActivity(proj,{type:'project',toStatus:'restored',note:doneArea===BOARD_AREA?'Moved back to the board from Completed Houses':'Moved from the '+doneArea.toUpperCase()+' board to '+BOARD_AREA.toUpperCase()});
     toast('Moving house…');
     Promise.resolve(persistBoard()).then(function(){
       completed.splice(idx,1);
