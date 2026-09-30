@@ -314,6 +314,8 @@
     border:1px solid var(--line);background:#fff;color:var(--navy);border-radius:7px;
     padding:3px 7px;font-family:'Barlow',sans-serif;font-weight:800;font-size:.72rem;cursor:pointer;
   }
+  .sqft-remove{color:#C0392B;border-color:#F0C4BE;}
+  .sqft-remove:hover{background:#FDECEA;}
   .addr-chip{
     background:#EEF4FF;border:1px solid #D5E2F5;color:#1B59C5;border-radius:7px;
     padding:3px 7px;white-space:nowrap;text-decoration:none;font-weight:700;
@@ -1502,8 +1504,10 @@ function stbMergeProject(mineP,baseP){
   });
   if(!mineP.renderImage && baseP.renderImage){ mineP.renderImage=baseP.renderImage; mineP.renderUpdatedAt=mineP.renderUpdatedAt||baseP.renderUpdatedAt||''; }
   if(!mineP.address && baseP.address){ mineP.address=baseP.address; }   // keep a saved address a stale copy is missing
-  if(!mineP.blueprintUrl && baseP.blueprintUrl){ mineP.blueprintUrl=baseP.blueprintUrl; mineP.blueprintName=mineP.blueprintName||baseP.blueprintName; }
-  if(!mineP.windstormUrl && baseP.windstormUrl){ mineP.windstormUrl=baseP.windstormUrl; mineP.windstormName=mineP.windstormName||baseP.windstormName; }
+  /* A PDF removed on purpose (xxxRemovedAt) stays removed unless a newer upload exists. */
+  function docWasRemoved(kind){ var r=mineP[kind+'RemovedAt']; return !!r && !((baseP[kind+'UpdatedAt']||'')>r); }
+  if(!mineP.blueprintUrl && baseP.blueprintUrl && !docWasRemoved('blueprint')){ mineP.blueprintUrl=baseP.blueprintUrl; mineP.blueprintName=mineP.blueprintName||baseP.blueprintName; }
+  if(!mineP.windstormUrl && baseP.windstormUrl && !docWasRemoved('windstorm')){ mineP.windstormUrl=baseP.windstormUrl; mineP.windstormName=mineP.windstormName||baseP.windstormName; }
   /* Today's tasks: union by id (a task checked done on any device stays done);
      removals are tombstoned so a stale device can't resurrect a deleted task. */
   var mineDT=Array.isArray(mineP.dayTasks)?mineP.dayTasks:[], baseDT=Array.isArray(baseP.dayTasks)?baseP.dayTasks:[];
@@ -1517,7 +1521,7 @@ function stbMergeProject(mineP,baseP){
   });
   mineP.dayTasksRemoved=Object.assign({}, baseP.dayTasksRemoved||{}, mineP.dayTasksRemoved||{});
   mineP.dayTasks=Object.keys(byId).map(function(k){ return byId[k]; }).filter(function(t){ return !mineP.dayTasksRemoved[t.id]; });
-  if(!mineP.selectionsUrl && baseP.selectionsUrl){ mineP.selectionsUrl=baseP.selectionsUrl; mineP.selectionsName=mineP.selectionsName||baseP.selectionsName; }
+  if(!mineP.selectionsUrl && baseP.selectionsUrl && !docWasRemoved('selections')){ mineP.selectionsUrl=baseP.selectionsUrl; mineP.selectionsName=mineP.selectionsName||baseP.selectionsName; }
   return mineP;
 }
 function stbMergeBoards(mine,base){
@@ -2801,14 +2805,16 @@ function projectCard(p){
         '<input class="blueprint-file" type="file" accept="application/pdf,.pdf" data-act="uploadblueprint" style="display:none;" />'+
         (p.blueprintUrl
           ? '<a class="addr-chip" data-act="openblueprint" href="'+attr(p.blueprintUrl)+'" target="_blank" rel="noopener" title="Open blueprint PDF">📄 Blueprint</a>'+
-            '<button class="sqft-edit" data-act="chooseblueprint">Replace</button>'
+            '<button class="sqft-edit" data-act="chooseblueprint">Replace</button>'+
+            '<button class="sqft-edit sqft-remove" data-act="removedoc" data-kind="blueprint" title="Remove the blueprint PDF from this project">Remove</button>'
           : '<button class="sqft-edit" data-act="chooseblueprint">📄 Add blueprint</button>')+
         Object.keys(DOC_KINDS).map(function(kind){
           var k=DOC_KINDS[kind];
           return '<input class="doc-file" type="file" accept="application/pdf,.pdf" data-act="uploaddoc" data-kind="'+kind+'" style="display:none;" />'+
             (p[k.url]
               ? '<a class="addr-chip" data-act="opendoc" href="'+attr(p[k.url])+'" target="_blank" rel="noopener" title="Open '+k.label+' PDF">'+k.icon+' '+k.label+'</a>'+
-                '<button class="sqft-edit" data-act="choosedoc" data-kind="'+kind+'">Replace</button>'
+                '<button class="sqft-edit" data-act="choosedoc" data-kind="'+kind+'">Replace</button>'+
+                '<button class="sqft-edit sqft-remove" data-act="removedoc" data-kind="'+kind+'" title="Remove the '+k.label+' PDF from this project">Remove</button>'
               : '<button class="sqft-edit" data-act="choosedoc" data-kind="'+kind+'">'+k.icon+' Add '+k.label+'</button>');
         }).join('')+
       '</div>'+
@@ -3009,6 +3015,18 @@ document.getElementById('projectList').addEventListener('click',function(e){
   if(act==='chooseblueprint'){
     var bi=card.querySelector('.blueprint-file');
     if(bi) bi.click();
+    return;
+  }
+  if(act==='removedoc'){
+    var rk=t.dataset.kind, rm=rk==='blueprint'
+      ? {url:'blueprintUrl',name:'blueprintName',label:'Blueprint'}
+      : (DOC_KINDS[rk] ? {url:DOC_KINDS[rk].url,name:DOC_KINDS[rk].name,label:DOC_KINDS[rk].label} : null);
+    if(!rm) return;
+    if(!confirm('Remove the '+rm.label+' PDF from '+(p.name||'this project')+'?\n\nYou can add a new one afterwards.')) return;
+    logDailyActivity(p,{type:'document',task:rm.label,toStatus:'removed',note:(p[rm.name]||'')});
+    p[rm.url]=''; p[rm.name]='';
+    p[rk+'RemovedAt']=new Date().toISOString();
+    queueSave(); render(); toast(rm.label+' removed');
     return;
   }
   if(act==='choosedoc'){
