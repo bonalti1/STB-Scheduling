@@ -360,15 +360,26 @@
   .daytask-list{align-content:start;}
   @media(max-width:980px){ .card-row{grid-template-columns:1fr;} .daytask-panel{position:static;} }
   /* ---------- Meeting mode: a left column beside the house card, nothing else moves ---------- */
-  .card-row.mtg{grid-template-columns:320px minmax(0,1fr) 420px;}
-  @media(max-width:1500px){ .card-row.mtg{grid-template-columns:290px minmax(0,1fr) 360px;} }
-  @media(max-width:1100px){ .card-row.mtg{grid-template-columns:1fr;} }
-  .mtg-panel{background:var(--card);border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow);padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0;position:sticky;top:150px;align-self:start;}
-  @media(max-width:1100px){ .mtg-panel{position:static;} }
+  /* the meeting lives in a dock on the left edge; the board is pushed over, never covered or replaced */
+  .mtg-dock{position:fixed;left:0;top:0;bottom:0;width:320px;z-index:40;background:var(--card);border-right:1px solid var(--line);box-shadow:4px 0 22px rgba(19,35,61,.14);padding:14px;display:none;flex-direction:column;gap:10px;overflow-y:auto;}
+  body.meeting-on .mtg-dock{display:flex;}
+  @media(min-width:1101px){ body.meeting-on{padding-left:320px;} }
+  @media(max-width:1100px){
+    .mtg-dock{top:auto;width:auto;right:0;max-height:48vh;border-right:0;border-top:1px solid var(--line);box-shadow:0 -6px 22px rgba(19,35,61,.16);}
+    body.meeting-on{padding-bottom:48vh;}
+  }
+  .card-row.mtg-current > .card{box-shadow:0 0 0 3px var(--red),var(--shadow);}
+  .mtg-house{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.5rem;line-height:1.1;color:var(--ink);}
+  .mtg-house small{display:block;font-family:'Barlow',sans-serif;font-size:.74rem;font-weight:600;color:var(--muted);margin-top:2px;}
+  .mtg-status{font-size:.92rem;font-weight:700;color:#1d6b49;padding:4px 6px;}
+  .mtg-clock.over .mtg-status{font-size:1.15rem;color:#C02A1B;}
+  .mtg-time,.mtg-bar,.mtg-totalwrap{display:none;}
+  .mtg-dock.show-time .mtg-time{display:block;} .mtg-dock.show-time .mtg-bar{display:block;} .mtg-dock.show-time .mtg-totalwrap{display:inline;}
+  .mtg-link{font-size:.72rem;color:var(--muted);text-decoration:underline;cursor:pointer;font-weight:600;}
   .mtg-head{display:flex;align-items:baseline;gap:8px;}
   .mtg-head .lbl{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.15rem;color:var(--ink);letter-spacing:.01em;}
   .mtg-head .cnt{margin-left:auto;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:.8rem;background:#EAF2FF;color:#1E4C97;border-radius:999px;padding:0 9px;line-height:1.6;}
-  .mtg-clock{text-align:center;border-radius:11px;padding:10px 8px 12px;background:#E8F7EE;transition:background .3s;}
+  .mtg-clock{text-align:center;border-radius:11px;padding:12px 8px 12px;background:#E8F7EE;transition:background .3s;}
   .mtg-clock.warn{background:#FFF0D5;} .mtg-clock.over{background:#FDE7E3;}
   .mtg-clock.alarm{animation:mtgflash .7s ease-in-out infinite;}
   @keyframes mtgflash{50%{background:#F7B8AF;}}
@@ -876,6 +887,8 @@
     </div>
   </div>
 </div>
+
+<aside class="mtg-dock" id="mtgDock" aria-label="House meeting"></aside>
 
 <!-- Meeting summary -->
 <div class="ovl" id="mtgOvl">
@@ -2654,10 +2667,6 @@ function render(){
     return true;
   });
 
-  if(meeting){
-    var mtgP=projById(meeting.ids[meeting.idx]);
-    if(mtgP){ shown=[mtgP]; } else { mtgStop(); }
-  }
   if(!shown.length){
     list.innerHTML='<div class="empty"><div class="big">No projects to show</div>'+
       (board.projects.length? 'Try clearing the search or phase filter.' :
@@ -2980,12 +2989,7 @@ function projectCard(p){
 
   /* house card + Today's Tasks panel side by side (panel stacks below on narrow screens) */
   var row=document.createElement('div'); row.className='card-row';
-  if(meeting && meeting.ids[meeting.idx]===p.id){
-    row.classList.add('mtg');
-    var mtgEl=document.createElement('aside'); mtgEl.className='mtg-panel'; mtgEl.dataset.pid=p.id;
-    mtgEl.innerHTML=mtgPanelHtml(p);
-    row.appendChild(mtgEl);
-  }
+  if(meeting && meeting.ids[meeting.idx]===p.id){ row.classList.add('mtg-current'); }
   row.appendChild(card);
   var panel=document.createElement('div'); panel.className='daytask-panel';
   panel.dataset.pid=p.id;
@@ -4677,16 +4681,14 @@ document.getElementById('historyBody').addEventListener('click',function(e){
 });
 
 /* ============ Meeting mode ============
-   A left column beside the house card: a 3-minute countdown, a short agenda, a note that can
-   become a Today's Task, and previous/next house. Nothing on the board itself moves, and
-   nothing new is saved except Today's Tasks added through the existing button. */
+   A dock on the left edge (the board is pushed to the right, never covered or replaced).
+   It walks the houses one by one: it opens that house on the board, asks the four questions,
+   and quietly times it. There are no running numbers; at 3 minutes it beeps and says so.
+   Nothing new is saved except Today's Tasks added through the existing button. */
 var MTG_TARGET=180000, MTG_GOAL=40*60000;
 var meeting=null, mtgTimer=null, mtgAudio=null;
 var MTG_STEPS=[['Alerts & delays',''],['Who’s working there?',''],['Who is scheduled?',''],['Please review all the checklists to make sure before moving to the next house.','']];
-function mtgFmt(ms,signed){
-  var neg=ms<0; var t=Math.floor(Math.abs(ms)/1000); var m=Math.floor(t/60), sec=t%60;
-  return (neg&&signed?'+':'')+m+':'+String(sec).padStart(2,'0');
-}
+function mtgFmt(ms){ var t=Math.floor(Math.abs(ms)/1000); return Math.floor(t/60)+':'+String(t%60).padStart(2,'0'); }
 function mtgElapsed(){ return meeting ? meeting.accum+(meeting.running?Date.now()-meeting.runFrom:0) : 0; }
 function mtgCur(){ return meeting ? meeting.ids[meeting.idx] : null; }
 function mtgCommit(){ if(meeting){ meeting.times[mtgCur()]=mtgElapsed(); } }
@@ -4696,23 +4698,28 @@ function mtgTotal(){
   return sum+mtgElapsed();
 }
 function mtgState(pid){ meeting.state[pid]=meeting.state[pid]||{steps:[false,false,false,false],note:''}; return meeting.state[pid]; }
-function mtgPanelHtml(p){
-  var st=mtgState(p.id), n=meeting.ids.length, last=meeting.idx===n-1;
+function mtgDockRender(){
+  var dock=document.getElementById('mtgDock'); if(!dock||!meeting) return;
+  var pid=mtgCur(), p=projById(pid); if(!p) return;
+  var st=mtgState(pid), n=meeting.ids.length, last=meeting.idx===n-1;
   var steps=MTG_STEPS.map(function(s,i){
     var sub=s[1];
     if(i===0){ var od=delayStats(p).open; sub=od?od+(od===1?' open delay':' open delays'):'No open delays'; }
     var rv=i===MTG_STEPS.length-1;
     return '<label class="mtg-step'+(rv?' mtg-review':'')+(st.steps[i]?' done':'')+'"><input type="checkbox" data-mstep="'+i+'"'+(st.steps[i]?' checked':'')+'><span><b>'+(rv?'':(i+1)+'. ')+s[0]+'</b>'+(sub?'<small>'+esc(sub)+'</small>':'')+'</span></label>';
   }).join('');
-  return '<div class="mtg-head"><span class="lbl">House meeting</span><span class="cnt">House '+(meeting.idx+1)+' of '+n+'</span></div>'+
-    '<div class="mtg-clock" id="mtgClock"><div class="mtg-time" id="mtgTime">3:00</div><div class="mtg-sub" id="mtgSub">Target 3:00</div><div class="mtg-bar"><i id="mtgBar"></i></div></div>'+
+  dock.classList.toggle('show-time',!!meeting.showTime);
+  dock.innerHTML=
+    '<div class="mtg-head"><span class="lbl">House meeting</span><span class="cnt">House '+(meeting.idx+1)+' of '+n+'</span></div>'+
+    '<div class="mtg-house">'+esc(p.name)+(p.code?' ('+esc(p.code)+')':'')+'<small>'+esc(p.phase||'')+'</small></div>'+
+    '<div class="mtg-clock" id="mtgClock"><div class="mtg-status" id="mtgStatus">Meeting in progress</div><div class="mtg-time" id="mtgTime">0:00</div><div class="mtg-bar"><i id="mtgBar"></i></div></div>'+
     '<div class="mtg-btns"><button type="button" class="pri" id="mtgToggle" data-mact="toggle">❚❚ Pause</button><button type="button" data-mact="reset">Restart 3:00</button></div>'+
     '<div>'+steps+'</div>'+
     '<textarea class="mtg-note" id="mtgNote" placeholder="Decision / note for this house…" maxlength="200">'+esc(st.note)+'</textarea>'+
     '<button type="button" class="mtg-addtask" data-mact="note2task">+ Add note to Today’s Tasks</button>'+
     '<div class="mtg-nav"><button type="button" data-mact="prev"'+(meeting.idx===0?' disabled':'')+'>← Previous</button>'+
       '<button type="button" class="nxt" data-mact="next">'+(last?'Finish meeting ✓':'Next house →')+'</button></div>'+
-    '<div class="mtg-foot"><span>Meeting <b id="mtgTotal">0:00</b> / 40:00 goal</span><a data-mact="end">End meeting</a></div>';
+    '<div class="mtg-foot"><span><span class="mtg-link" data-mact="showtime">'+(meeting.showTime?'Hide time':'Show time')+'</span><span class="mtg-totalwrap"> · <b id="mtgTotal">0:00</b> / 40:00</span></span><a data-mact="end">End meeting</a></div>';
 }
 function mtgBeep(){
   try{
@@ -4731,30 +4738,33 @@ function mtgBeep(){
 }
 function mtgPaint(){
   if(!meeting) return;
-  var pid=mtgCur(), el=mtgElapsed(), left=MTG_TARGET-el;
+  var pid=mtgCur(), el=mtgElapsed(), over=el>=MTG_TARGET;
   var clock=document.getElementById('mtgClock'); if(!clock) return;
-  var over=left<=0, warn=!over && left<=30000;
-  document.getElementById('mtgTime').textContent=over?mtgFmt(left,true):mtgFmt(left);
-  document.getElementById('mtgSub').textContent=over?'⏰ 3 minutes are up — wrap up and move on':
-    (!meeting.running?'Paused':warn?'Wrap it up':'On pace · target 3:00');
+  document.getElementById('mtgStatus').textContent=over?'⏰ 3 minutes are up — wrap up and move on':(meeting.running?'Meeting in progress':'Paused');
+  clock.classList.toggle('over',over);
+  clock.classList.toggle('alarm',over && el-MTG_TARGET<8000 && meeting.running);
+  var t=document.getElementById('mtgTime'); if(t) t.textContent=over?'+'+mtgFmt(el-MTG_TARGET):mtgFmt(MTG_TARGET-el);
   document.getElementById('mtgBar').style.width=Math.min(100,el/MTG_TARGET*100)+'%';
-  clock.classList.toggle('warn',warn); clock.classList.toggle('over',over);
-  clock.classList.toggle('alarm',over && !meeting.ack[pid] && el-MTG_TARGET<8000);
   var tg=document.getElementById('mtgToggle'); if(tg) tg.textContent=meeting.running?'❚❚ Pause':'▶ Resume';
-  document.getElementById('mtgTotal').textContent=mtgFmt(mtgTotal());
+  var tt=document.getElementById('mtgTotal'); if(tt) tt.textContent=mtgFmt(mtgTotal());
   if(over && !meeting.alerted[pid] && meeting.running){
     meeting.alerted[pid]=true; mtgBeep(); toast('⏰ 3 minutes are up for '+((projById(pid)||{}).name||'this house'));
   }
 }
+function mtgScrollTo(pid){
+  var c=document.querySelector('.card[data-pid="'+pid+'"]'), row=c&&c.closest('.card-row');
+  if(row){ window.scrollTo({top:Math.max(0,row.getBoundingClientRect().top+window.pageYOffset-140),behavior:'smooth'}); }
+}
+function mtgCloseOpened(pid){ if(meeting.opened[pid]){ collapsed[pid]=true; delete meeting.opened[pid]; } }
 function mtgGo(idx){
   mtgCommit();
+  var prev=mtgCur(); if(prev) mtgCloseOpened(prev);        // put a house back the way we found it
   meeting.idx=idx; var pid=mtgCur();
   meeting.accum=meeting.times[pid]||0; meeting.running=true; meeting.runFrom=Date.now();
-  meeting.alerted[pid]=meeting.accum>=MTG_TARGET; meeting.ack[pid]=meeting.alerted[pid];
+  meeting.alerted[pid]=meeting.accum>=MTG_TARGET;
+  if(collapsed[pid]){ meeting.opened[pid]=true; }
   collapsed[pid]=false; selectedProjectId=pid;
-  render(); mtgPaint();
-  var l=document.getElementById('projectList'); if(l&&l.scrollIntoView) l.scrollIntoView({block:'start'});
-  window.scrollBy(0,-130);
+  render(); mtgDockRender(); mtgPaint(); mtgScrollTo(pid);
 }
 function mtgStart(){
   if(meeting){ toast('The meeting is already running'); return; }
@@ -4766,14 +4776,16 @@ function mtgStart(){
   }).map(function(p){ return p.id; });
   if(!ids.length){ toast('No houses to review'); return; }
   try{ var C=window.AudioContext||window.webkitAudioContext; if(C && !mtgAudio) mtgAudio=new C(); if(mtgAudio && mtgAudio.resume) mtgAudio.resume(); }catch(e){}   // unlocked by this click so the alarm can sound later
-  meeting={ids:ids,idx:0,times:{},state:{},alerted:{},ack:{},accum:0,running:true,runFrom:Date.now(),startedAt:Date.now()};
+  meeting={ids:ids,idx:0,times:{},state:{},alerted:{},opened:{},showTime:false,accum:0,running:true,runFrom:Date.now(),startedAt:Date.now()};
   document.body.classList.add('meeting-on');
-  mtgTimer=setInterval(mtgPaint,250);
+  mtgTimer=setInterval(mtgPaint,500);
   mtgGo(0);
 }
 function mtgStop(){
   if(mtgTimer){ clearInterval(mtgTimer); mtgTimer=null; }
+  if(meeting){ Object.keys(meeting.opened).forEach(function(id){ collapsed[id]=true; }); }
   meeting=null; document.body.classList.remove('meeting-on');
+  var dock=document.getElementById('mtgDock'); if(dock) dock.innerHTML='';
 }
 function mtgFinish(){
   mtgCommit();
@@ -4799,7 +4811,9 @@ document.addEventListener('click',function(e){
     if(meeting.running){ meeting.accum=mtgElapsed(); meeting.running=false; } else { meeting.runFrom=Date.now(); meeting.running=true; }
     mtgPaint();
   } else if(act==='reset'){
-    meeting.accum=0; meeting.times[pid]=0; meeting.runFrom=Date.now(); meeting.running=true; meeting.alerted[pid]=false; meeting.ack[pid]=false; mtgPaint();
+    meeting.accum=0; meeting.times[pid]=0; meeting.runFrom=Date.now(); meeting.running=true; meeting.alerted[pid]=false; mtgPaint();
+  } else if(act==='showtime'){
+    meeting.showTime=!meeting.showTime; mtgDockRender(); mtgPaint();
   } else if(act==='prev'){ if(meeting.idx>0) mtgGo(meeting.idx-1);
   } else if(act==='next'){
     if(!mtgState(pid).steps[MTG_STEPS.length-1] && !confirm('You have not ticked "review all the checklists" for this house.\n\nMove on anyway?')) return;
@@ -4807,7 +4821,7 @@ document.addEventListener('click',function(e){
   } else if(act==='end'){ if(confirm('End the meeting?')) mtgFinish();
   } else if(act==='note2task'){
     var st=mtgState(pid), nt=document.getElementById('mtgNote'); var txt=nt?nt.value:st.note;
-    if(p && addDayTask(p,txt)){ st.note=''; queueSave(); render(); mtgPaint(); toast('Added to Today’s Tasks'); }
+    if(p && addDayTask(p,txt)){ st.note=''; if(nt) nt.value=''; queueSave(); render(); mtgPaint(); toast('Added to Today’s Tasks'); }
     else toast('Type a note first');
   }
 });
