@@ -1873,6 +1873,65 @@ route('POST', '/api/read-selections', async (_, fd) => {
   return { ok: true, ...parsed, photoUrls, fileUrl };
 });
 
+// ── Reading a signed contract (needs the read-contract function) ──
+// Pages with real text go as text (lines rebuilt by position, so the filled-in blanks land
+// next to their labels); photographed pages go as small JPEGs. The e-signature audit pages
+// (emails, IP addresses) are never sent.
+const CONTRACT_URL_LS = 'stbContractFnUrl', CONTRACT_TOKEN_LS = 'stbContractFnToken';
+function contractConfig() {
+  let url = '', token = '';
+  try { url = localStorage.getItem(CONTRACT_URL_LS) || ''; token = localStorage.getItem(CONTRACT_TOKEN_LS) || ''; } catch (e) {}
+  return { url: url || (SUPABASE_URL + '/functions/v1/read-contract'), token };
+}
+function linesFromItems(items) {
+  const rows = [];
+  items.forEach(it => {
+    if (!it.str || !it.str.trim()) return;
+    const y = it.transform[5], x = it.transform[4];
+    let row = rows.find(r => Math.abs(r.y - y) <= 6);
+    if (!row) { row = { y, parts: [] }; rows.push(row); }
+    row.parts.push({ x, str: it.str });
+  });
+  rows.sort((a, b) => b.y - a.y);
+  return rows.map(r => r.parts.sort((a, b) => a.x - b.x).map(q => q.str).join(' ').replace(/\s+/g, ' ').trim()).join('\n');
+}
+const AUDIT_PAGE = /Sent for signature to|Viewed by [^\n]*\(|IP:\s*\d+\.\d+\.\d+\.\d+|The document has been completed/i;
+async function pageJpegBase64(page, width) {
+  const v1 = page.getViewport({ scale: 1 }), scale = Math.min(2.5, width / v1.width), vp = page.getViewport({ scale });
+  const c = document.createElement('canvas'); c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+  const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+  await page.render({ canvasContext: ctx, viewport: vp }).promise;
+  return c.toDataURL('image/jpeg', 0.8).split(',')[1];
+}
+window.contractConfig = contractConfig; window.CONTRACT_URL_LS = CONTRACT_URL_LS; window.CONTRACT_TOKEN_LS = CONTRACT_TOKEN_LS;
+window.readContractPdf = async function (file, catalog, step) {
+  const cfg = contractConfig();
+  if (!cfg.token) throw new HttpError(400, 'The contract reader is not set up on this computer yet. Open Settings and enter the contract key.');
+  const say = step || (() => {});
+  say('Opening the PDF…');
+  const pdfjs = await loadPdfJs();
+  const doc = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+  const pages = []; let skipped = 0, photos = 0;
+  for (let n = 1; n <= doc.numPages; n++) {
+    say('Reading page ' + n + ' of ' + doc.numPages + '…');
+    const page = await doc.getPage(n);
+    const text = linesFromItems((await page.getTextContent()).items);
+    if (AUDIT_PAGE.test(text)) { skipped++; continue; }
+    if (text.replace(/\s/g, '').length >= 80) pages.push({ n, text });
+    else { pages.push({ n, image: await pageJpegBase64(page, 1500) }); photos++; }
+  }
+  if (!pages.length) throw new HttpError(400, 'Nothing readable was found in that PDF.');
+  say('Sending ' + pages.length + ' pages to be read' + (photos ? ' (' + photos + ' photographed)' : '') + '… this takes about a minute.');
+  let res;
+  try {
+    res = await fetch(cfg.url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-stb-token': cfg.token }, body: JSON.stringify({ pages, catalog }) });
+  } catch (e) { throw new HttpError(0, 'Could not reach the contract reader. Check the address in Settings and the connection.'); }
+  const out = await res.json().catch(() => ({}));
+  if (!res.ok || !out.result) throw new HttpError(res.status, out.error || ('The contract reader answered ' + res.status + '.'));
+  out.result.skippedPages = skipped;
+  return out.result;
+};
+
 // ── Moving the data over from the old desktop tool (one time) ──
 // Choose the old STB-Ordenes folder; its houses and photos are copied to the cloud.
 window.importOldTool = async function (fileList, progress) {
@@ -2925,6 +2984,7 @@ const splitItems = cat => (cat.items || []).filter(i => isSplit(i.id));
 function openAllowances() {
   const p = house();
   initDraft(p);
+  CT = null; CT_HOUSE = null; CT_NA = [];
 
   let html = '<div class="notice blue">Type the figures straight off the signed contract. ' +
     'Nothing here is guessed — what you enter is exactly what the alerts compare against, and ' +
@@ -2944,6 +3004,11 @@ function openAllowances() {
         : '') + '</div>' +
     '</div><div style="font-size:12px;color:var(--gray);margin-top:9px">' +
     'The percentage allowances are worked out from this number.</div></div>';
+
+  html += '<div class="gray-box" id="ct-box"><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">' +
+    '<button class="btn btn-red" id="ct-btn" onclick="readContract()">Read the contract and fill this in</button>' +
+    '<span style="font-size:12.5px;color:var(--gray)">Choose the contract PDF above first. You check everything before it is saved.</span></div>' +
+    '<div id="ct-out"></div></div>';
 
   (p.categories || []).slice()
     .sort((a, b) => (a.orderRank || 99) - (b.orderRank || 99))
@@ -2999,6 +3064,115 @@ function openAllowances() {
     '<button class="btn btn-navy" onclick="saveAllowances()">Save all allowances</button>', true);
 
   (p.categories || []).forEach(cat => allowanceRows(cat.id));
+}
+
+
+// ── Reading the signed contract ──────────────────────────────
+let CT = null, CT_HOUSE = null, CT_NA = [];
+const normName = t => String(t || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+async function readContract() {
+  const file = $('al-contract').files[0];
+  if (!file) { toast('Choose the contract PDF above first'); return; }
+  const btn = $('ct-btn'), out = $('ct-out');
+  btn.disabled = true;
+  const say = t => { out.innerHTML = '<div class="notice blue" style="margin-top:12px">' + esc(t) + '</div>'; };
+  try {
+    const catalog = (house().categories || []).map(cat => {
+      const b = catBase(cat.id);
+      return { id: cat.id, name: b.name, budgetType: (cat.budget || {}).type || 'open', oneWholeBudget: b.splittable === false,
+        items: (cat.items || []).map(i => ({ name: i.name, type: i.type || 'category' })) };
+    });
+    CT = await readContractPdf(file, catalog, say);
+    showContractReview();
+  } catch (e) {
+    out.innerHTML = '<div class="notice red" style="margin-top:12px">' + esc(e.message || String(e)) +
+      '<br>You can still type the allowances in by hand below.</div>';
+  } finally { btn.disabled = false; }
+}
+
+function describeCat(c, price) {
+  const n = v => (v == null || v === '' ? null : Number(v));
+  const bits = [];
+  if (c.budgetType === 'percent' && n(c.percent)) bits.push(c.percent + '% of the contract price' + (price ? ' = ' + fmt(price * c.percent / 100) : ''));
+  else if (c.budgetType === 'amount' && n(c.amount)) bits.push(fmt(c.amount) + ' total');
+  else if (c.budgetType === 'perUnit' && n(c.rate)) bits.push(fmt(c.rate) + ' each' + (n(c.qty) ? ' × ' + c.qty : ''));
+  else if (c.budgetType === 'perItem') bits.push('priced line by line');
+  (c.lines || []).forEach(l => {
+    const cap = n(l.cap) ? ' (up to ' + l.cap + ' sqft)' : '';
+    const v = l.basis === 'amount' ? fmt(l.amount) : l.basis === 'unit' ? fmt(l.rate) + ' each' + (n(l.qty) ? ' × ' + l.qty : '') : fmt(l.rate) + '/sqft' + (n(l.sqft) ? ' × ' + l.sqft : '') + cap;
+    bits.push('<span style="display:block;margin-left:10px">• ' + esc(l.item) + ': ' + v + (l.note ? ' <span class="muted">(' + esc(l.note) + ')</span>' : '') + '</span>');
+  });
+  return bits.map(b => b.startsWith('<span') ? b : '<span style="display:block">' + b + '</span>').join('') || '<span class="muted">no figure found</span>';
+}
+
+function showContractReview() {
+  const r = CT, h = r.house || {}, price = Number(h.contractPrice) || 0, p = house();
+  const fact = (k, v) => '<tr><td style="color:var(--gray);width:150px">' + k + '</td><td><b>' + (v == null || v === '' ? '<span class="muted">not found</span>' : esc(String(v))) + '</b></td></tr>';
+  let html = '<div style="margin-top:14px"><div class="notice blue">This is what was read from the contract. <b>Check it against the paper</b>, then press the button at the bottom. ' +
+    'Nothing is saved until you press <b>Save all allowances</b>.</div>' +
+    '<table class="items" style="margin-top:10px">' +
+      fact('Client', h.client) + fact('Address', h.address) + fact('Living area', h.livingSqft ? h.livingSqft + ' sqft' : null) +
+      fact('Total area', h.totalSqft ? h.totalSqft + ' sqft' : null) + fact('Contract price', price ? fmt(price) : null) +
+      fact('Deposit', h.deposit ? fmt(h.deposit) : null) + fact('Days to build', h.daysToBuild) + '</table>' +
+    '<table class="items" style="margin-top:12px"><tr><th>Category</th><th>What the contract says</th></tr>';
+  (r.categories || []).forEach(c => {
+    const base = catBase(c.id);
+    let body;
+    if (c.status === 'priced') {
+      body = describeCat(c, price) + (c.needs && c.needs.length ? '<div style="margin-top:4px">' + c.needs.map(x => '<span class="chip" style="background:var(--amber-soft);color:var(--amber-text)">needs: ' + esc(x) + '</span>').join(' ') + '</div>' : '');
+    } else {
+      const checked = c.status === 'excluded' || c.id === 'garage';
+      body = '<span class="muted">' + (c.status === 'excluded' ? 'Not included in this contract.' : 'Not mentioned in this contract.') + '</span>' +
+        '<label style="display:block;margin-top:3px;font-size:12.5px"><input type="checkbox" id="ct-na-' + c.id + '"' + (checked ? ' checked' : '') +
+        '> Mark “does not apply” for this house</label>';
+    }
+    body += c.evidence ? '<div class="muted" style="font-size:11.5px;margin-top:3px">“' + esc(c.evidence) + '”</div>' : '';
+    html += '<tr><td class="i-name">' + base.icon + ' ' + esc(base.name) + '</td><td>' + body + '</td></tr>';
+  });
+  html += '</table>';
+  if ((r.otherAllowances || []).length) {
+    html += '<div class="notice" style="margin-top:12px"><b>Allowances with no place here yet:</b><br>' +
+      r.otherAllowances.map(o => '• ' + esc(o.label) + ' — ' + esc(o.detail)).join('<br>') + '</div>';
+  }
+  if ((r.warnings || []).length) {
+    html += '<div class="notice red" style="margin-top:12px"><b>Check these:</b><br>' + r.warnings.map(w => '• ' + esc(w)).join('<br>') + '</div>';
+  }
+  html += '<div style="margin-top:12px"><button class="btn btn-navy" onclick="applyContract()">Fill the allowances below with this</button></div></div>';
+  $('ct-out').innerHTML = html;
+}
+
+function applyContract() {
+  const r = CT; if (!r) return;
+  const h = r.house || {}, p = house();
+  if (Number(h.contractPrice)) $('al-price').value = h.contractPrice;
+  CT_HOUSE = { client: h.client || '', address: h.address || '', sqft: h.totalSqft || h.livingSqft || '' };
+  CT_NA = [];
+  (r.categories || []).forEach(c => {
+    const cat = (p.categories || []).find(x => x.id === c.id); if (!cat) return;
+    const base = catBase(c.id);
+    if (c.status !== 'priced') { const na = $('ct-na-' + c.id); if (na && na.checked) CT_NA.push(c.id); return; }
+    let type = c.budgetType || 'open';
+    if (base.splittable === false && type === 'perItem') type = 'amount';
+    const sel = $('al-t-' + c.id);
+    if (sel && Array.from(sel.options).some(o => o.value === type)) sel.value = type;
+    const set = (id, v) => { const el = $(id); if (el && v != null && v !== '') el.value = v; };
+    set('al-a-' + c.id, c.amount); set('al-p-' + c.id, c.percent); set('al-ur-' + c.id, c.rate); set('al-uq-' + c.id, c.qty);
+    if (base.splittable !== false) {
+      (c.lines || []).forEach(l => {
+        const it = (cat.items || []).find(i => normName(i.name) === normName(l.item)); if (!it) return;
+        const d = draftOf(it.id); d.basis = l.basis;
+        if (l.basis === 'amount') { d.value = l.amount == null ? '' : l.amount; d.count = ''; d.cap = ''; }
+        else if (l.basis === 'unit') { d.value = l.rate == null ? '' : l.rate; d.count = l.qty == null ? '' : l.qty; d.cap = ''; }
+        else { d.value = l.rate == null ? '' : l.rate; d.count = l.sqft == null ? '' : l.sqft; d.cap = l.cap == null ? '' : l.cap; }
+      });
+    }
+    allowanceRows(c.id);
+  });
+  refreshPercents();
+  $('ct-out').innerHTML = '<div class="notice blue" style="margin-top:12px">✅ Filled in below. Go down the list, compare each figure with the paper contract, ' +
+    'add the numbers marked “needs”, then press <b>Save all allowances</b>.' +
+    (CT_NA.length ? '<br>' + CT_NA.length + ' categor' + (CT_NA.length === 1 ? 'y' : 'ies') + ' will be marked “does not apply” when you save.' : '') + '</div>';
 }
 
 // The lines the contract prices on their own — only those, never the full list
@@ -3149,6 +3323,14 @@ async function saveAllowances() {
   const r = await apiJSON('/api/projects/' + S.houseId + '/allowances', 'POST', {
     contractPrice: val('al-price'), categories
   });
+  if (CT_HOUSE) {                                   // from the contract reader: only fill what is still empty
+    const fill = {};
+    if (!p.client && CT_HOUSE.client) fill.client = CT_HOUSE.client;
+    if (!p.address && CT_HOUSE.address) fill.address = CT_HOUSE.address;
+    if (!p.sqft && CT_HOUSE.sqft) fill.sqft = CT_HOUSE.sqft;
+    if (Object.keys(fill).length) await apiJSON('/api/projects/' + S.houseId, 'PUT', fill);
+  }
+  for (const id of CT_NA) await apiJSON('/api/projects/' + S.houseId + '/categories/' + id, 'PUT', { notApplicable: true });
   closeModal(); await load(); openHouse(S.houseId);
   toast('Allowances saved · house total ' + fmt(r.summary.allowanceTotal));
 }
@@ -3360,6 +3542,9 @@ function openSettings() {
       '<input type="password" id="cf-key" placeholder="At least 4 characters"></div>' +
     '<div class="notice blue">Construction phases come from the scheduling board. Each house is matched by its number ' +
       '(for example 113) and family name; press <b>Sync phases</b> to update all of them (' + S.reports.length + ' houses on the board).</div>' +
+    '<div class="set-sec"><h4>Contract reader (this computer only)</h4>' +
+      '<div class="field"><label>Contract key</label><input type="password" id="cf-ct-token" placeholder="' + (contractConfig().token ? 'saved — type to replace' : 'paste the key from Supabase') + '"></div>' +
+      '<div class="field"><label>Reader address</label><input type="text" id="cf-ct-url" value="' + esc(contractConfig().url) + '"></div></div>' +
     '<div class="set-sec"><h4>Backup</h4>' +
       '<button class="btn-sm" onclick="downloadOrdersBackup()">Download a backup file</button></div>' +
     '<div class="set-sec"><h4>Bring over the old desktop tool</h4>' +
@@ -3394,6 +3579,10 @@ async function saveSettings() {
   const body = { warnPercent: val('cf-warn') };
   if (val('cf-key')) body.key = val('cf-key');
   await apiJSON('/api/config', 'POST', body);
+  try {
+    if (val('cf-ct-token')) localStorage.setItem(CONTRACT_TOKEN_LS, val('cf-ct-token').trim());
+    if (val('cf-ct-url')) localStorage.setItem(CONTRACT_URL_LS, val('cf-ct-url').trim());
+  } catch (e) {}
   closeModal(); await load(); toast('Settings saved');
 }
 
