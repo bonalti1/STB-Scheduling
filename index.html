@@ -385,6 +385,8 @@
   .mtg-step{display:flex;gap:9px;align-items:flex-start;font-size:.88rem;padding:5px 2px;cursor:pointer;}
   .mtg-step input{width:18px;height:18px;margin:1px 0 0;accent-color:var(--green);}
   .mtg-step small{display:block;font-size:.72rem;color:var(--muted);font-weight:500;}
+  .mtg-review{background:#FFF6DC;border:1px solid #F1E3BF;border-radius:9px;padding:9px 8px;margin-top:4px;}
+  .mtg-review b{font-weight:700;line-height:1.25;display:block;}
   .mtg-step.done b{text-decoration:line-through;color:var(--muted);font-weight:600;}
   .mtg-note{width:100%;font:inherit;font-size:.88rem;border:1px solid var(--line);border-radius:8px;padding:8px;min-height:58px;resize:none;}
   .mtg-addtask{background:var(--navy);border-color:var(--navy);color:#fff;}
@@ -4680,7 +4682,7 @@ document.getElementById('historyBody').addEventListener('click',function(e){
    nothing new is saved except Today's Tasks added through the existing button. */
 var MTG_TARGET=180000, MTG_GOAL=40*60000;
 var meeting=null, mtgTimer=null, mtgAudio=null;
-var MTG_STEPS=[['Alerts & delays','Anything red or waiting?'],['Checklist','What is next, what is stuck?'],['Today’s tasks','Who does what today?']];
+var MTG_STEPS=[['Alerts & delays',''],['Who’s working there?',''],['Who is scheduled?',''],['Please review all the checklists to make sure before moving to the next house.','']];
 function mtgFmt(ms,signed){
   var neg=ms<0; var t=Math.floor(Math.abs(ms)/1000); var m=Math.floor(t/60), sec=t%60;
   return (neg&&signed?'+':'')+m+':'+String(sec).padStart(2,'0');
@@ -4693,11 +4695,14 @@ function mtgTotal(){
   Object.keys(meeting.times).forEach(function(k){ if(k!==cur) sum+=meeting.times[k]; });
   return sum+mtgElapsed();
 }
-function mtgState(pid){ meeting.state[pid]=meeting.state[pid]||{steps:[false,false,false],note:''}; return meeting.state[pid]; }
+function mtgState(pid){ meeting.state[pid]=meeting.state[pid]||{steps:[false,false,false,false],note:''}; return meeting.state[pid]; }
 function mtgPanelHtml(p){
   var st=mtgState(p.id), n=meeting.ids.length, last=meeting.idx===n-1;
   var steps=MTG_STEPS.map(function(s,i){
-    return '<label class="mtg-step'+(st.steps[i]?' done':'')+'"><input type="checkbox" data-mstep="'+i+'"'+(st.steps[i]?' checked':'')+'><span><b>'+(i+1)+'. '+s[0]+'</b><small>'+s[1]+'</small></span></label>';
+    var sub=s[1];
+    if(i===0){ var od=delayStats(p).open; sub=od?od+(od===1?' open delay':' open delays'):'No open delays'; }
+    var rv=i===MTG_STEPS.length-1;
+    return '<label class="mtg-step'+(rv?' mtg-review':'')+(st.steps[i]?' done':'')+'"><input type="checkbox" data-mstep="'+i+'"'+(st.steps[i]?' checked':'')+'><span><b>'+(rv?'':(i+1)+'. ')+s[0]+'</b>'+(sub?'<small>'+esc(sub)+'</small>':'')+'</span></label>';
   }).join('');
   return '<div class="mtg-head"><span class="lbl">House meeting</span><span class="cnt">House '+(meeting.idx+1)+' of '+n+'</span></div>'+
     '<div class="mtg-clock" id="mtgClock"><div class="mtg-time" id="mtgTime">3:00</div><div class="mtg-sub" id="mtgSub">Target 3:00</div><div class="mtg-bar"><i id="mtgBar"></i></div></div>'+
@@ -4796,7 +4801,9 @@ document.addEventListener('click',function(e){
   } else if(act==='reset'){
     meeting.accum=0; meeting.times[pid]=0; meeting.runFrom=Date.now(); meeting.running=true; meeting.alerted[pid]=false; meeting.ack[pid]=false; mtgPaint();
   } else if(act==='prev'){ if(meeting.idx>0) mtgGo(meeting.idx-1);
-  } else if(act==='next'){ if(meeting.idx<meeting.ids.length-1) mtgGo(meeting.idx+1); else mtgFinish();
+  } else if(act==='next'){
+    if(!mtgState(pid).steps[MTG_STEPS.length-1] && !confirm('You have not ticked "review all the checklists" for this house.\n\nMove on anyway?')) return;
+    if(meeting.idx<meeting.ids.length-1) mtgGo(meeting.idx+1); else mtgFinish();
   } else if(act==='end'){ if(confirm('End the meeting?')) mtgFinish();
   } else if(act==='note2task'){
     var st=mtgState(pid), nt=document.getElementById('mtgNote'); var txt=nt?nt.value:st.note;
