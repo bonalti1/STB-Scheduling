@@ -3544,7 +3544,9 @@ function openSettings() {
       '(for example 113) and family name; press <b>Sync phases</b> to update all of them (' + S.reports.length + ' houses on the board).</div>' +
     '<div class="set-sec"><h4>Contract reader (this computer only)</h4>' +
       '<div class="field"><label>Contract key</label><input type="password" id="cf-ct-token" placeholder="' + (contractConfig().token ? 'saved — type to replace' : 'paste the key from Supabase') + '"></div>' +
-      '<div class="field"><label>Reader address</label><input type="text" id="cf-ct-url" value="' + esc(contractConfig().url) + '"></div></div>' +
+      '<div class="field"><label>Reader address</label><input type="text" id="cf-ct-url" value="' + esc(contractConfig().url) + '"></div>' +
+      '<button class="btn-sm" onclick="saveContractReader()">Save the contract reader</button>' +
+      '<div id="ct-saved" style="font-size:12.5px;margin-top:8px">' + (contractConfig().token ? '✅ A contract key is saved on this computer.' : 'No contract key saved on this computer yet.') + '</div></div>' +
     '<div class="set-sec"><h4>Backup</h4>' +
       '<button class="btn-sm" onclick="downloadOrdersBackup()">Download a backup file</button></div>' +
     '<div class="set-sec"><h4>Bring over the old desktop tool</h4>' +
@@ -3575,14 +3577,27 @@ async function sendCO(coId) {
     await load(); openHouse(S.houseId); toast('Sent to Cobros');
   } catch (_) { /* the message already showed */ }
 }
+// Kept on this computer only (never in the cloud). Checked by reading it back, so a blocked browser shows a clear message.
+function saveContractReader() {
+  const tok = (val('cf-ct-token') || '').trim(), url = (val('cf-ct-url') || '').trim();
+  try {
+    if (tok) localStorage.setItem(CONTRACT_TOKEN_LS, tok);
+    if (url) localStorage.setItem(CONTRACT_URL_LS, url);
+    const back = contractConfig();
+    if ((tok && back.token !== tok) || (url && back.url !== url)) throw new Error('read-back mismatch');
+  } catch (e) {
+    const el = $('ct-saved'); if (el) el.innerHTML = '⚠ This browser would not keep the setting (private window or blocked site data). Use a normal Chrome window.';
+    toast('Could not save the contract reader on this computer'); return false;
+  }
+  const el = $('ct-saved'); if (el) el.innerHTML = '✅ Saved on this computer. A contract key is ' + (contractConfig().token ? 'saved.' : 'NOT saved yet.');
+  toast('Contract reader saved on this computer'); return true;
+}
+
 async function saveSettings() {
+  if ((val('cf-ct-token') || '').trim() || (val('cf-ct-url') || '').trim()) saveContractReader();   // first, so it never depends on the cloud save
   const body = { warnPercent: val('cf-warn') };
   if (val('cf-key')) body.key = val('cf-key');
   await apiJSON('/api/config', 'POST', body);
-  try {
-    if (val('cf-ct-token')) localStorage.setItem(CONTRACT_TOKEN_LS, val('cf-ct-token').trim());
-    if (val('cf-ct-url')) localStorage.setItem(CONTRACT_URL_LS, val('cf-ct-url').trim());
-  } catch (e) {}
   closeModal(); await load(); toast('Settings saved');
 }
 
