@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STB Pickups</title>
+<link rel="icon" href="favicon.png">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #13233d; --red: #e8442e; --green: #2e7d4f; --green-soft: #e6f2ea;
+    --amber: #f5a623; --amber-soft: #fdf3dd; --amber-text: #9a6b00;
+    --red-soft: #fdeae7; --blue: #2f6fb3; --blue-soft: #e8f0f9;
+    --gray: #667085; --border: #e3e6eb; --bg: #f6f5f2;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: #1c2534; }
+  header { background: var(--navy); color: white; padding: 14px 16px 0; position: sticky; top: 0; z-index: 10; }
+  .top { display: flex; align-items: center; gap: 10px; }
+  .top img { width: 40px; height: 40px; background: white; border-radius: 7px; padding: 3px; }
+  h1 { font-family: 'Oswald'; font-size: 20px; letter-spacing: 1px; text-transform: uppercase; }
+  h1 span { color: var(--red); }
+  .who { font-size: 11px; color: #8fa0bb; }
+  .lang { margin-left: auto; background: transparent; color: white; border: 1px solid rgba(255,255,255,.3);
+          border-radius: 7px; padding: 7px 11px; font-weight: 700; font-size: 12px; }
+  nav { display: flex; margin-top: 12px; overflow-x: auto; }
+  nav button { flex: 1; background: none; border: none; color: #8fa0bb; font-family: 'Oswald'; font-size: 13px;
+               letter-spacing: .5px; text-transform: uppercase; padding: 11px 3px; border-bottom: 3px solid transparent; white-space: nowrap; }
+  nav button.on { color: white; border-bottom-color: var(--red); }
+  nav .n { background: var(--red); color: white; border-radius: 9px; padding: 0 6px; font-family: Inter; font-size: 11px; margin-left: 4px; }
+  main { padding: 14px 12px 80px; max-width: 640px; margin: 0 auto; }
+  .day { background: var(--blue-soft); color: #1f5590; border-radius: 10px; padding: 11px 14px; font-size: 13px; margin-bottom: 12px; }
+  .group { font-family: 'Oswald'; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; color: var(--navy);
+           margin: 18px 0 8px; display: flex; gap: 8px; align-items: center; }
+  .group small { font-family: Inter; font-size: 12px; color: var(--gray); text-transform: none; letter-spacing: 0; }
+  .card { background: white; border-radius: 12px; padding: 12px; margin-bottom: 9px; display: flex; gap: 12px;
+          box-shadow: 0 1px 4px rgba(16,30,54,.08); border-left: 5px solid var(--border); align-items: flex-start; }
+  .card.critical { border-left-color: var(--red); } .card.urgent { border-left-color: var(--amber); }
+  .card.done { opacity: .55; }
+  .ph { width: 64px; height: 64px; border-radius: 9px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0;
+        background: #eef1f5; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+  .info { flex: 1; min-width: 0; }
+  .t { font-weight: 700; font-size: 15px; }
+  .s { font-size: 12.5px; color: var(--gray); margin-top: 2px; line-height: 1.4; word-wrap: break-word; }
+  .tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; }
+  .tag { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 12px; background: #eef1f5; color: #48566e; }
+  .tag.red { background: var(--red-soft); color: #b3311f; } .tag.amber { background: var(--amber-soft); color: var(--amber-text); }
+  .tag.blue { background: var(--blue-soft); color: var(--blue); }
+  .acts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 9px; }
+  .btn { border: none; border-radius: 9px; font-family: 'Oswald'; font-weight: 600; letter-spacing: .8px;
+         text-transform: uppercase; padding: 11px 14px; font-size: 13px; background: var(--navy); color: white; }
+  .btn.green { background: var(--green); } .btn.light { background: #eef1f5; color: #33415c; }
+  .empty { text-align: center; color: var(--gray); padding: 40px 10px; font-size: 14px; }
+  .empty div { font-size: 38px; margin-bottom: 8px; }
+  .toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--navy); color: white;
+           padding: 12px 20px; border-radius: 10px; font-weight: 600; font-size: 14px; display: none; z-index: 20; }
+  .toast.on { display: block; }
+  .sheet-bg { position: fixed; inset: 0; background: rgba(12,20,34,.55); display: none; align-items: flex-end; z-index: 30; }
+  .sheet-bg.on { display: flex; }
+  .sheet { background: white; width: 100%; border-radius: 16px 16px 0 0; padding: 18px 16px 26px; }
+  .sheet h2 { font-family: Oswald; font-size: 18px; text-transform: uppercase; margin-bottom: 12px; }
+  .sheet .btn { width: 100%; margin-bottom: 8px; padding: 14px; font-size: 15px; }
+  input[type=text] { width: 100%; padding: 13px; border: 1px solid var(--border); border-radius: 10px; font-size: 16px; margin-bottom: 10px; }
+  /* access gate */
+  #gate { position: fixed; inset: 0; z-index: 999; background: #13233d; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .gate-box { background: white; border-radius: 18px; padding: 36px 32px; width: 100%; max-width: 380px; text-align: center; box-shadow: 0 25px 70px rgba(0,0,0,.45); }
+  .gate-box img { width: 120px; height: auto; margin: 0 auto 12px; display: block; }
+  .gate-box h1 { font-size: 22px; text-transform: uppercase; letter-spacing: 1px; color: #13233d; }
+  .gate-box h1 span { color: #e8442e; }
+  .gate-box .sub { font-size: 12px; color: #667085; letter-spacing: 2px; text-transform: uppercase; margin: 4px 0 22px; }
+  .gate-box input { width: 100%; padding: 13px 16px; border: 1px solid #e3e6eb; border-radius: 10px; font-size: 16px; text-align: center; letter-spacing: 2px; font-family: 'Inter'; }
+  .gate-box button { width: 100%; margin-top: 14px; padding: 13px; border: 0; border-radius: 10px; background: #e8442e; color: white; font-family: 'Oswald'; font-size: 15px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; }
+  .gate-box .err { color: #e8442e; font-size: 13px; font-weight: 600; margin-top: 12px; display: none; }
+</style>
+</head>
+<body>
+<div id="gate">
+  <div class="gate-box">
+    <img src="south-texas-builders-logo.png" alt="South Texas Builders">
+    <h1 class="oswald">STB <span>Pickups</span></h1>
+    <div class="sub">South Texas Builders</div>
+    <form onsubmit="orderGate(event)">
+      <input id="gateKey" type="password" placeholder="Access key" autocomplete="current-password">
+      <button type="submit">Sign in</button>
+    </form>
+    <div class="err" id="gateErr">Wrong key. Try again.</div>
+    <div class="err" id="gateMsg"></div>
+  </div>
+</div>
+<header>
+  <div class="top">
+    <img src="south-texas-builders-logo.png" alt="STB">
+    <div><h1>STB <span id="h-title">Pickups</span></h1><div class="who" id="who"></div></div>
+    <button class="lang" id="lang" onclick="toggleLang()">ES</button>
+  </div>
+  <nav>
+    <button id="tab-pickup" onclick="go('pickup')"></button>
+    <button id="tab-garage" onclick="go('garage')"></button>
+    <button id="tab-coming" onclick="go('coming')"></button>
+    <button id="tab-done" onclick="go('done')"></button>
+  </nav>
+</header>
+<main id="view"></main>
+<div class="sheet-bg" id="sheetBg" onclick="if(event.target===this)closeSheet()"><div class="sheet" id="sheet"></div></div>
+<div class="toast" id="toast"></div>
+
+<script src="lib/orders-engine.js"></script>
+<script>
+// Robert's phone: what to pick up, what is in the garage, what goes to each house.
+const T = {
+  en: {
+    title: 'Pickups', pickup: 'Pick up', garage: 'In garage', coming: 'On the way', done: 'Delivered',
+    pickupDay: d => 'Pickup day: <b>' + d + '</b>. Take everything below to the garage.',
+    noPickupDay: 'Take everything below to the garage.',
+    at: 'At', toGarage: '✓ Took it to the garage', toHouse: '✓ Delivered to the house',
+    arrived: 'It arrived', where: 'Where did it arrive?', cancel: 'Cancel', undo: 'Undo',
+    neededNow: 'NEEDED NOW', neededSoon: 'Needed next', room: 'Goes in', pieces: 'pieces',
+    order: 'Order', eta: 'Expected',
+    emptyPickup: 'Nothing waiting to be picked up.', emptyGarage: 'The garage is empty.',
+    emptyComing: 'Nothing on the way.', emptyDone: 'Nothing delivered yet.',
+    take: n => n + ' to take', name: 'Your name', nameQ: 'Who is using this phone?', save: 'Save',
+    saved: 'Saved', by: 'by', change: 'change'
+  },
+  es: {
+    title: 'Recolección', pickup: 'Recoger', garage: 'En garage', coming: 'En camino', done: 'Entregado',
+    pickupDay: d => 'Día de recolección: <b>' + d + '</b>. Lleva todo esto al garage.',
+    noPickupDay: 'Lleva todo esto al garage.',
+    at: 'En', toGarage: '✓ Lo llevé al garage', toHouse: '✓ Lo entregué en la casa',
+    arrived: 'Ya llegó', where: '¿Dónde llegó?', cancel: 'Cancelar', undo: 'Deshacer',
+    neededNow: 'SE NECESITA YA', neededSoon: 'Se necesita pronto', room: 'Va en', pieces: 'piezas',
+    order: 'Orden', eta: 'Llega',
+    emptyPickup: 'No hay nada que recoger.', emptyGarage: 'El garage está vacío.',
+    emptyComing: 'No hay nada en camino.', emptyDone: 'Todavía no se ha entregado nada.',
+    take: n => n + ' por llevar', name: 'Tu nombre', nameQ: '¿Quién usa este teléfono?', save: 'Guardar',
+    saved: 'Guardado', by: 'por', change: 'cambiar'
+  }
+};
+const DAYS_ES = { Monday: 'lunes', Tuesday: 'martes', Wednesday: 'miércoles', Thursday: 'jueves', Friday: 'viernes', Saturday: 'sábado', Sunday: 'domingo' };
+
+const store = {
+  get: k => { try { return localStorage.getItem(k); } catch (_) { return null; } },
+  set: (k, v) => { try { localStorage.setItem(k, v); } catch (_) {} }
+};
+const S = { lang: store.get('stb-lang') || 'en', view: 'pickup', name: store.get('stb-driver') || '', d: null };
+const L = () => T[S.lang];
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+function toast(m) { const t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('on'), 2200); }
+
+async function load() {
+  S.d = await api('/api/deliveries');
+  render();
+  if (!S.name) askName();
+}
+
+function toggleLang() { S.lang = S.lang === 'en' ? 'es' : 'en'; store.set('stb-lang', S.lang); render(); }
+function go(v) { S.view = v; render(); window.scrollTo(0, 0); }
+
+const placeName = id => id === 'garage' ? S.d.garage
+  : ((S.d.places.find(p => p.id === id) || {}).name || id || '—');
+const weight = i => ({ critical: 0, urgent: 1, soon: 2 })[i.need] ?? 3;
+
+function render() {
+  const l = L();
+  $('h-title').textContent = l.title;
+  $('lang').textContent = S.lang === 'en' ? 'ES' : 'EN';
+  $('who').innerHTML = S.name ? esc(S.name) + ' · <a href="#" style="color:#8fa0bb" onclick="askName();return false">' + l.change + '</a>' : '';
+  const items = S.d.items;
+  const lists = {
+    pickup: items.filter(i => i.stage === 'arrived'),
+    garage: items.filter(i => i.stage === 'garage'),
+    coming: items.filter(i => !i.stage),
+    done: items.filter(i => i.stage === 'delivered')
+  };
+  ['pickup', 'garage', 'coming', 'done'].forEach(v => {
+    const n = lists[v].length;
+    $('tab-' + v).innerHTML = l[v] + (n && v !== 'done' ? '<span class="n">' + n + '</span>' : '');
+    $('tab-' + v).classList.toggle('on', S.view === v);
+  });
+
+  const list = lists[S.view];
+  let html = '';
+  if (S.view === 'pickup') {
+    const day = S.d.pickupDay ? (S.lang === 'es' ? (DAYS_ES[S.d.pickupDay] || S.d.pickupDay) : S.d.pickupDay) : '';
+    html += '<div class="day">' + (day ? l.pickupDay(day) : l.noPickupDay) + '</div>';
+    html += grouped(list, i => i.location, k => l.at + ' ' + esc(placeName(k)), i =>
+      '<button class="btn green" onclick="move(\'' + key(i) + '\',\'garage\')">' + l.toGarage + '</button>');
+  } else if (S.view === 'garage') {
+    html += grouped(list, i => i.house, k => esc(k), i =>
+      '<button class="btn green" onclick="move(\'' + key(i) + '\',\'delivered\')">' + l.toHouse + '</button>', true);
+  } else if (S.view === 'coming') {
+    html += grouped(list, i => i.house, k => esc(k), i =>
+      '<button class="btn" onclick="arrived(\'' + key(i) + '\')">' + l.arrived + '</button>');
+  } else {
+    const recent = list.slice().sort((a, b) => lastAt(b).localeCompare(lastAt(a))).slice(0, 60);
+    html += grouped(recent, i => i.house, k => esc(k), i =>
+      '<button class="btn light" onclick="move(\'' + key(i) + '\',\'garage\')">' + l.undo + '</button>');
+  }
+  if (!list.length) html += '<div class="empty"><div>' + ({ pickup: '📦', garage: '🏠', coming: '🚚', done: '✅' })[S.view] +
+    '</div>' + l['empty' + S.view[0].toUpperCase() + S.view.slice(1)] + '</div>';
+  $('view').innerHTML = html;
+}
+
+const key = i => i.houseId + '|' + i.catId + '|' + i.itemId;
+const lastAt = i => ((i.log || []).slice(-1)[0] || {}).at || '';
+
+function grouped(list, by, title, actions, countTake) {
+  const groups = {};
+  list.slice().sort((a, b) => weight(a) - weight(b)).forEach(i => (groups[by(i)] = groups[by(i)] || []).push(i));
+  return Object.keys(groups).sort((a, b) => Math.min(...groups[a].map(weight)) - Math.min(...groups[b].map(weight)))
+    .map(k => {
+      const g = groups[k];
+      const addr = g[0].address && by(g[0]) === g[0].house ? ' <small>' + esc(g[0].address) + '</small>' : '';
+      return '<div class="group">' + title(k) + addr + (countTake ? ' <small>· ' + L().take(g.length) + '</small>' : '') + '</div>' +
+        g.map(i => card(i, actions(i))).join('');
+    }).join('');
+}
+
+function card(i, actions) {
+  const l = L();
+  const tags = [];
+  if (S.view !== 'done') {
+    if (i.need === 'critical') tags.push('<span class="tag red">' + l.neededNow + '</span>');
+    else if (i.need === 'urgent') tags.push('<span class="tag amber">' + l.neededSoon + '</span>');
+  }
+  if (i.room) tags.push('<span class="tag blue">' + l.room + ': ' + esc(i.room) + '</span>');
+  if (i.pieces) tags.push('<span class="tag">' + i.pieces + ' ' + l.pieces + '</span>');
+  if (S.view !== 'garage') tags.push('<span class="tag">' + esc(i.house) + '</span>');
+  if (S.view === 'coming' && i.etaDate) tags.push('<span class="tag">' + l.eta + ' ' + esc(i.etaDate) + '</span>');
+  if (i.orderNo) tags.push('<span class="tag">' + l.order + ' ' + esc(i.orderNo) + '</span>');
+  const last = (i.log || []).slice(-1)[0];
+  const lastTxt = last && last.by ? '<div class="s">' + new Date(last.at).toLocaleDateString() + ' ' + l.by + ' ' + esc(last.by) + '</div>' : '';
+  return '<div class="card ' + (S.view === 'done' ? 'done' : i.need) + '">' +
+    (i.photo ? '<img class="ph" src="' + esc(i.photo) + '" onclick="window.open(this.src)">' : '<div class="ph">' + i.icon + '</div>') +
+    '<div class="info"><div class="t">' + esc(i.item) + '</div>' +
+    '<div class="s">' + esc(i.category) + (i.selection ? ' · ' + esc(i.selection.slice(0, 140)) : '') + '</div>' +
+    '<div class="tags">' + tags.join('') + '</div>' + lastTxt +
+    '<div class="acts">' + actions + '</div></div></div>';
+}
+
+async function post(k, stage, location) {
+  const [h, c, it] = k.split('|');
+  try { await api('/api/deliveries/' + h + '/' + c + '/' + it, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ stage, location, by: S.name }) }); }
+  catch (e) { return; }
+  toast(L().saved);
+  closeSheet();
+  await load();
+}
+const move = (k, stage) => post(k, stage);
+
+function arrived(k) {
+  const l = L();
+  $('sheet').innerHTML = '<h2>' + l.where + '</h2>' +
+    S.d.places.map(p => '<button class="btn" onclick="post(\'' + k + '\',\'arrived\',\'' + p.id + '\')">' + esc(p.name) + '</button>').join('') +
+    '<button class="btn green" onclick="post(\'' + k + '\',\'garage\')">' + esc(S.d.garage) + '</button>' +
+    '<button class="btn light" onclick="closeSheet()">' + l.cancel + '</button>';
+  $('sheetBg').classList.add('on');
+}
+function askName() {
+  const l = L();
+  $('sheet').innerHTML = '<h2>' + l.nameQ + '</h2><input type="text" id="nm" placeholder="' + l.name + '" value="' + esc(S.name) + '">' +
+    '<button class="btn green" onclick="saveName()">' + l.save + '</button>';
+  $('sheetBg').classList.add('on');
+}
+function saveName() { S.name = $('nm').value.trim(); store.set('stb-driver', S.name); closeSheet(); render(); }
+function closeSheet() { $('sheetBg').classList.remove('on'); }
+
+// Same access key as the office page, asked once and remembered on this phone
+window.orderGate = async function (e) {
+  e.preventDefault();
+  const el = $('gateKey');
+  if (await ordersAccess.tryKey(el.value)) { $('gate').style.display = 'none'; load(); }
+  else { $('gateErr').style.display = 'block'; el.value = ''; el.focus(); }
+};
+(async () => {
+  try {
+    if (await ordersAccess.ok()) { $('gate').style.display = 'none'; await load(); }
+    else { $('gate').style.display = 'flex'; $('gateKey').focus(); }
+  } catch (e) { $('gateMsg').textContent = '⚠ Could not connect. Check the internet and reload.'; $('gateMsg').style.display = 'block'; $('gate').style.display = 'flex'; }
+})();
+</script>
+</body>
+</html>

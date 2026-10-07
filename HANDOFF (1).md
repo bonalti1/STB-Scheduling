@@ -22,6 +22,21 @@ Two connected web apps for South Texas Builders (STB):
 ## Files in this repo (the whole site)
 - `index.html` — scheduling board (the big one, ~4,500 lines)
 - `change-orders.html` — Change Orders / Cobros tool (cloud version)
+- `ordenes.html` + `lib/orders-engine.js` + `lib/pdf*.js` — **STB Purchasing & Ordering** (Jackie's
+  selections/allowances/orders tool, opened from the board's 🛒 Orders button). Her Node server was
+  rebuilt as a browser engine on Supabase (row `stb_orders_v1`, files in bucket folder `ordenes/`);
+  her catalog/budget/selections/plan rules are copied verbatim. Access key default `STB2026`
+  (stored hashed). The PDF readers (selections, plans, contract) run in the browser on pdf.js and were
+  checked identical to her Node readers on her real PDFs.
+- `driver.html` — Robert's phone page (pickups/deliveries), same access key.
+- `supabase/functions/read-contract` — AI contract reader (Claude reads text + photographed pages and
+  returns allowance figures for a person to confirm). Deployed in Supabase project `krpylhnklvhanmztkgnp`
+  under the name **rapid-worker** (Verify JWT off). Secrets: `ANTHROPIC_API_KEY`, `CONTRACT_TOKEN`
+  (the Orders page sends it; entered per computer in Orders → Settings → Contract reader).
+- **When Jackie sends a new zip of her desktop tool:** the code of the cloud version is generated from
+  hers; it is not edited by hand. Ask for a rebuild from the new zip, then Settings → "Bring over the old
+  desktop tool" (tick "Replace…" to refresh houses already here — a backup downloads first). Better: she
+  works in the cloud page only, so there is one copy of the data.
 - `firmar.html` — public customer signing page (opened via a secret-token link)
 - `south-texas-builders-logo.png`, `favicon.png` — branding
 - `uploads/fotos/…` — seed photo(s) for Change Orders
