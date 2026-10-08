@@ -1176,6 +1176,7 @@ var PHASE_TASKS = {
     'Tile Delivery',
     'Flooring Tile',
     'Shower Tile',
+    'Schedule the glass and shower door vendor.',
     'Trim, Door, Shelving Installation',
     'Cabinet Installation',
     'Interior Paint',
@@ -1871,7 +1872,7 @@ function toast(msg){
 function attr(s){ return esc(s).replace(/"/g,'&quot;'); }
 function isPriorityPhaseTask(txt){
   var key=String(txt||'').toLowerCase();
-  return key==='schedule pre form survey' || key==='plumbing rough before roof shingles' || key==='verify windstorm page has shear wall' || key==='electrical rough in / island' || key==='check if windstorm metals needed' || key==='windstorm inspection (by rgv structure)' || key==='make sure foundation has done the sunken showers if needed' || key==='all showers need to have proper niches built by framer' || key==='ceiling designs must be provided to the framer.';
+  return key==='schedule pre form survey' || key==='plumbing rough before roof shingles' || key==='verify windstorm page has shear wall' || key==='electrical rough in / island' || key==='check if windstorm metals needed' || key==='windstorm inspection (by rgv structure)' || key==='make sure foundation has done the sunken showers if needed' || key==='all showers need to have proper niches built by framer' || key==='ceiling designs must be provided to the framer.' || key==='schedule the glass and shower door vendor.';
 }
 function isSelectionPhaseTask(txt){
   var key=String(txt||'').toLowerCase();

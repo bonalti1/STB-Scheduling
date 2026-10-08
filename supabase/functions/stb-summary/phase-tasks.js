@@ -75,6 +75,7 @@ export const PHASE_TASKS = {
     "Tile Delivery",
     "Flooring Tile",
     "Shower Tile",
+    "Schedule the glass and shower door vendor.",
     "Trim, Door, Shelving Installation",
     "Cabinet Installation",
     "Interior Paint",
