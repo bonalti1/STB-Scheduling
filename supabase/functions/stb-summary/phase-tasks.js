@@ -33,6 +33,7 @@ export const PHASE_TASKS = {
     "Quality Control Visit",
     "Exterior & Interior Wall framing",
     "All showers need to have proper niches built by framer",
+    "Ceiling designs must be provided to the framer.",
     "Roof Framing / Sheathing & Fascia",
     "Order Exterior Doors",
     "Deliver Windows",
