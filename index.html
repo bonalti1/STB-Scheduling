@@ -407,6 +407,11 @@
   .mtg-foot b{color:var(--navy);} .mtg-foot a{color:#C02A1B;font-weight:800;cursor:pointer;text-decoration:underline;}
   .mtg-sum{width:100%;border-collapse:collapse;font-size:.92rem;} .mtg-sum td,.mtg-sum th{padding:7px 6px;border-bottom:1px solid var(--line-soft);text-align:left;}
   .mtg-sum td:last-child,.mtg-sum th:last-child{text-align:right;font-weight:800;} .mtg-sum .over td:last-child{color:#C02A1B;}
+  /* view-only role */
+  .viewer-badge{display:none;margin-left:8px;background:#E8F0F9;color:#1E4C97;border:1px solid #C9DAF0;border-radius:999px;padding:3px 11px;font-size:.74rem;font-weight:800;letter-spacing:.04em;white-space:nowrap;}
+  body.viewer .viewer-badge{display:inline-block;}
+  body.viewer .additem,body.viewer .phase-add,body.viewer .daytask-add,body.viewer .lesson-form,body.viewer .delay-form,body.viewer .mtg-dock{display:none!important;}
+  body.viewer input:disabled,body.viewer select:disabled{opacity:1;cursor:default;}
   .t-chip{background:#F1F2F4;border:1px solid var(--line-soft);border-radius:7px;padding:2px 6px;color:#516079;font-weight:700;white-space:nowrap;}
   .t-chip.now{background:#FFF0D5;border-color:#E8A21C;color:#8a6404;}
   .summary-chip.phase{background:#EEF2F8;color:var(--navy);border-color:#DDE3EF;}
@@ -824,6 +829,7 @@
       <input id="userNameInput" type="text" value="Ramiro Lerma" />
     </div>
     <span class="sync-pill local" id="syncStatus">Local backup</span>
+    <span class="viewer-badge" id="viewerBadge">View only</span>
     <button class="today-btn" id="dayToday">Today</button>
   </div>
 </header>
@@ -1254,7 +1260,8 @@ var USERS = [
   {role:'scheduler',name:'Ramiro Lerma',password:'Ramiro'},
   {role:'scheduler',name:'Javier Gonzalez',password:'Javi'},
   {role:'scheduler',name:'Cristo',password:'Cristo'},
-  {role:'scheduler',name:'Jackie',password:'Jackie'}
+  {role:'scheduler',name:'Jackie',password:'Jackie'},
+  {role:'viewer',name:'Roberto',password:'916303'}   /* view-only: field employee */
 ];
 var SUPABASE_URL = 'https://ttpkyepzzpxctajrhwvx.supabase.co';
 var SUPABASE_KEY = 'sb_publishable_bnhfaLTxNe2ApJ94myqtIg_uHjo3_B1';
@@ -1263,6 +1270,53 @@ var SUPABASE_RENDER_BUCKET = 'stb-project-renders';
 var SUPABASE_BLUEPRINT_BUCKET = 'stb-blueprints';
 var AI_FUNCTION = SUPABASE_URL + '/functions/v1/quick-responder';
 var SUPABASE_ENABLED = !!(SUPABASE_URL && SUPABASE_KEY);
+
+/* ============ Roles ============
+   owner / scheduler : full access.
+   viewer            : sees everything, can change nothing.
+   The rule is enforced at the DATA layer (below) and not only in the UI: a viewer session can never
+   write to the cloud, so a viewer's phone can never overwrite the board with an older copy.
+   Fail-closed: any session role that is not explicitly allowed to write is treated as read-only. */
+var ROLE_CAPS={
+  owner:{write:true},
+  scheduler:{write:true},
+  /* ownTasks: reserved for "a viewer may check off only the tasks assigned to him"
+     (task state would carry assignedTo:<name>). Off for now - see HANDOFF "Viewer role". */
+  viewer:{write:false, ownTasks:false}
+};
+function sessionUser(){
+  try{ var u=JSON.parse(sessionStorage.getItem(AUTH_USER_KEY)||'null'); return (u && u.role) ? u : null; }catch(e){ return null; }
+}
+function isViewerSession(){
+  var u=sessionUser();
+  if(!u) return false;                       /* not signed in yet: nothing has loaded or can save */
+  var c=ROLE_CAPS[u.role];
+  return !c || c.write!==true;
+}
+/* Last line of defence: for a read-only session every network call except GET/HEAD is refused,
+   whichever code path made it (saves, uploads, AI, save-check, restore ...). */
+(function(){
+  var realFetch=window.fetch;
+  if(realFetch){
+    window.fetch=function(input,init){
+      var m=String((init&&init.method)||(input&&typeof input==='object'&&input.method)||'GET').toUpperCase();
+      if(isViewerSession() && m!=='GET' && m!=='HEAD'){ return Promise.reject(new Error('View only: this account cannot change anything.')); }
+      return realFetch.apply(this,arguments);
+    };
+  }
+  if(window.XMLHttpRequest){
+    var realOpen=XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open=function(method){
+      if(isViewerSession() && String(method||'GET').toUpperCase()!=='GET'){ throw new Error('View only: this account cannot change anything.'); }
+      return realOpen.apply(this,arguments);
+    };
+  }
+  if(navigator.sendBeacon){
+    var realBeacon=navigator.sendBeacon.bind(navigator);
+    navigator.sendBeacon=function(){ return isViewerSession() ? false : realBeacon.apply(null,arguments); };
+  }
+})();
+
 var syncMode = 'local';
 
 function setSyncStatus(mode,msg){
@@ -1299,6 +1353,7 @@ async function supabaseGet(k){
   return rows && rows[0] && rows[0].data ? rows[0].data.value : null;
 }
 async function supabaseSet(k,v){
+  if(isViewerSession()) throw new Error('View only');
   if(!SUPABASE_ENABLED || !window.fetch) return false;
   var renderManifest=null;
   if(k===BOARD_KEY){
@@ -1353,6 +1408,7 @@ async function supabaseSet(k,v){
   return true;
 }
 async function supabaseRawSet(k,v){
+  if(isViewerSession()) throw new Error('View only');
   var payload={data:{value:v},updated_at:new Date().toISOString()};
   var res=await fetch(SUPABASE_URL+'/rest/v1/'+SUPABASE_TABLE+'?id=eq.'+encodeURIComponent(k),{
     method:'PATCH',
@@ -1479,6 +1535,7 @@ var Store = {
     return local;
   },
   set: async function(k,v){
+    if(isViewerSession()) return;          /* read-only session: no cloud write, no local copy either */
     localSet(k,v);
     if(SUPABASE_ENABLED){
       try{
@@ -1623,6 +1680,7 @@ function stbAdoptServerBoard(serverVal){
 /* Compare-and-set board save: never blind-overwrites a newer cloud copy. On conflict it
    re-reads the latest board, merges this device's edits onto it, and retries. */
 async function supabaseSaveBoardCAS(v){
+  if(isViewerSession()) throw new Error('View only');
   for(var attempt=0; attempt<6; attempt++){
     var row=await supabaseGetBoardRow();
     if(!row){
@@ -2465,6 +2523,7 @@ function autoBackupPayload(){
   };
 }
 function persistAutoBackup(){
+  if(isViewerSession()) return Promise.resolve();
   var payload=autoBackupPayload();
   var packed=JSON.stringify({
     latest:payload,
@@ -2522,6 +2581,7 @@ async function init(){
   render();
 }
 function persistBoard(){
+  if(isViewerSession()) return Promise.resolve();   /* view only: never save */
   captureDailyReport();
   var snapshot=JSON.stringify(board);
   saveChain=saveChain.catch(function(){}).then(function(){
@@ -2542,10 +2602,12 @@ function persistCompleted(){ return Store.set(COMP_KEY,JSON.stringify(completed)
 function persistSubs(){ return Store.set(SUBS_KEY,JSON.stringify(SUBCONTRACTORS)); }
 function persistLessons(){ return Store.set(LESSONS_KEY,JSON.stringify(manualLessons)); }
 function queueSave(){
+  if(isViewerSession()) return;            /* view only: never save */
   clearTimeout(saveTimer);
   saveTimer=setTimeout(function(){ persistBoard(); },550);
 }
 function saveBoardNow(){
+  if(isViewerSession()) return Promise.resolve();   /* view only: never save */
   clearTimeout(saveTimer);
   return persistBoard();
 }
@@ -4179,10 +4241,12 @@ function aiSnapshot(){
   };
 }
 function openAI(){
+  if(isViewerSession()) return;
   document.getElementById('aiOvl').classList.add('show');
   setTimeout(function(){ document.getElementById('aiQuestion').focus(); },50);
 }
 async function askAI(){
+  if(isViewerSession()) return;
   var q=(document.getElementById('aiQuestion').value||'').trim();
   var out=document.getElementById('aiAnswer');
   var btn=document.getElementById('askAI');
@@ -4841,9 +4905,110 @@ document.querySelectorAll('.ovl').forEach(function(o){
   o.addEventListener('click',function(e){ if(e.target===o) o.classList.remove('show'); });
 });
 
+/* ============ View-only role (front end) ============
+   The data layer above already refuses every write for a viewer. This part makes the screen honest:
+   everything that would change something is hidden or locked, and a stray click on one is swallowed. */
+var VIEWER_OK_BUTTONS=[
+  '[data-close]','.close','#openExport','#printReport','#printProjectSnapshot','#copyReport',
+  '#openSubs','#openLessons','#openHistory','#areaToggle','#gateEnter','[data-budgetphase]',
+  '[data-act="openmap"]','[data-act="openblueprint"]','[data-act="opendoc"]','[data-act="openrender"]',
+  '[data-act="doneinfo"]','[data-act="viewphase"]','[data-act="opendelays"]','[data-act="closedelays"]',
+  '[data-act="openbudget"]','[data-act="tasknote"]'
+];
+var VIEWER_OK_FIELDS=['#searchInput','#phaseFilter','#optDone','#gatePassword'];
+(function(){
+  var st=document.createElement('style');
+  st.textContent='body.viewer button'+VIEWER_OK_BUTTONS.map(function(x){ return ':not('+x+')'; }).join('')+'{display:none!important;}';
+  document.head.appendChild(st);
+})();
+function viewerMayChangeTask(el){
+  /* hook for later: a viewer may toggle only tasks assigned to him (ROLE_CAPS.viewer.ownTasks) */
+  return false;
+}
+function lockViewerControls(){
+  if(!isViewerSession()) return;
+  var keep=VIEWER_OK_FIELDS.join(',');
+  Array.prototype.forEach.call(document.querySelectorAll('input,select,textarea'),function(el){
+    if(el.matches(keep) || el.disabled) return;
+    if(el.tagName==='TEXTAREA' || el.type==='text' || el.type==='number' || el.type==='date' || el.type==='password'){ el.readOnly=true; if(el.tagName!=='TEXTAREA') el.disabled=true; }
+    else { el.disabled=true; }
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[contenteditable="true"]'),function(el){ el.setAttribute('contenteditable','false'); });
+}
+(function(){
+  var pending=false;
+  function schedule(){ if(pending) return; pending=true; (window.requestAnimationFrame||setTimeout)(function(){ pending=false; lockViewerControls(); }); }
+  window.startViewerLock=function(){
+    lockViewerControls();
+    new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true});
+  };
+})();
+(function(){
+  var INTERACTIVE='button,a[download],input,select,textarea,[data-act],[data-restore],[data-subfield],[contenteditable="true"]';
+  var okAll=VIEWER_OK_BUTTONS.concat(VIEWER_OK_FIELDS).join(',');
+  function swallow(e){
+    if(!isViewerSession()) return;
+    if(e.type==='drop'){ e.preventDefault(); e.stopImmediatePropagation(); return; }
+    var t=e.target; if(!t || !t.closest) return;
+    var el=t.closest(INTERACTIVE);
+    if(!el || el.matches(okAll)) return;
+    if(e.type==='click' && viewerMayChangeTask(el)) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+  }
+  ['click','dblclick','change','input','keydown','keypress','paste','cut','drop','submit'].forEach(function(ev){
+    document.addEventListener(ev,swallow,true);
+  });
+})();
+/* A field employee leaves the page open on a phone: keep it fresh instead of letting it go stale. */
+async function viewerRefresh(){
+  if(!isViewerSession() || !board || document.hidden || !SUPABASE_ENABLED) return;
+  try{
+    var raw=await supabaseGet(BOARD_KEY); if(!raw) return;
+    var fresh=JSON.parse(raw); if(!fresh || !Array.isArray(fresh.projects)) return;
+    var compIds={}; (completed||[]).forEach(function(c){ if(c&&c.project&&c.project.id) compIds[c.project.id]=true; });
+    var removed=Array.isArray(fresh.removedProjectIds)?fresh.removedProjectIds:[];
+    fresh.projects=fresh.projects.filter(function(p){ return !compIds[p.id] && removed.indexOf(p.id)<0; });
+    fresh.projects.forEach(normalizeProject);
+    fresh.dayDate=board.dayDate;
+    fresh.dailyLog=fresh.dailyLog||{}; fresh.dailyReports=fresh.dailyReports||{};
+    if(JSON.stringify(fresh)===JSON.stringify(board)) return;
+    board=fresh;
+    board.projects.forEach(function(p){ if(!(p.id in collapsed)) collapsed[p.id]=true; });
+    render();
+  }catch(e){}
+}
+function applyRoleUI(){
+  var u=sessionUser();
+  var viewer=isViewerSession();
+  document.body.classList.toggle('viewer',viewer);
+  var b=document.getElementById('viewerBadge');
+  if(b){ b.textContent='View only · '+((u&&u.name)||'viewer'); }
+  if(viewer && !window._viewerStarted){
+    window._viewerStarted=true;
+    window.startViewerLock();
+    setInterval(viewerRefresh,60000);
+    document.addEventListener('visibilitychange',function(){ if(!document.hidden) viewerRefresh(); });
+  }
+}
+/* Open from another app (Employee OS) without typing the PIN: https://.../index.html#code=<PIN>
+   Read once, then removed from the address bar and history. Only view-only PINs work this way,
+   so a link can never open the board with edit rights. */
+(function(){
+  var m=(location.hash||'').match(/[#&]code=([^&]+)/);
+  if(!m) return;
+  var code=''; try{ code=decodeURIComponent(m[1]).trim(); }catch(e){}
+  try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){ location.hash=''; }
+  var user=USERS.filter(function(u){ return u.role==='viewer' && u.password===code; })[0];
+  if(user){
+    sessionStorage.setItem(AUTH_USER_KEY,JSON.stringify({role:user.role,name:user.name}));
+    sessionStorage.setItem(AUTH_KEY,'yes');
+  }
+})();
+
 /* ============ Go ============ */
 function unlockApp(){
   sessionStorage.setItem(AUTH_KEY,'yes');
+  applyRoleUI();
   document.getElementById('loginGate').classList.add('hide');
   initUserName();
   init();

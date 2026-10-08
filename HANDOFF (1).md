@@ -150,3 +150,37 @@ Two connected web apps for South Texas Builders (STB):
   URL shape: `https://krpylhnklvhanmztkgnp.supabase.co/functions/v1/rapid-processor?token=<BOT_READ_TOKEN>`.
   Verify JWT is OFF. The token lives only in Supabase secrets and in the Grok bot. Never write it here.
 - Which login owns the app's own project `ttpkyepzzpxctajrhwvx` (morning text, cron) is still unknown.
+
+## Viewer role — read-only board for field employees (added Oct 8, 2026)
+- `USERS` in `index.html` now has `{role:'viewer', name:'Roberto', password:'916303'}` (PIN is plain text in
+  the page source like the other passwords — a courtesy lock, not real security). Add more field employees
+  by adding more `role:'viewer'` entries.
+- **A viewer sees everything and can change nothing.** Enforced in the DATA layer, not only the UI
+  (`ROLE_CAPS` / `isViewerSession()` near the Supabase constants; fail-closed — any role not explicitly
+  `write:true` is read-only):
+  - `window.fetch`, `XMLHttpRequest.open`, `navigator.sendBeacon` are wrapped: for a viewer every
+    non-GET/HEAD request is refused, whichever code made it (saves, uploads, AI, save-check, restore).
+  - Explicit guards too: `queueSave`, `saveBoardNow`, `persistBoard`, `persistAutoBackup`, `Store.set`,
+    `supabaseSet`, `supabaseRawSet`, `supabaseSaveBoardCAS`, `openAI`/`askAI`. His phone can never overwrite
+    the board with an older copy, and the load-time auto-saves stay silent too.
+  - Front end: `body.viewer` hides every button except an allow-list (`VIEWER_OK_BUTTONS`: close, Export Report,
+    Subcontractors / Lessons / Completed Houses to read, map/blueprint/render links, phase tabs, budget, delays,
+    notes to read). Default-deny: any NEW button added later is hidden for viewers until it is allow-listed.
+    Inputs/selects/checkboxes are disabled, contenteditable is turned off, drops are swallowed, and a
+    capture-phase handler swallows stray clicks. Hidden for viewers: Add Project, Start Meeting, Operations AI,
+    Backup, Change Orders, Orders, day arrows, Complete House, every edit/add/delete/upload.
+  - "View only · Roberto" badge in the header. An open viewer page re-reads the board every 60 s and when the
+    tab becomes visible (`viewerRefresh`), so a phone left open never shows a stale board.
+- **Open from Employee OS without typing the PIN:** link `https://stb-scheduling.netlify.app/#code=<PIN>`.
+  Read once, then removed from the address bar/history (`history.replaceState`). Only view-only PINs work this
+  way — an owner/scheduler PIN in a link does nothing.
+- **Room for later — "assigned to":** `ROLE_CAPS.viewer.ownTasks` (off) and `viewerMayChangeTask(el)` (returns
+  false) are the hooks. To let a viewer check off only his own tasks: (1) put `assignedTo:<name>` in the task
+  state (`phaseTaskState[phase][task]`) and add a way to set it; (2) turn `ownTasks` on and make
+  `viewerMayChangeTask` check the row's `assignedTo === currentUserName()`; (3) the data-layer guard must then
+  allow ONE narrow write path (the compare-and-set board save, with the merge that already protects against stale
+  copies) for those toggles only — today `isViewerSession()` refuses all writes.
+- **Honest limits:** the PIN check and the guards are in the browser; the Supabase publishable key can still write
+  (the board has no server-side login), so a determined person using developer tools could bypass them. Real
+  enforcement would need Supabase RLS / a function that checks a token. The viewer cannot reach Change Orders /
+  Orders from the board (buttons hidden), but those pages have their own gates if someone types the address.
