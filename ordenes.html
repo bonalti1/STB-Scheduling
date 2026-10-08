@@ -1338,6 +1338,7 @@ async function readContract() {
   const btn = $('ct-btn'), out = $('ct-out');
   btn.disabled = true;
   const say = t => { out.innerHTML = '<div class="notice blue" style="margin-top:12px">' + esc(t) + '</div>'; };
+  if (!contractReaderKey()) { btn.disabled = false; askReaderKey(); return; }   // set up right here, no Settings needed
   try {
     const catalog = (house().categories || []).map(cat => {
       const b = catBase(cat.id);
@@ -1436,6 +1437,23 @@ function applyContract() {
     (CT_NA.length ? '<br>' + CT_NA.length + ' categor' + (CT_NA.length === 1 ? 'y' : 'ies') + ' will be marked “does not apply” when you save.' : '') + '</div>';
 }
 
+
+// The key lives on each computer. If this one has none yet, ask for it right where it is needed.
+function contractReaderKey() { try { return localStorage.getItem(CONTRACT_TOKEN_LS) || ''; } catch (e) { return ''; } }
+function askReaderKey() {
+  $('ct-out').innerHTML = '<div class="notice" style="margin-top:12px"><b>This computer does not have the contract key yet.</b><br>' +
+    'Paste it once here (ask Rolando if you do not have it) and the contract is read right away.' +
+    '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input type="password" id="ct-key-in" placeholder="Contract key" style="flex:1;min-width:200px">' +
+    '<button class="btn btn-navy" onclick="saveReaderKeyHere()">Save and read the contract</button></div></div>';
+  const el = $('ct-key-in'); if (el) el.focus();
+}
+function saveReaderKeyHere() {
+  const k = (val('ct-key-in') || '').trim();
+  if (!k) { toast('Paste the key first'); return; }
+  try { localStorage.setItem(CONTRACT_TOKEN_LS, k); } catch (e) {}
+  if (!contractReaderKey()) { $('ct-out').innerHTML = '<div class="notice red" style="margin-top:12px">⚠ This browser would not keep the key (private window?). Use a normal Chrome window.</div>'; return; }
+  readContract();
+}
 
 // The lines the contract prices on their own — only those, never the full list
 function renderSplit(catId) {
