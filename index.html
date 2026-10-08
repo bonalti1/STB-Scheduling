@@ -1157,6 +1157,9 @@ var PHASE_TASKS = {
     'A/C Duct Work (Rough HVAC)',
     'Poly Seal',
     'Quality Control Visit',
+    'Team Cleanup and Quality Visit',
+    'Cabinet Meeting',
+    'Sync Dimensions (send the dimensions of the sink to the cabinet fabricator)',
     'Schedule Inspection If Needed',
     'Wall Insulation',
     'Insulation Inspection',
@@ -1872,7 +1875,7 @@ function toast(msg){
 function attr(s){ return esc(s).replace(/"/g,'&quot;'); }
 function isPriorityPhaseTask(txt){
   var key=String(txt||'').toLowerCase();
-  return key==='schedule pre form survey' || key==='plumbing rough before roof shingles' || key==='verify windstorm page has shear wall' || key==='electrical rough in / island' || key==='check if windstorm metals needed' || key==='windstorm inspection (by rgv structure)' || key==='make sure foundation has done the sunken showers if needed' || key==='all showers need to have proper niches built by framer' || key==='ceiling designs must be provided to the framer.' || key==='schedule the glass and shower door vendor.';
+  return key==='schedule pre form survey' || key==='plumbing rough before roof shingles' || key==='verify windstorm page has shear wall' || key==='electrical rough in / island' || key==='check if windstorm metals needed' || key==='windstorm inspection (by rgv structure)' || key==='make sure foundation has done the sunken showers if needed' || key==='all showers need to have proper niches built by framer' || key==='ceiling designs must be provided to the framer.' || key==='schedule the glass and shower door vendor.' || key==='team cleanup and quality visit' || key==='cabinet meeting' || key==='sync dimensions (send the dimensions of the sink to the cabinet fabricator)';
 }
 function isSelectionPhaseTask(txt){
   var key=String(txt||'').toLowerCase();
