@@ -1348,6 +1348,7 @@ async function readContract() {
     CT = await readContractPdf(file, catalog, say);
     showContractReview();
   } catch (e) {
+    if (e && e.status === 401) { try { localStorage.removeItem(CONTRACT_TOKEN_LS); } catch (_) {} askReaderKey('The key on this computer was not accepted, so it was cleared.'); btn.disabled = false; return; }
     out.innerHTML = '<div class="notice red" style="margin-top:12px">' + esc(e.message || String(e)) +
       '<br>You can still type the allowances in by hand below.</div>';
   } finally { btn.disabled = false; }
@@ -1440,9 +1441,9 @@ function applyContract() {
 
 // The key lives on each computer. If this one has none yet, ask for it right where it is needed.
 function contractReaderKey() { try { return localStorage.getItem(CONTRACT_TOKEN_LS) || ''; } catch (e) { return ''; } }
-function askReaderKey() {
-  $('ct-out').innerHTML = '<div class="notice" style="margin-top:12px"><b>This computer does not have the contract key yet.</b><br>' +
-    'Paste it once here (ask Rolando if you do not have it) and the contract is read right away.' +
+function askReaderKey(why) {
+  $('ct-out').innerHTML = '<div class="notice' + (why ? ' red' : '') + '" style="margin-top:12px"><b>' + (why ? esc(why) + ' Paste the key again.' : 'This computer does not have the contract key yet.') + '</b><br>' +
+    (why ? 'Check it character by character: the number 0 and the letter O look alike, and so do l, 1 and I. Copying and pasting the message is safest. ' : 'Paste it once here (ask Rolando if you do not have it) and the contract is read right away.') +
     '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input type="password" id="ct-key-in" placeholder="Contract key" style="flex:1;min-width:200px">' +
     '<button class="btn btn-navy" onclick="saveReaderKeyHere()">Save and read the contract</button></div></div>';
   const el = $('ct-key-in'); if (el) el.focus();
@@ -1452,7 +1453,18 @@ function saveReaderKeyHere() {
   if (!k) { toast('Paste the key first'); return; }
   try { localStorage.setItem(CONTRACT_TOKEN_LS, k); } catch (e) {}
   if (!contractReaderKey()) { $('ct-out').innerHTML = '<div class="notice red" style="margin-top:12px">⚠ This browser would not keep the key (private window?). Use a normal Chrome window.</div>'; return; }
-  readContract();
+  testReaderKey().then(r => {
+    if (r === 'bad') { try { localStorage.removeItem(CONTRACT_TOKEN_LS); } catch (e) {} askReaderKey('That key was not accepted.'); }
+    else readContract();
+  });
+}
+// Asks the reader with nothing to read: the key is checked first (401 = wrong key, 400 = key accepted)
+async function testReaderKey() {
+  const cfg = contractConfig();
+  try {
+    const r = await fetch(cfg.url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-stb-token': cfg.token }, body: '{}' });
+    return r.status === 401 ? 'bad' : 'ok';
+  } catch (e) { return 'offline'; }
 }
 
 // The lines the contract prices on their own — only those, never the full list
@@ -2303,7 +2315,9 @@ function saveContractReader() {
     toast('Could not save the contract reader on this computer'); return false;
   }
   const el = $('ct-saved'); if (el) el.innerHTML = '✅ Saved on this computer. A contract key is ' + (contractConfig().token ? 'saved.' : 'NOT saved yet.');
-  toast('Contract reader saved on this computer'); return true;
+  toast('Contract reader saved on this computer');
+  testReaderKey().then(r => { const e2 = $('ct-saved'); if (e2) e2.innerHTML = r === 'bad' ? '⚠ Saved, but the reader did NOT accept this key. Check 0 (zero) vs O, and l / 1 / I.' : r === 'ok' ? '✅ Saved, and the reader accepted the key.' : '✅ Saved (could not reach the reader to check it right now).'; });
+  return true;
 }
 
 async function saveSettings() {
