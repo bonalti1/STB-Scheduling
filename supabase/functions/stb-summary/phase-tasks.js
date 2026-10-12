@@ -80,6 +80,7 @@ export const PHASE_TASKS = {
     "Shower Tile",
     "Schedule the glass and shower door vendor.",
     "Trim, Door, Shelving Installation",
+    "Cedar Beams",
     "Cabinet Installation",
     "Interior Paint",
     "Purchase Counter Tops",
