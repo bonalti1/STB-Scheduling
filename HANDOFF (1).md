@@ -184,3 +184,16 @@ Two connected web apps for South Texas Builders (STB):
   (the board has no server-side login), so a determined person using developer tools could bypass them. Real
   enforcement would need Supabase RLS / a function that checks a token. The viewer cannot reach Change Orders /
   Orders from the board (buttons hidden), but those pages have their own gates if someone types the address.
+
+## Task delete + checked-box fixes (Oct 14, 2026)
+- **Bug found ("air vent" in Lot 6 would not delete):** touching a task's text and then tapping its × did nothing the
+  first time. The text's `blur` handler re-rendered the whole checklist between mouse-down and mouse-up on the ×, so
+  the × button was replaced before the click landed. Fixed: blur now saves/re-renders only when the wording really
+  changed, and never redraws the row (`index.html`, "contenteditable save on blur").
+- Renaming a task now leaves a delete mark for the old wording (so a stale device can't bring it back, and renaming a
+  standard task no longer leaves a duplicate). Renaming back to an earlier wording works.
+- **Checked boxes:** `saveCurrentPhaseState` used to overwrite `phaseTaskState` from the older `p.phaseTasks` list,
+  which can lag behind after a sync/merge — that could silently un-check finished work on reload or after any delete.
+  `phaseTaskState` is now the single source of truth; the list may only fill in a missing entry.
+- Tests (not in repo): delete after touching the text, delete after editing, stale-copy merge, reload, standard-task rename,
+  stale list vs checked state, two devices checking different tasks, delete not disturbing checks.

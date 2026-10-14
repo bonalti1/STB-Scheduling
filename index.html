@@ -2126,6 +2126,11 @@ function saveCurrentPhaseState(p){
   p.phaseTaskState[p.phase]=p.phaseTaskState[p.phase]||{};
   (p.phaseTasks||[]).forEach(function(it){
     if(it.phaseDefault){
+      /* phaseTaskState is the source of truth. This list can lag behind it (another device checked the
+         task, or a sync merged it in), so it may only FILL IN a missing entry - never overwrite one,
+         or a stale list would silently un-check finished work. Real changes go through setPhaseItemState. */
+      var existing=p.phaseTaskState[p.phase][it.text.toLowerCase()];
+      if(existing && typeof existing==='object') return;
       var prev=phaseItemState(p,p.phase,it.text);
       var status=it.status || (it.done?'done':'');
       p.phaseTaskState[p.phase][it.text.toLowerCase()]={
@@ -2235,7 +2240,13 @@ function renamePhaseTask(p,phase,oldText,newText){
   var oldKey=oldText.toLowerCase(), newKey=newText.toLowerCase();
   var oldState=p.phaseTaskState[phase][oldKey]||{done:false,status:'',sub:''};
   p.phaseTaskState[phase][newKey]=oldState;
-  if(oldKey!==newKey){ delete p.phaseTaskState[phase][oldKey]; }
+  if(oldKey!==newKey){
+    delete p.phaseTaskState[phase][oldKey];
+    var gone=phaseDeletedTasks(p,phase);
+    gone[oldKey]=true;                 /* the old wording must not come back (default or custom) */
+    delete gone[newKey];               /* ...but renaming back to an earlier wording must work */
+    p.customPhaseTasks[phase]=phaseCustomTasks(p,phase).filter(function(it){ return it.text.toLowerCase()!==oldKey || it.text===newText; });
+  }
 }
 function phaseCustomTasks(p,phase){
   p.customPhaseTasks=p.customPhaseTasks||{};
@@ -3365,12 +3376,16 @@ document.getElementById('projectList').addEventListener('blur',function(e){
     var rowPhase=t.closest('.item');
     var oldText=rowPhase.dataset.task;
     var newText=t.textContent.trim();
-    if(newText){
-      renamePhaseTask(p,rowPhase.dataset.phase,oldText,newText);
-      saveBoardNow(); render();
-    } else {
+    if(!newText){
       t.textContent=oldText;
+    } else if(newText!==oldText){
+      renamePhaseTask(p,rowPhase.dataset.phase,oldText,newText);
+      rowPhase.dataset.task=newText;     /* keep the row in step; NO re-render here: a re-render on blur
+                                            replaced the x button between mouse-down and mouse-up, so the
+                                            first tap on x (after touching the text) did nothing */
+      saveBoardNow();
     }
+    /* unchanged text: nothing to save and nothing to redraw */
   } else if(t.dataset.act==='edititem'){
     var iid=t.closest('.item').dataset.iid; var nv=t.textContent.trim();
     SECTIONS.forEach(function(s){
