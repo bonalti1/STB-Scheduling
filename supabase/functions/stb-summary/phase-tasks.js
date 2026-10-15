@@ -94,6 +94,7 @@ export const PHASE_TASKS = {
     "A/C Compressor & Grills",
     "Final Clean Up",
     "Final Inspection",
+    "Final Inspection – Windstorm Engineering",
     "Owner Walkthrough & Punch List",
     "Certificate of Occupancy (CO) / Final Approval",
     "Punch List Completion"

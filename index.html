@@ -1195,6 +1195,7 @@ var PHASE_TASKS = {
     'A/C Compressor & Grills',
     'Final Clean Up',
     'Final Inspection',
+    'Final Inspection – Windstorm Engineering',
     'Owner Walkthrough & Punch List',
     'Certificate of Occupancy (CO) / Final Approval',
     'Punch List Completion'
@@ -1876,7 +1877,7 @@ function toast(msg){
 function attr(s){ return esc(s).replace(/"/g,'&quot;'); }
 function isPriorityPhaseTask(txt){
   var key=String(txt||'').toLowerCase();
-  return key==='schedule pre form survey' || key==='plumbing rough before roof shingles' || key==='verify windstorm page has shear wall' || key==='electrical rough in / island' || key==='check if windstorm metals needed' || key==='windstorm inspection (by rgv structure)' || key==='make sure foundation has done the sunken showers if needed' || key==='all showers need to have proper niches built by framer' || key==='ceiling designs must be provided to the framer.' || key==='schedule the glass and shower door vendor.' || key==='team cleanup and quality visit' || key==='cabinet meeting' || key==='sync dimensions (send the dimensions of the sink to the cabinet fabricator)';
+  return key==='schedule pre form survey' || key==='plumbing rough before roof shingles' || key==='verify windstorm page has shear wall' || key==='electrical rough in / island' || key==='check if windstorm metals needed' || key==='windstorm inspection (by rgv structure)' || key==='make sure foundation has done the sunken showers if needed' || key==='all showers need to have proper niches built by framer' || key==='ceiling designs must be provided to the framer.' || key==='schedule the glass and shower door vendor.' || key==='team cleanup and quality visit' || key==='cabinet meeting' || key==='sync dimensions (send the dimensions of the sink to the cabinet fabricator)' || key==='final inspection – windstorm engineering';
 }
 function isSelectionPhaseTask(txt){
   var key=String(txt||'').toLowerCase();
