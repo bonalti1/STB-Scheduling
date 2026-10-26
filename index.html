@@ -1645,6 +1645,7 @@ function stbMergeProject(mineP,baseP){
   mineP.dayTasksRemoved=Object.assign({}, baseP.dayTasksRemoved||{}, mineP.dayTasksRemoved||{});
   mineP.dayTasks=Object.keys(byId).map(function(k){ return byId[k]; }).filter(function(t){ return !mineP.dayTasksRemoved[t.id]; });
   if(!mineP.selectionsUrl && baseP.selectionsUrl && !docWasRemoved('selections')){ mineP.selectionsUrl=baseP.selectionsUrl; mineP.selectionsName=mineP.selectionsName||baseP.selectionsName; }
+  if(!mineP.permitsUrl && baseP.permitsUrl && !docWasRemoved('permits')){ mineP.permitsUrl=baseP.permitsUrl; mineP.permitsName=mineP.permitsName||baseP.permitsName; }
   return mineP;
 }
 function stbMergeBoards(mine,base){
@@ -2014,7 +2015,8 @@ function uploadBlueprintPdf(p,file){ return uploadProjectPdf(p,file,'blueprint')
 /* Per-house PDF slots that behave exactly like Blueprint (cloud file, board keeps only the link). */
 var DOC_KINDS={
   windstorm:{url:'windstormUrl',name:'windstormName',at:'windstormUpdatedAt',label:'Windstorm',icon:'🌀'},
-  selections:{url:'selectionsUrl',name:'selectionsName',at:'selectionsUpdatedAt',label:'Selections',icon:'🎨'}
+  selections:{url:'selectionsUrl',name:'selectionsName',at:'selectionsUpdatedAt',label:'Selections',icon:'🎨'},
+  permits:{url:'permitsUrl',name:'permitsName',at:'permitsUpdatedAt',label:'Building Permits',icon:'📋'}
 };
 function handleDocUpload(p,file,input,kind){
   var k=DOC_KINDS[kind];

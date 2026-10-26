@@ -133,7 +133,7 @@ export function summarizeBoard(board, area, today = isoToday()) {
       currentPhaseChecklist: phaseBlock(board, p, phase),
       nextPhase: nextPhase(phase) ? phaseBlock(board, p, nextPhase(phase)) : undefined,
       allPhases: PHASES.map((ph) => { const b = phaseBlock(board, p, ph); return { phase: ph, done: b.done, total: b.total }; }),
-      links: { render: p.renderImage || undefined, blueprint: p.blueprintUrl || undefined, windstorm: p.windstormUrl || undefined, selections: p.selectionsUrl || undefined }
+      links: { render: p.renderImage || undefined, blueprint: p.blueprintUrl || undefined, windstorm: p.windstormUrl || undefined, selections: p.selectionsUrl || undefined, permits: p.permitsUrl || undefined }
     };
   });
   return { area, boardDay: (board && board.dayDate) || undefined, projects: out };
