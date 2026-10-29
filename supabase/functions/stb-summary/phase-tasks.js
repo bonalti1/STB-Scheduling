@@ -82,6 +82,7 @@ export const PHASE_TASKS = {
     "Trim, Door, Shelving Installation",
     "Cedar Beams / Mantle",
     "Cabinet Installation",
+    "All hardware must be ordered for the project.",
     "Interior Paint",
     "Purchase Counter Tops",
     "Install Counter Tops"

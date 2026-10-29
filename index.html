@@ -1183,6 +1183,7 @@ var PHASE_TASKS = {
     'Trim, Door, Shelving Installation',
     'Cedar Beams / Mantle',
     'Cabinet Installation',
+    'All hardware must be ordered for the project.',
     'Interior Paint',
     'Purchase Counter Tops',
     'Install Counter Tops'
@@ -1878,7 +1879,7 @@ function toast(msg){
 function attr(s){ return esc(s).replace(/"/g,'&quot;'); }
 function isPriorityPhaseTask(txt){
   var key=String(txt||'').toLowerCase();
-  return key==='schedule pre form survey' || key==='plumbing rough before roof shingles' || key==='verify windstorm page has shear wall' || key==='electrical rough in / island' || key==='check if windstorm metals needed' || key==='windstorm inspection (by rgv structure)' || key==='make sure foundation has done the sunken showers if needed' || key==='all showers need to have proper niches built by framer' || key==='ceiling designs must be provided to the framer.' || key==='schedule the glass and shower door vendor.' || key==='team cleanup and quality visit' || key==='cabinet meeting' || key==='sync dimensions (send the dimensions of the sink to the cabinet fabricator)' || key==='final inspection – windstorm engineering';
+  return key==='schedule pre form survey' || key==='plumbing rough before roof shingles' || key==='verify windstorm page has shear wall' || key==='electrical rough in / island' || key==='check if windstorm metals needed' || key==='windstorm inspection (by rgv structure)' || key==='make sure foundation has done the sunken showers if needed' || key==='all showers need to have proper niches built by framer' || key==='ceiling designs must be provided to the framer.' || key==='schedule the glass and shower door vendor.' || key==='team cleanup and quality visit' || key==='cabinet meeting' || key==='sync dimensions (send the dimensions of the sink to the cabinet fabricator)' || key==='final inspection – windstorm engineering' || key==='all hardware must be ordered for the project.';
 }
 function isSelectionPhaseTask(txt){
   var key=String(txt||'').toLowerCase();
