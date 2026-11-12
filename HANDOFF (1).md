@@ -220,3 +220,6 @@ Two connected web apps for South Texas Builders (STB):
 - **Not done:** per-checklist-line PDF (use the line's Notes + the house PDF slots for now); the Who/Subcontractor dropdown is hidden on TC lines;
   TC board has no Budget/Delays/Command Center (hidden); "Person in charge" in the header still says Ramiro.
 - Tests live outside the repo (Playwright with a fake Supabase): Nadia sign-in, TC checklist, contract upload, send to Alice, owner TC toggle, Roberto.
+- **Loom videos:** `p.looms=[{id,url,title,at,by}]` (+ `loomsRemoved` tombstones, merged by id in `stbMergeProject`). The **🎥 Add Loom** button and the × remove
+  appear on the TC board only (link must be `https://(www.)loom.com/share|embed|i/...`, then a short title). Links travel with the house, so Main/Alice
+  cards show them as read-only chips (`loomChips()`); viewers may open them.

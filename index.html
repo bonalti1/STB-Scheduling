@@ -1735,6 +1735,15 @@ function stbMergeProject(mineP,baseP){
   mineP.dayTasks=Object.keys(byId).map(function(k){ return byId[k]; }).filter(function(t){ return !mineP.dayTasksRemoved[t.id]; });
   if(!mineP.selectionsUrl && baseP.selectionsUrl && !docWasRemoved('selections')){ mineP.selectionsUrl=baseP.selectionsUrl; mineP.selectionsName=mineP.selectionsName||baseP.selectionsName; }
   if(!mineP.permitsUrl && baseP.permitsUrl && !docWasRemoved('permits')){ mineP.permitsUrl=baseP.permitsUrl; mineP.permitsName=mineP.permitsName||baseP.permitsName; }
+  /* Loom links (TC): union by id; removals tombstoned so a stale device can't bring one back. */
+  (function(){
+    var rm=Object.assign({}, baseP.loomsRemoved||{}, mineP.loomsRemoved||{}), seen={}, out=[];
+    (Array.isArray(mineP.looms)?mineP.looms:[]).concat(Array.isArray(baseP.looms)?baseP.looms:[]).forEach(function(l){
+      if(!l||!l.id||seen[l.id]||rm[l.id]) return; seen[l.id]=true; out.push(l);
+    });
+    if(out.length||mineP.looms||baseP.looms){ mineP.looms=out.sort(function(a,b){ return String(b.at||'').localeCompare(String(a.at||'')); }); }
+    if(Object.keys(rm).length) mineP.loomsRemoved=rm;
+  })();
   if(!mineP.contractUrl && baseP.contractUrl && !docWasRemoved('contract')){ mineP.contractUrl=baseP.contractUrl; mineP.contractName=mineP.contractName||baseP.contractName; }
   return mineP;
 }
@@ -3006,6 +3015,16 @@ function completedInfo(p,phase,task){
   }
   return label;
 }
+/* Loom videos: Nadia records them on the TC board; they travel with the house, so every board shows them. */
+function loomChips(p){
+  var tc=BOARD_AREA==='tc', list=Array.isArray(p.looms)?p.looms:[];
+  var html=list.map(function(l){
+    return '<a class="addr-chip loom-chip" data-act="openloom" href="'+attr(l.url)+'" target="_blank" rel="noopener" title="'+attr((l.by?l.by+' \u00B7 ':'')+(l.at?fmtDate(isoFromDateTime(l.at)):''))+'">\uD83C\uDFA5 '+esc(l.title||'Loom video')+'</a>'+
+      (tc?'<button class="sqft-edit sqft-remove" data-act="removeloom" data-lid="'+attr(l.id)+'" title="Remove this Loom link">\u00D7</button>':'');
+  }).join('');
+  if(tc) html+='<button class="sqft-edit" data-act="addloom">\uD83C\uDFA5 Add Loom</button>';
+  return html;
+}
 function projectCard(p){
   var phc=PHASE_COLOR[p.phase]||'#8A93A6';
   var prog=overallProgress(p);
@@ -3041,6 +3060,7 @@ function projectCard(p){
             '<button class="sqft-edit" data-act="chooseblueprint">Replace</button>'+
             '<button class="sqft-edit sqft-remove" data-act="removedoc" data-kind="blueprint" title="Remove the blueprint PDF from this project">Remove</button>'
           : '<button class="sqft-edit" data-act="chooseblueprint">📄 Add blueprint</button>')+
+        loomChips(p)+
         Object.keys(DOC_KINDS).map(function(kind){
           var k=DOC_KINDS[kind];
           return '<input class="doc-file" type="file" accept="application/pdf,.pdf" data-act="uploaddoc" data-kind="'+kind+'" style="display:none;" />'+
@@ -3268,6 +3288,27 @@ document.getElementById('projectList').addEventListener('click',function(e){
   if(act==='choosedoc'){
     var di=card.querySelector('.doc-file[data-kind="'+t.dataset.kind+'"]');
     if(di) di.click();
+    return;
+  }
+  if(act==='addloom'){
+    var lu=prompt('Paste the Loom link (https://www.loom.com/share/...)','');
+    if(lu===null) return;
+    lu=String(lu).trim();
+    if(!/^https:\/\/(www\.)?loom\.com\/(share|embed|i)\/[A-Za-z0-9]+/i.test(lu)){ toast('That is not a Loom link. Copy it from Loom and try again.'); return; }
+    var lt=prompt('Short title for this video (example: Lender update)','');
+    if(lt===null) return;
+    p.looms=Array.isArray(p.looms)?p.looms:[];
+    p.looms.unshift({id:uid(),url:lu,title:String(lt).trim()||'Loom video',at:new Date().toISOString(),by:currentUserName()||''});
+    logDailyActivity(p,{type:'document',task:'Loom video',toStatus:'uploaded',note:lt||lu});
+    queueSave(); render(); toast('Loom video added');
+    return;
+  }
+  if(act==='removeloom'){
+    var lid=t.dataset.lid, lm=(p.looms||[]).filter(function(x){ return x.id===lid; })[0];
+    if(!lm || !confirm('Remove the Loom link \u201C'+(lm.title||'Loom video')+'\u201D from this house?')) return;
+    p.looms=p.looms.filter(function(x){ return x.id!==lid; });
+    p.loomsRemoved=p.loomsRemoved||{}; p.loomsRemoved[lid]=true;
+    queueSave(); render(); toast('Loom link removed');
     return;
   }
   if(act==='editaddress'){
@@ -5117,7 +5158,7 @@ document.querySelectorAll('.ovl').forEach(function(o){
 var VIEWER_OK_BUTTONS=[
   '[data-close]','.close','#openExport','#printReport','#printProjectSnapshot','#copyReport',
   '#openSubs','#openLessons','#openHistory','#areaToggle','#gateEnter','[data-budgetphase]',
-  '[data-act="openmap"]','[data-act="openblueprint"]','[data-act="opendoc"]','[data-act="openrender"]',
+  '[data-act="openmap"]','[data-act="openloom"]','[data-act="openblueprint"]','[data-act="opendoc"]','[data-act="openrender"]',
   '[data-act="doneinfo"]','[data-act="viewphase"]','[data-act="opendelays"]','[data-act="closedelays"]',
   '[data-act="openbudget"]','[data-act="tasknote"]'
 ];
