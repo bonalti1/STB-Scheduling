@@ -842,6 +842,7 @@
     <button class="tbtn go" id="openExport"><span class="ic">📤</span> Export Report</button>
     <button class="tbtn" id="openAI"><span class="ic">🧠</span> Operations AI</button>
     <button class="tbtn go" id="areaToggle"><span class="ic" id="areaToggleIc">🏘</span> <span id="areaToggleLbl">Alice Projects</span></button>
+    <button class="tbtn go" id="openTC" title="Transaction Coordination"><span class="ic">📋</span> TC</button>
     <button class="tbtn" id="openSubs"><span class="ic">👷</span> Subcontractors</button>
     <button class="tbtn" id="openLessons"><span class="ic">📘</span> Lessons Learned</button>
     <button class="tbtn" id="openHistory"><span class="ic">🗂</span> Completed Houses</button>
@@ -1269,7 +1270,8 @@ var USERS = [
   {role:'scheduler',name:'Javier Gonzalez',password:'Javi'},
   {role:'scheduler',name:'Cristo',password:'Cristo'},
   {role:'scheduler',name:'Jackie',password:'Jackie'},
-  {role:'viewer',name:'Roberto',password:'916303'}   /* view-only: field employee */
+  {role:'viewer',name:'Roberto',password:'916303'},   /* view-only: field employee */
+  {role:'tc',name:'Nadia',password:'Nadia'}           /* Transaction Coordination only: signs in straight to tc.html, never sees the board */
 ];
 var SUPABASE_URL = 'https://ttpkyepzzpxctajrhwvx.supabase.co';
 var SUPABASE_KEY = 'sb_publishable_bnhfaLTxNe2ApJ94myqtIg_uHjo3_B1';
@@ -1290,7 +1292,8 @@ var ROLE_CAPS={
   scheduler:{write:true},
   /* ownTasks: reserved for "a viewer may check off only the tasks assigned to him"
      (task state would carry assignedTo:<name>). Off for now - see HANDOFF "Viewer role". */
-  viewer:{write:false, ownTasks:false}
+  viewer:{write:false, ownTasks:false},
+  tc:{write:false}      /* Nadia: the board is never opened for her (she is sent to tc.html); read-only if it ever were */
 };
 function sessionUser(){
   try{ var u=JSON.parse(sessionStorage.getItem(AUTH_USER_KEY)||'null'); return (u && u.role) ? u : null; }catch(e){ return null; }
@@ -4388,6 +4391,15 @@ document.getElementById('openChangeOrders').addEventListener('click',function(){
 document.getElementById('openOrders').addEventListener('click',function(){
   window.open('ordenes.html','_blank');
 });
+/* Transaction Coordination (before Pre Phase) lives on its own page, like Orders. Whoever is signed in here
+   does not have to type a password again. */
+function rememberTcAccess(u){
+  try{ localStorage.setItem('stb_tc_auth_v1',JSON.stringify({name:u.name,role:u.role,t:Date.now()})); }catch(e){}
+}
+document.getElementById('openTC').addEventListener('click',function(){
+  var u=sessionUser(); if(u && (u.role==='owner'||u.role==='scheduler')) rememberTcAccess(u);
+  window.open('tc.html','_blank');
+});
 function backupPayload(){
   captureDailyReport();
   return {
@@ -5046,6 +5058,7 @@ function tryPassword(){
   if(user){
     sessionStorage.setItem(AUTH_USER_KEY,JSON.stringify({role:user.role,name:user.name}));
     err.classList.remove('show');
+    if(user.role==='tc'){ sessionStorage.setItem(AUTH_KEY,'yes'); rememberTcAccess(user); location.replace('tc.html'); return; }   /* Nadia: home page is TC, the board never loads */
     unlockApp();
   } else {
     err.classList.add('show');
@@ -5056,7 +5069,9 @@ document.getElementById('gateEnter').addEventListener('click',tryPassword);
 document.getElementById('gatePassword').addEventListener('keydown',function(e){
   if(e.key==='Enter'){ tryPassword(); }
 });
-if(sessionStorage.getItem(AUTH_KEY)==='yes'){
+if(sessionStorage.getItem(AUTH_KEY)==='yes' && (sessionUser()||{}).role==='tc'){
+  rememberTcAccess(sessionUser()); location.replace('tc.html');
+} else if(sessionStorage.getItem(AUTH_KEY)==='yes'){
   if(!sessionStorage.getItem(AUTH_USER_KEY)){
     sessionStorage.setItem(AUTH_USER_KEY,JSON.stringify({role:'owner',name:'Owner'}));
   }

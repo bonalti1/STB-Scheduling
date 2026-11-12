@@ -197,3 +197,22 @@ Two connected web apps for South Texas Builders (STB):
   `phaseTaskState` is now the single source of truth; the list may only fill in a missing entry.
 - Tests (not in repo): delete after touching the text, delete after editing, stale-copy merge, reload, standard-task rename,
   stale list vs checked state, two devices checking different tasks, delete not disturbing checks.
+
+## Transaction Coordination (TC) — before Pre Phase (Nov 2026)
+- **What it is:** `tc.html`, its own page (like Orders / Change Orders), opened by the red **TC** button on the board toolbar
+  (next to "Alice Projects"/"Main Projects"). Nadia's list of incoming houses before they become construction projects.
+- **Nadia:** password `Nadia` (`USERS` role `tc`). Typing it at the board's gate sends her straight to `tc.html`; opening the
+  board again sends her back; the board's data is never requested for her. Owner/schedulers pressing TC are not asked again
+  (`stb_tc_auth_v1` in localStorage, set by the board). Roberto (viewer) has no TC button. TC has its own gate for direct visits.
+- **Data:** one cloud row `stb_tc_v1` = `{projects:[...], removedIds:[...]}` in `stb_app_state`. Project =
+  `{id,name,code,notes,items:{<lineId>:{c,na,files:[{url,name,at}],t,by}},sent:{area,at,by}|null,...}`. Same compare-and-set
+  save as the board; conflicts merge per field (each field keeps the copy changed last, by `nameAt`/`notesAt`/`items[id].t`).
+- **Checklist:** from the CFS "Doc Checklist" PDF (Borrower 13 / Builder 5 / Lender 11 lines). Ids (`b01…`, `d01…`, `l01…`) are
+  permanent — edit `TC_SECTIONS` in `tc.html` to change wording/add lines. Each line: check, N/A, optional PDF/photo (stored in
+  `stb-blueprints` under `tc/<last>-<house>/`). Per-house **Notes** button holds everything else (lender, title co., etc.).
+  Builder line 1 of the PDF (insurance + contract + plans + specs ran together) was split into 4 lines.
+- **Ready for Construction:** Nadia picks **Main / Valley** or **Alice**; `sendToBoard()` adds `{name, code, phase:'Pre Phase', tcId, tcNotes}`
+  to `stb_board_v1` or `stb_board_alice_v1` with compare-and-set (never duplicates: it checks `tcId`). The board gives it
+  its Pre Phase checklist on load (`normalizeProject`). A stale board tab saving later keeps the house (`stbMergeBoards` restores cloud-only projects).
+  The TC house then sits in the "Sent to Construction" tab. Missing checklist lines only warn; they never block.
+- **Not done yet:** the board card does not display `tcNotes` or link back to the TC checklist; no "undo send"; no notification when a house is sent.

@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>STB Transaction Coordination</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="south-texas-builders-logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --navy:#16294D; --navy-deep:#0E1B36; --red:#E23B2A; --red-dark:#BE2C1D;
+    --paper:#F2F1EA; --card:#FFFFFF; --ink:#1B2233; --muted:#717A8C;
+    --line:#E3E1D7; --line-soft:#EDEBE2; --amber:#E8A21C; --amber-bg:#FBF4E3;
+    --green:#2E9166; --green-bg:#E6F2EA;
+    --shadow:0 1px 2px rgba(14,27,54,.06), 0 8px 24px -12px rgba(14,27,54,.18);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{min-height:100%;}
+  body{
+    font-family:'Barlow',system-ui,sans-serif;color:var(--ink);background-color:var(--paper);
+    background-image:linear-gradient(rgba(22,41,77,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(22,41,77,.035) 1px,transparent 1px);
+    background-size:26px 26px;-webkit-font-smoothing:antialiased;line-height:1.45;
+  }
+  button{font-family:inherit;cursor:pointer;}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 14px 90px;}
+
+  /* header */
+  header.app{background:var(--navy);background-image:linear-gradient(180deg,var(--navy) 0%,var(--navy-deep) 100%);
+    color:#fff;padding:12px 14px;border-bottom:4px solid var(--red);margin-bottom:14px;}
+  header.app .in{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  header.app img{height:44px;width:auto;background:#fff;border-radius:8px;padding:3px 6px;}
+  header.app h1{font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;letter-spacing:.5px;text-transform:uppercase;line-height:1.05;}
+  header.app h1 small{display:block;font-family:'Barlow',sans-serif;font-size:.72rem;letter-spacing:1.5px;opacity:.75;font-weight:500;}
+  header.app .sp{flex:1;}
+  .pill{background:rgba(255,255,255,.12);border-radius:99px;padding:5px 12px;font-size:.78rem;font-weight:600;}
+  .pill.cloud{background:rgba(46,145,102,.35);} .pill.error{background:rgba(226,59,42,.5);}
+  .hbtn{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.45);border-radius:8px;padding:6px 12px;font-weight:600;font-size:.8rem;text-decoration:none;}
+  .hbtn:hover{background:rgba(255,255,255,.12);}
+
+  /* toolbar */
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;}
+  .tbtn{display:flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:11px 16px;font-weight:600;font-size:.9rem;color:var(--navy);box-shadow:var(--shadow);}
+  .tbtn.primary{background:var(--navy);color:#fff;border-color:var(--navy);}
+  .tbtn:active{transform:scale(.97);}
+  .tabs{display:flex;gap:6px;}
+  .tab{border:1px solid var(--line);background:var(--card);border-radius:99px;padding:8px 14px;font-weight:600;font-size:.84rem;color:var(--muted);}
+  .tab.on{background:var(--navy);color:#fff;border-color:var(--navy);}
+  .toolbar input.search{flex:1 1 180px;min-width:140px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:inherit;font-size:.9rem;background:#fff;outline:none;}
+
+  /* project card */
+  .card{background:var(--card);border:1px solid var(--line);border-left:6px solid var(--navy);border-radius:14px;box-shadow:var(--shadow);margin-bottom:12px;overflow:hidden;}
+  .card.sent{border-left-color:var(--green);}
+  .card-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 14px;}
+  .caret{border:none;background:none;font-size:1.1rem;color:var(--muted);width:26px;height:26px;transition:transform .15s;}
+  .card.open .caret{transform:rotate(90deg);}
+  .namebox{display:flex;align-items:center;gap:6px;flex:1 1 220px;min-width:200px;}
+  .namebox input{border:1px solid transparent;border-radius:8px;background:transparent;font-family:'Barlow Condensed',sans-serif;
+    font-weight:700;font-size:1.35rem;color:var(--navy);padding:3px 6px;outline:none;min-width:0;}
+  .namebox input:hover,.namebox input:focus{border-color:var(--line);background:#fff;}
+  .namebox .nm{flex:1 1 120px;} .namebox .cd{width:84px;}
+  .namebox .hash{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.2rem;color:var(--muted);}
+  .prog{flex:1 1 170px;min-width:150px;}
+  .prog .t{font-size:.78rem;font-weight:700;color:var(--navy);display:flex;justify-content:space-between;margin-bottom:3px;}
+  .prog .t span{color:var(--muted);font-weight:600;}
+  .track{height:9px;background:var(--line-soft);border-radius:6px;overflow:hidden;}
+  .fill{height:100%;background:var(--green);width:0;transition:width .25s;}
+  .cbtn{border:1px solid var(--line);background:#fff;color:var(--navy);border-radius:9px;padding:8px 12px;font-weight:700;font-size:.82rem;}
+  .cbtn.notes.has{background:var(--amber-bg);border-color:var(--amber);color:#8a5a00;}
+  .cbtn.ready{background:var(--green);border-color:var(--green);color:#fff;}
+  .cbtn.rm{color:var(--red-dark);border-color:#f0cdc8;}
+  .badge-sent{background:var(--green-bg);color:var(--green);border-radius:99px;padding:5px 12px;font-weight:700;font-size:.8rem;}
+
+  .card-body{display:none;border-top:1px solid var(--line-soft);padding:6px 14px 14px;}
+  .card.open .card-body{display:block;}
+  .sec-h{display:flex;align-items:center;justify-content:space-between;background:var(--navy);color:#fff;border-radius:9px;
+    padding:9px 14px;margin:14px 0 4px;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:.8px;text-transform:uppercase;}
+  .sec-h span{font-family:'Barlow',sans-serif;font-size:.8rem;font-weight:700;opacity:.85;letter-spacing:0;}
+  .item{display:flex;align-items:flex-start;gap:10px;padding:9px 4px;border-bottom:1px solid var(--line-soft);}
+  .item:last-child{border-bottom:none;}
+  .chk{width:24px;height:24px;border:2px solid #c3c8d4;border-radius:6px;background:#fff;flex:none;margin-top:1px;
+    display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;line-height:1;}
+  .item.done .chk{background:var(--green);border-color:var(--green);}
+  .item.na .chk{background:#e8eaf0;border-color:#c3c8d4;color:#8a93a6;font-size:11px;font-weight:700;}
+  .item .txt{flex:1;min-width:0;font-size:.95rem;}
+  .item.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:rgba(46,145,102,.7);}
+  .item.na .txt{color:#9aa1b3;}
+  .item .meta{font-size:.72rem;color:var(--muted);margin-top:2px;}
+  .files{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px;}
+  .fchip{display:inline-flex;align-items:center;gap:4px;background:#eef2fb;border:1px solid #cfd9f0;border-radius:99px;padding:3px 4px 3px 10px;font-size:.78rem;font-weight:600;}
+  .fchip a{color:var(--navy);text-decoration:none;max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .fchip button{border:none;background:none;color:var(--red-dark);font-size:.95rem;width:20px;height:20px;border-radius:50%;}
+  .acts{display:flex;gap:6px;flex:none;}
+  .mini{border:1px solid var(--line);background:#fff;color:var(--navy);border-radius:8px;padding:6px 10px;font-weight:700;font-size:.76rem;}
+  .mini.on{background:#e8eaf0;border-color:#c3c8d4;}
+  .empty{text-align:center;color:var(--muted);padding:40px 10px;background:var(--card);border:1px dashed var(--line);border-radius:14px;}
+
+  /* overlays */
+  .ovl{position:fixed;inset:0;background:rgba(14,27,54,.55);display:none;align-items:center;justify-content:center;padding:16px;z-index:60;}
+  .ovl.show{display:flex;}
+  .modal{background:#fff;border-radius:16px;width:100%;max-width:520px;max-height:90vh;overflow:auto;padding:20px;box-shadow:0 25px 70px rgba(0,0,0,.4);}
+  .modal h3{font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;}
+  .modal .sub{color:var(--muted);font-size:.86rem;margin:2px 0 12px;}
+  .modal textarea{width:100%;min-height:220px;border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit;font-size:.95rem;outline:none;resize:vertical;}
+  .modal .row{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap;}
+  .btn{border:1px solid var(--line);background:#fff;color:var(--navy);border-radius:10px;padding:11px 18px;font-weight:700;font-size:.9rem;}
+  .btn.go{background:var(--green);border-color:var(--green);color:#fff;}
+  .btn.go[disabled]{opacity:.45;cursor:not-allowed;}
+  .btn.navy{background:var(--navy);border-color:var(--navy);color:#fff;}
+  .area{display:flex;gap:8px;margin:10px 0;}
+  .area label{flex:1;border:2px solid var(--line);border-radius:12px;padding:12px;font-weight:700;color:var(--navy);cursor:pointer;display:block;text-align:center;}
+  .area input{display:none;}
+  .area input:checked + span{color:var(--green);}
+  .area label.sel{border-color:var(--green);background:var(--green-bg);}
+  .missing{background:var(--amber-bg);border:1px solid #f1d9a0;border-radius:10px;padding:10px 12px;font-size:.86rem;margin:10px 0;max-height:180px;overflow:auto;}
+  .missing b{color:#8a5a00;} .missing ul{margin:6px 0 0 18px;}
+  .okbox{background:var(--green-bg);border:1px solid #bfe0cc;border-radius:10px;padding:10px 12px;font-size:.88rem;margin:10px 0;color:#1d6b49;font-weight:600;}
+  .err{color:var(--red-dark);font-weight:600;font-size:.86rem;margin-top:8px;display:none;}
+
+  /* gate */
+  .gate{position:fixed;inset:0;background:var(--navy);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .gate.hide{display:none;}
+  .gate-card{background:#fff;border-radius:18px;padding:34px 30px;width:100%;max-width:380px;text-align:center;box-shadow:0 25px 70px rgba(0,0,0,.45);}
+  .gate-card img{width:120px;margin:0 auto 12px;display:block;}
+  .gate-card h2{font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;color:var(--navy);text-transform:uppercase;letter-spacing:1px;}
+  .gate-card p{color:var(--muted);font-size:.82rem;letter-spacing:1.5px;text-transform:uppercase;margin:2px 0 20px;}
+  .gate-card input{width:100%;padding:13px 16px;border:1px solid var(--line);border-radius:10px;font-size:1rem;text-align:center;font-family:inherit;}
+  .gate-card button{width:100%;margin-top:12px;padding:13px;border:none;border-radius:10px;background:var(--red);color:#fff;font-weight:700;font-size:1rem;letter-spacing:1px;text-transform:uppercase;}
+  .gate-card .e{color:var(--red-dark);font-weight:600;font-size:.85rem;margin-top:10px;display:none;}
+  .gate-card .e.show{display:block;}
+
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--navy);color:#fff;padding:11px 20px;
+    border-radius:99px;font-weight:600;font-size:.88rem;box-shadow:0 8px 24px rgba(0,0,0,.3);opacity:0;transition:all .25s ease;z-index:90;pointer-events:none;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  @media(max-width:640px){ .card-head{padding:10px;} .namebox input{font-size:1.15rem;} .acts{flex-wrap:wrap;} }
+</style>
+</head>
+<body>
+
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <img src="south-texas-builders-logo.png" alt="South Texas Builders" />
+    <h2>Transaction Coordination</h2>
+    <p>South Texas Builders</p>
+    <input id="gatePw" type="password" placeholder="Password" autocomplete="off" />
+    <button id="gateGo">Enter</button>
+    <div class="e" id="gateErr">Wrong password. Try again.</div>
+  </div>
+</div>
+
+<header class="app"><div class="in">
+  <img src="south-texas-builders-logo.png" alt="South Texas Builders" />
+  <h1>Transaction Coordination<small>Before Pre Phase · South Texas Builders</small></h1>
+  <span class="sp"></span>
+  <span class="pill" id="who"></span>
+  <span class="pill" id="sync">Starting…</span>
+  <a class="hbtn" id="toBoard" href="index.html">← Board</a>
+  <button class="hbtn" id="signOut">Sign out</button>
+</div></header>
+
+<div class="wrap">
+  <div class="toolbar">
+    <button class="tbtn primary" id="addProject">＋ Add Project</button>
+    <div class="tabs">
+      <button class="tab on" id="tabActive">In Transaction (0)</button>
+      <button class="tab" id="tabSent">Sent to Construction (0)</button>
+    </div>
+    <input class="search" id="search" type="search" placeholder="Search last name or house #" />
+  </div>
+  <div id="list"></div>
+</div>
+
+<div class="ovl" id="notesOvl"><div class="modal">
+  <h3 id="notesTitle">Notes</h3>
+  <div class="sub">Anything about this client: lender, loan type, title company, lot, who to call, what is missing…</div>
+  <textarea id="notesText" placeholder="Write notes here"></textarea>
+  <div class="row"><button class="btn navy" id="notesDone">Done</button></div>
+</div></div>
+
+<div class="ovl" id="readyOvl"><div class="modal">
+  <h3 id="readyTitle">Ready for Construction</h3>
+  <div class="sub">This sends the house to the construction board as a new project in Pre Phase.</div>
+  <div class="area" id="areaPick">
+    <label data-area="main"><input type="radio" name="area" value="main"><span>Main / Valley</span></label>
+    <label data-area="alice"><input type="radio" name="area" value="alice"><span>Alice</span></label>
+  </div>
+  <div id="readyMissing"></div>
+  <div class="err" id="readyErr"></div>
+  <div class="row"><button class="btn" id="readyCancel">Cancel</button><button class="btn go" id="readyGo" disabled>Send to Construction</button></div>
+</div></div>
+
+<input type="file" id="fileIn" accept=".pdf,application/pdf,image/*" style="display:none" />
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ Config ============ */
+var SUPABASE_URL='https://ttpkyepzzpxctajrhwvx.supabase.co';
+var SUPABASE_KEY='sb_publishable_bnhfaLTxNe2ApJ94myqtIg_uHjo3_B1';
+var TABLE='stb_app_state';
+var TC_KEY='stb_tc_v1';
+var LOCAL_KEY='stb_tc_local_v1';
+var AUTH_KEY='stb_tc_auth_v1';
+var PDF_BUCKET='stb-blueprints', IMG_BUCKET='stb-project-renders';
+var BOARD_KEYS={main:'stb_board_v1',alice:'stb_board_alice_v1'};
+var AREA_LABEL={main:'Main / Valley',alice:'Alice'};
+
+/* Same logins as the board. Roberto (view-only) is not here. Nadia lands here by default. */
+var USERS=[
+  {role:'owner',name:'Owner',password:'1226'},
+  {role:'scheduler',name:'Ramiro Lerma',password:'Ramiro'},
+  {role:'scheduler',name:'Javier Gonzalez',password:'Javi'},
+  {role:'scheduler',name:'Cristo',password:'Cristo'},
+  {role:'scheduler',name:'Jackie',password:'Jackie'},
+  {role:'tc',name:'Nadia',password:'Nadia'}
+];
+
+/* The checklist (from the CFS Doc Checklist). Ids are permanent: change the wording freely, keep the ids. */
+var TC_SECTIONS=[
+  {id:'borrower',title:'Borrower Documents',items:[
+    ['b01','INCOME: Paystubs for most recent full month [from both borrower and co-borrower if applicable]'],
+    ['b02','INCOME: W2 Statements for past 2 years [from both borrower and co-borrower if applicable]'],
+    ['b03','ASSETS: Bank Statements for Checking & Saving Accounts for past 2 months'],
+    ['b04','ASSETS: Bank Statements for Investment Accounts for past 2 months'],
+    ['b05','ASSETS: Explanation of Current Residence – if own, need mortgage, insurance and tax statements'],
+    ['b06','FINANCIAL HISTORY: Tax Returns - 2 most recent years'],
+    ['b07','FINANCIAL HISTORY: Letter or Email Explanation for any unusual bank transactions [large deposits or withdraws]'],
+    ['b08','FINANCIAL HISTORY: Letter or Email Explanation for inquiries and derogatory items on credit report'],
+    ['b09',"IDENTITY: Social Security Card & Driver's License for borrower, co-borrower and non-qualifying spouse [if applicable]"],
+    ['b10','PROPERTY: Land Contract, Current Payoff or Warranty Deed with Lot Purchase HUD/CD'],
+    ['b11','PROPERTY: Land Survey or Plat Showing Lot Dimensions and Set-Backs'],
+    ['b12','SELF-EMPLOYED: Business P&L and Balance Sheet for current year To-Date / Expanded Reports for Distributions & Wages'],
+    ['b13','SELF-EMPLOYED: Business Tax Returns for Previous 2 Years']
+  ]},
+  {id:'builder',title:'Builder Documents',items:[
+    ['d01',"General Liability Insurance Certificate or Confirmation (will get Supplemental Liability to the Builder’s Risk after loan approval)"],
+    ['d02','House Contract between Builder and Borrower, including allowances'],
+    ['d03','House Floor Plans'],
+    ['d04','House Specifications - Detailed w/ Materials and Upgrades'],
+    ['d05','Construction Budget Breakdown - include separate line item for admin/profit']
+  ]},
+  {id:'lender',title:'Lender Documents',items:[
+    ['l01','Loan Application - 1003 / 1008 [signed & dated] WITH Mortgage Lender Income Calculation Worksheet'],
+    ['l02','If own current home, include mortgage in DTI. Apply rental income if necessary'],
+    ['l03','Loan Disclosures / Loan Estimate'],
+    ['l04','Credit Report - within 90 days'],
+    ['l05','SELF-EMPLOYED: Tax Transcripts for 2 most recent years [Personal and Business if filed separately]'],
+    ['l06','If borrower obtaining VA mortgage, need Certificate of Eligibility'],
+    ['l07','If land is in either FEMA Zone A or V [100 Year], Flood Insurance will be required'],
+    ['l08','Loan DU Submission Report [w/ accurate debt per credit report and correct Appraised Amt & Improved Taxes]'],
+    ['l09','Title Commitment [within 3 months – CFS can order if provided Title Co. contact information]'],
+    ['l10','Appraisal [as-built - within 12 months]'],
+    ['l11','** Fully Underwritten Conditional Mortgage Loan Approval [within 3 months] listing Conditions, with underwriter’s name. Any reserve or financial conditions listed will be required at Construction Loan closing.']
+  ]}
+];
+var ALL_ITEMS=[]; TC_SECTIONS.forEach(function(s){ s.items.forEach(function(i){ ALL_ITEMS.push({id:i[0],text:i[1],sec:s.id}); }); });
+
+/* ============ Helpers ============ */
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function nowIso(){ return new Date().toISOString(); }
+function fmtDate(iso){ try{ var d=new Date(iso); return (d.getMonth()+1)+'/'+d.getDate()+'/'+String(d.getFullYear()).slice(2); }catch(e){ return ''; } }
+function toast(m){ var t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(function(){ t.classList.remove('show'); },2400); }
+function hdr(extra){ var h={apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY}; for(var k in (extra||{})) h[k]=extra[k]; return h; }
+function slug(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'x'; }
+
+/* ============ Session ============ */
+var me=null;
+function getAuth(){ try{ var a=JSON.parse(localStorage.getItem(AUTH_KEY)||'null'); return (a&&a.name)?a:null; }catch(e){ return null; } }
+function setAuth(u){ try{ localStorage.setItem(AUTH_KEY,JSON.stringify({name:u.name,role:u.role,t:Date.now()})); }catch(e){} }
+function tryGate(){
+  var pw=($('gatePw').value||'').trim();
+  var u=USERS.filter(function(x){ return x.password===pw; })[0];
+  if(!u){ $('gateErr').classList.add('show'); $('gatePw').select(); return; }
+  setAuth(u); startApp(u);
+}
+$('gateGo').addEventListener('click',tryGate);
+$('gatePw').addEventListener('keydown',function(e){ if(e.key==='Enter') tryGate(); });
+$('signOut').addEventListener('click',function(){
+  try{ localStorage.removeItem(AUTH_KEY); sessionStorage.removeItem('stb_auth_ok_v1'); sessionStorage.removeItem('stb_auth_user_v1'); }catch(e){}
+  location.reload();
+});
+
+/* ============ Data ============ */
+var data={projects:[],removedIds:[]};
+var syncToken=null, dirty=false, saveTimer=null, saving=false, uploadingCount=0;
+var view='active', query='';
+var openCards={};
+
+function newProject(name,code){
+  var t=nowIso();
+  return {id:uid(),name:name||'',code:code||'',nameAt:t,notes:'',notesAt:t,items:{},sent:null,created:t,createdBy:me?me.name:'',updatedAt:t};
+}
+function parseVal(v){
+  try{ var d=typeof v==='string'?JSON.parse(v):v; if(d && Array.isArray(d.projects)){ d.removedIds=Array.isArray(d.removedIds)?d.removedIds:[]; return d; } }catch(e){}
+  return null;
+}
+function mergeProject(a,b){
+  /* a = this device, b = cloud. Each field keeps whichever copy changed last. */
+  var out=JSON.parse(JSON.stringify(a));
+  if((b.nameAt||'')>(a.nameAt||'')){ out.name=b.name; out.code=b.code; out.nameAt=b.nameAt; }
+  if((b.notesAt||'')>(a.notesAt||'')){ out.notes=b.notes; out.notesAt=b.notesAt; }
+  out.items=out.items||{};
+  Object.keys(b.items||{}).forEach(function(id){
+    var mi=out.items[id], bi=b.items[id];
+    if(!mi || (bi.t||'')>(mi.t||'')) out.items[id]=JSON.parse(JSON.stringify(bi));
+  });
+  if(!out.sent && b.sent) out.sent=b.sent;
+  if((b.updatedAt||'')>(out.updatedAt||'')) out.updatedAt=b.updatedAt;
+  return out;
+}
+function mergeData(mine,theirs){
+  var removed={}; (mine.removedIds||[]).concat(theirs.removedIds||[]).forEach(function(i){ removed[i]=1; });
+  var byId={}, order=[];
+  mine.projects.forEach(function(p){ byId[p.id]=p; order.push(p.id); });
+  theirs.projects.forEach(function(p){
+    if(byId[p.id]) byId[p.id]=mergeProject(byId[p.id],p);
+    else { byId[p.id]=p; order.push(p.id); }
+  });
+  return {projects:order.filter(function(i){ return !removed[i]; }).map(function(i){ return byId[i]; }), removedIds:Object.keys(removed)};
+}
+async function getRow(key){
+  var res=await fetch(SUPABASE_URL+'/rest/v1/'+TABLE+'?id=eq.'+encodeURIComponent(key)+'&select=data,updated_at',{headers:hdr()});
+  if(!res.ok) throw new Error('Cloud read failed');
+  var rows=await res.json();
+  return rows&&rows[0]?{value:rows[0].data?rows[0].data.value:null,updated_at:rows[0].updated_at}:null;
+}
+function setSync(mode,msg){ var s=$('sync'); s.className='pill '+mode; s.textContent=msg; }
+function saveLocal(){ try{ localStorage.setItem(LOCAL_KEY,JSON.stringify(data)); }catch(e){} }
+
+async function loadAll(){
+  var local=null; try{ local=parseVal(localStorage.getItem(LOCAL_KEY)); }catch(e){}
+  try{
+    var row=await getRow(TC_KEY);
+    var cloud=row?parseVal(row.value):null;
+    if(cloud){ data=local?mergeData(local,cloud):cloud; syncToken=row.updated_at; if(local) dirty=true; }
+    else if(local){ data=local; dirty=true; }
+    setSync('cloud','Cloud synced');
+  }catch(e){
+    if(local) data=local;
+    setSync('error','Cloud offline');
+  }
+  render();
+  if(dirty) queueSave(0);
+}
+function queueSave(delay){
+  dirty=true; saveLocal(); setSync('', 'Saving…');
+  clearTimeout(saveTimer); saveTimer=setTimeout(saveNow, delay==null?500:delay);
+}
+async function saveNow(){
+  if(saving){ queueSave(400); return; }
+  saving=true; saveTimer=null;
+  try{
+    for(var attempt=0; attempt<6; attempt++){
+      var row=await getRow(TC_KEY);
+      var mineVal=JSON.stringify(data);
+      if(!row){
+        var ins=await fetch(SUPABASE_URL+'/rest/v1/'+TABLE,{method:'POST',headers:hdr({'Content-Type':'application/json',Prefer:'return=representation'}),
+          body:JSON.stringify({id:TC_KEY,data:{value:mineVal},updated_at:nowIso()})});
+        if(ins.ok){ var j=await ins.json().catch(function(){return[];}); if(j[0]) syncToken=j[0].updated_at; dirty=false; break; }
+        if(ins.status===409) continue;
+        throw new Error('Cloud save failed');
+      }
+      var cloud=parseVal(row.value), merged=false;
+      if(cloud && row.updated_at!==syncToken){ data=mergeData(data,cloud); mineVal=JSON.stringify(data); merged=true; }
+      var res=await fetch(SUPABASE_URL+'/rest/v1/'+TABLE+'?id=eq.'+encodeURIComponent(TC_KEY)+'&updated_at=eq.'+encodeURIComponent(row.updated_at),
+        {method:'PATCH',headers:hdr({'Content-Type':'application/json',Prefer:'return=representation'}),body:JSON.stringify({data:{value:mineVal},updated_at:nowIso()})});
+      if(!res.ok) throw new Error('Cloud save failed');
+      var out=await res.json().catch(function(){return[];});
+      if(out&&out.length){ syncToken=out[0].updated_at; dirty=false; if(merged && !saveTimer && !typingNow()) render(); break; }
+      if(attempt===5) throw new Error('Save conflict');
+    }
+    saveLocal(); setSync('cloud',savedLabel());
+  }catch(e){
+    setSync('error','Not saved – retrying');
+    clearTimeout(saveTimer); saveTimer=setTimeout(saveNow,5000);
+  }finally{ saving=false; }
+}
+function savedLabel(){ var d=new Date(),h=d.getHours(),m=String(d.getMinutes()).padStart(2,'0'); return 'Saved '+(h%12||12)+':'+m+(h>=12?' PM':' AM'); }
+function typingNow(){ var a=document.activeElement; return !!a && (a.tagName==='INPUT'||a.tagName==='TEXTAREA') && a.id!=='search'; }
+/* Pick up changes other people made (Nadia on her computer, Jackie on hers). */
+async function refresh(){
+  if(document.hidden || dirty || saving || typingNow() || $('notesOvl').classList.contains('show') || $('readyOvl').classList.contains('show')) return;
+  try{
+    var row=await getRow(TC_KEY); if(!row || row.updated_at===syncToken) return;
+    var cloud=parseVal(row.value); if(!cloud) return;
+    data=mergeData(data,cloud); syncToken=row.updated_at; saveLocal(); render(); setSync('cloud',savedLabel());
+  }catch(e){}
+}
+setInterval(refresh,30000);
+document.addEventListener('visibilitychange',function(){ if(!document.hidden) refresh(); });
+window.addEventListener('beforeunload',function(e){ if(dirty||uploadingCount){ e.preventDefault(); e.returnValue=''; } });
+
+/* ============ Render ============ */
+function counts(p){
+  var done=0,total=0;
+  ALL_ITEMS.forEach(function(it){ var s=p.items[it.id]||{}; if(s.na) return; total++; if(s.c) done++; });
+  return {done:done,total:total};
+}
+function itemHtml(p,it){
+  var s=p.items[it.id]||{}, cls='item'+(s.c?' done':'')+(s.na?' na':'');
+  var files=(s.files||[]).map(function(f,i){
+    return '<span class="fchip"><a href="'+esc(f.url)+'" target="_blank" rel="noopener">📄 '+esc(f.name||'file')+'</a><button data-act="delfile" data-pid="'+p.id+'" data-iid="'+it.id+'" data-fi="'+i+'" title="Remove file">×</button></span>';
+  }).join('');
+  var meta=s.c&&s.t?'<div class="meta">✓ '+fmtDate(s.t)+(s.by?' · '+esc(s.by):'')+'</div>':'';
+  return '<div class="'+cls+'" data-pid="'+p.id+'" data-iid="'+it.id+'">'+
+    '<button class="chk" data-act="toggle" data-pid="'+p.id+'" data-iid="'+it.id+'" aria-label="Done">'+(s.na?'N/A':(s.c?'✓':''))+'</button>'+
+    '<div class="txt"><span class="tt">'+esc(it.text)+'</span>'+meta+(files?'<div class="files">'+files+'</div>':'')+'</div>'+
+    '<div class="acts"><button class="mini'+(s.na?' on':'')+'" data-act="na" data-pid="'+p.id+'" data-iid="'+it.id+'">N/A</button>'+
+    '<button class="mini" data-act="attach" data-pid="'+p.id+'" data-iid="'+it.id+'">📎 PDF</button></div></div>';
+}
+function cardHtml(p){
+  var c=counts(p), pct=c.total?Math.round(100*c.done/c.total):0, sent=!!p.sent, open=!!openCards[p.id];
+  var body='';
+  TC_SECTIONS.forEach(function(sec){
+    var its=ALL_ITEMS.filter(function(i){ return i.sec===sec.id; }), d=0,t=0;
+    its.forEach(function(i){ var s=p.items[i.id]||{}; if(s.na) return; t++; if(s.c) d++; });
+    body+='<div class="sec-h">'+esc(sec.title)+'<span>'+d+' / '+t+'</span></div>'+its.map(function(i){ return itemHtml(p,i); }).join('');
+  });
+  return '<div class="card'+(open?' open':'')+(sent?' sent':'')+'" data-pid="'+p.id+'">'+
+    '<div class="card-head">'+
+      '<button class="caret" data-act="open" data-pid="'+p.id+'" aria-label="Open">▸</button>'+
+      '<div class="namebox"><input class="nm" data-field="name" data-pid="'+p.id+'" value="'+esc(p.name)+'" placeholder="Last name" /><span class="hash">#</span><input class="cd" data-field="code" data-pid="'+p.id+'" value="'+esc(p.code)+'" placeholder="House #" /></div>'+
+      '<div class="prog"><div class="t">Documents<span>'+c.done+' / '+c.total+' · '+pct+'%</span></div><div class="track"><div class="fill" style="width:'+pct+'%"></div></div></div>'+
+      '<button class="cbtn notes'+(p.notes?' has':'')+'" data-act="notes" data-pid="'+p.id+'">📝 Notes'+(p.notes?' •':'')+'</button>'+
+      (sent?'<span class="badge-sent">Sent to '+esc(AREA_LABEL[p.sent.area]||p.sent.area)+' · '+fmtDate(p.sent.at)+'</span>'
+           :'<button class="cbtn ready" data-act="ready" data-pid="'+p.id+'">✓ Ready for Construction</button>')+
+      '<button class="cbtn rm" data-act="remove" data-pid="'+p.id+'">Remove</button>'+
+    '</div><div class="card-body">'+body+'</div></div>';
+}
+function render(){
+  var act=data.projects.filter(function(p){ return !p.sent; }), snt=data.projects.filter(function(p){ return p.sent; });
+  $('tabActive').textContent='In Transaction ('+act.length+')'; $('tabSent').textContent='Sent to Construction ('+snt.length+')';
+  $('tabActive').classList.toggle('on',view==='active'); $('tabSent').classList.toggle('on',view==='sent');
+  var q=query.trim().toLowerCase();
+  var list=(view==='sent'?snt:act).filter(function(p){ return !q || (p.name+' '+p.code).toLowerCase().indexOf(q)>=0; });
+  $('list').innerHTML=list.length?list.map(cardHtml).join(''):
+    '<div class="empty">'+(view==='sent'?'No houses have been sent to construction yet.':(q?'No project matches your search.':'No projects yet. Tap “＋ Add Project” to start the first one.'))+'</div>';
+}
+
+/* ============ Actions ============ */
+function byId(id){ return data.projects.filter(function(p){ return p.id===id; })[0]; }
+function touch(p){ p.updatedAt=nowIso(); }
+function itemState(p,iid){ p.items[iid]=p.items[iid]||{}; return p.items[iid]; }
+function me_(){ return me?me.name:''; }
+
+$('addProject').addEventListener('click',function(){
+  var p=newProject('',''); data.projects.unshift(p); openCards[p.id]=true; view='active'; query=''; $('search').value='';
+  queueSave(); render();
+  var el=document.querySelector('.card[data-pid="'+p.id+'"] input.nm'); if(el){ el.focus(); el.scrollIntoView({block:'center'}); }
+  toast('Type the last name and house #');
+});
+$('tabActive').addEventListener('click',function(){ view='active'; render(); });
+$('tabSent').addEventListener('click',function(){ view='sent'; render(); });
+$('search').addEventListener('input',function(){ query=this.value; render(); });
+
+var pendingAttach=null;
+$('list').addEventListener('click',function(e){
+  var b=e.target.closest('[data-act]'); if(!b) return;
+  var p=byId(b.dataset.pid); if(!p) return;
+  var act=b.dataset.act, iid=b.dataset.iid;
+  if(act==='open'){ openCards[p.id]=!openCards[p.id]; var c=b.closest('.card'); c.classList.toggle('open',!!openCards[p.id]); return; }
+  if(act==='toggle'){
+    var s=itemState(p,iid); var wasNa=s.na;
+    s.na=false; s.c=wasNa?true:!s.c; s.t=nowIso(); s.by=me_(); touch(p); queueSave(); render(); return;
+  }
+  if(act==='na'){
+    var s2=itemState(p,iid); s2.na=!s2.na; if(s2.na) s2.c=false; s2.t=nowIso(); s2.by=me_(); touch(p); queueSave(); render(); return;
+  }
+  if(act==='attach'){ pendingAttach={pid:p.id,iid:iid}; $('fileIn').click(); return; }
+  if(act==='delfile'){
+    var s3=itemState(p,iid), f=(s3.files||[])[+b.dataset.fi]; if(!f) return;
+    if(!confirm('Remove “'+(f.name||'file')+'” from this item?')) return;
+    s3.files.splice(+b.dataset.fi,1); s3.t=nowIso(); s3.by=me_(); touch(p); queueSave(); render(); return;
+  }
+  if(act==='notes'){ openNotes(p); return; }
+  if(act==='ready'){ openReady(p); return; }
+  if(act==='remove'){
+    if(!confirm('Remove “'+(p.name||'this project')+'” from Transaction Coordination?\n\nThis deletes its checklist and notes. It does not touch the construction board.')) return;
+    data.removedIds=data.removedIds||[]; data.removedIds.push(p.id);
+    data.projects=data.projects.filter(function(x){ return x.id!==p.id; }); queueSave(); render(); toast('Project removed'); return;
+  }
+});
+$('list').addEventListener('change',function(e){
+  var f=e.target.dataset&&e.target.dataset.field; if(!f) return;
+  var p=byId(e.target.dataset.pid); if(!p) return;
+  p[f]=e.target.value.trim(); p.nameAt=nowIso(); touch(p); queueSave();
+});
+
+/* ---- PDF / photo per checklist line ---- */
+$('fileIn').addEventListener('change',async function(){
+  var file=this.files&&this.files[0], tgt=pendingAttach; this.value=''; pendingAttach=null;
+  if(!file||!tgt) return;
+  var p=byId(tgt.pid); if(!p) return;
+  if(file.size>25*1024*1024){ toast('File is too large (25 MB max)'); return; }
+  uploadingCount++; toast('Uploading '+file.name+'…');
+  try{
+    var url=await uploadFile(p,tgt.iid,file);
+    var s=itemState(p,tgt.iid); s.files=s.files||[]; s.files.push({url:url,name:file.name,at:nowIso()});
+    s.t=nowIso(); s.by=me_(); touch(p); queueSave(); render(); toast('File attached');
+  }catch(err){ toast(err&&err.message?err.message:'Upload failed'); }
+  finally{ uploadingCount--; }
+});
+async function uploadFile(p,iid,file){
+  var type=file.type||(/\.pdf$/i.test(file.name)?'application/pdf':'application/octet-stream');
+  var isImg=/^image\//i.test(type);
+  var clean=file.name.replace(/[^A-Za-z0-9._-]+/g,'_');
+  var path='tc/'+slug(p.name)+'-'+(slug(p.code)||p.id)+'/'+iid+'_'+Date.now()+'_'+clean;
+  var buckets=isImg?[IMG_BUCKET,PDF_BUCKET]:[PDF_BUCKET,IMG_BUCKET], last='';
+  for(var i=0;i<buckets.length;i++){
+    var res=await fetch(SUPABASE_URL+'/storage/v1/object/'+buckets[i]+'/'+path,{method:'POST',headers:hdr({'Content-Type':type,'x-upsert':'true'}),body:file});
+    if(res.ok) return SUPABASE_URL+'/storage/v1/object/public/'+buckets[i]+'/'+path;
+    try{ last=await res.text(); }catch(e){}
+  }
+  throw new Error('The file could not be uploaded. '+last);
+}
+
+/* ---- Notes ---- */
+var notesFor=null;
+function openNotes(p){
+  notesFor=p.id; $('notesTitle').textContent='Notes · '+(p.name||'New project')+(p.code?' #'+p.code:'');
+  $('notesText').value=p.notes||''; $('notesOvl').classList.add('show'); setTimeout(function(){ $('notesText').focus(); },50);
+}
+function commitNotes(){
+  var p=byId(notesFor); if(!p) return;
+  var v=$('notesText').value; if(v===(p.notes||'')) return;
+  p.notes=v; p.notesAt=nowIso(); touch(p); queueSave();
+}
+$('notesText').addEventListener('input',function(){ clearTimeout(openNotes._t); openNotes._t=setTimeout(commitNotes,600); });
+$('notesDone').addEventListener('click',function(){ commitNotes(); $('notesOvl').classList.remove('show'); notesFor=null; render(); });
+$('notesOvl').addEventListener('click',function(e){ if(e.target===this){ commitNotes(); this.classList.remove('show'); notesFor=null; render(); } });
+
+/* ---- Ready for Construction ---- */
+var readyFor=null;
+function openReady(p){
+  readyFor=p.id; $('readyErr').style.display='none';
+  $('readyTitle').textContent='Ready for Construction · '+(p.name||'New project')+(p.code?' #'+p.code:'');
+  var miss=ALL_ITEMS.filter(function(i){ var s=p.items[i.id]||{}; return !s.c && !s.na; });
+  $('readyMissing').innerHTML=miss.length
+    ?'<div class="missing"><b>'+miss.length+' checklist line'+(miss.length>1?'s are':' is')+' not checked yet.</b> You can still send it.<ul>'+miss.map(function(i){ return '<li>'+esc(i.text.length>90?i.text.slice(0,90)+'…':i.text)+'</li>'; }).join('')+'</ul></div>'
+    :'<div class="okbox">Every checklist line is checked or marked N/A.</div>';
+  Array.prototype.forEach.call(document.querySelectorAll('#areaPick input'),function(r){ r.checked=false; });
+  Array.prototype.forEach.call(document.querySelectorAll('#areaPick label'),function(l){ l.classList.remove('sel'); });
+  $('readyGo').disabled=true; $('readyGo').textContent='Send to Construction'; $('readyOvl').classList.add('show');
+}
+$('areaPick').addEventListener('change',function(){
+  Array.prototype.forEach.call(this.querySelectorAll('label'),function(l){ l.classList.toggle('sel',l.querySelector('input').checked); });
+  $('readyGo').disabled=!this.querySelector('input:checked');
+});
+$('readyCancel').addEventListener('click',function(){ $('readyOvl').classList.remove('show'); readyFor=null; });
+$('readyGo').addEventListener('click',async function(){
+  var p=byId(readyFor), pick=document.querySelector('#areaPick input:checked'); if(!p||!pick) return;
+  if(!(p.name||'').trim()){ showReadyErr('Type the last name before sending.'); return; }
+  var area=pick.value; this.disabled=true; this.textContent='Sending…'; $('readyErr').style.display='none';
+  try{
+    await sendToBoard(p,area);
+    p.sent={area:area,at:nowIso(),by:me_()}; touch(p); queueSave(0);
+    $('readyOvl').classList.remove('show'); readyFor=null; view='active'; render();
+    toast('Sent to '+AREA_LABEL[area]+' — it is now in Pre Phase');
+  }catch(err){
+    showReadyErr((err&&err.message?err.message:'Could not send')+' Nothing was changed.'); this.disabled=false; this.textContent='Send to Construction';
+  }
+});
+function showReadyErr(m){ var e=$('readyErr'); e.textContent=m; e.style.display='block'; }
+
+/* Adds the house to the chosen board (compare-and-set, same safety as the board's own save).
+   The board fills in its Pre Phase checklist the first time it opens the project. */
+async function sendToBoard(p,area){
+  var key=BOARD_KEYS[area];
+  var proj={id:uid(),name:p.name.trim(),code:(p.code||'').trim(),phase:'Pre Phase',startDate:'',goalDate:'',phaseTasks:[],progress:[],scheduled:[],
+    tcId:p.id,tcNotes:p.notes||'',tcSentAt:nowIso(),tcSentBy:me_()};
+  for(var attempt=0; attempt<6; attempt++){
+    var row=await getRow(key), board=null;
+    if(row){ try{ board=JSON.parse(row.value); }catch(e){} if(!board||!Array.isArray(board.projects)) throw new Error('The '+AREA_LABEL[area]+' board could not be read.'); }
+    if(board && board.projects.some(function(x){ return x && x.tcId===p.id; })) return;    // already there: sending twice never duplicates it
+    if(!row){
+      var v0=JSON.stringify({dayDate:new Date().toISOString().slice(0,10),projects:[proj]});
+      var ins=await fetch(SUPABASE_URL+'/rest/v1/'+TABLE,{method:'POST',headers:hdr({'Content-Type':'application/json',Prefer:'return=representation'}),body:JSON.stringify({id:key,data:{value:v0},updated_at:nowIso()})});
+      if(ins.ok) return; if(ins.status===409) continue; throw new Error('Could not reach the '+AREA_LABEL[area]+' board.');
+    }
+    board.projects.push(proj);
+    var res=await fetch(SUPABASE_URL+'/rest/v1/'+TABLE+'?id=eq.'+encodeURIComponent(key)+'&updated_at=eq.'+encodeURIComponent(row.updated_at),
+      {method:'PATCH',headers:hdr({'Content-Type':'application/json',Prefer:'return=representation'}),body:JSON.stringify({data:{value:JSON.stringify(board)},updated_at:nowIso()})});
+    if(!res.ok) throw new Error('Could not reach the '+AREA_LABEL[area]+' board.');
+    var out=await res.json().catch(function(){return[];});
+    if(out&&out.length) return;                                                          // saved
+  }
+  throw new Error('The board was busy. Try again in a moment.');
+}
+
+/* ============ Start ============ */
+function startApp(u){
+  me=u; $('gate').classList.add('hide');
+  $('who').textContent=u.name;
+  if(u.role==='tc') $('toBoard').style.display='none';     // Nadia lives here; she has no board link
+  loadAll();
+}
+(function(){
+  var a=getAuth(), u=a&&USERS.filter(function(x){ return x.name===a.name; })[0];
+  if(u) startApp(u); else $('gatePw').focus();
+})();
+</script>
+</body>
+</html>
