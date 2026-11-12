@@ -198,21 +198,25 @@ Two connected web apps for South Texas Builders (STB):
 - Tests (not in repo): delete after touching the text, delete after editing, stale-copy merge, reload, standard-task rename,
   stale list vs checked state, two devices checking different tasks, delete not disturbing checks.
 
-## Transaction Coordination (TC) — before Pre Phase (Nov 2026)
-- **What it is:** `tc.html`, its own page (like Orders / Change Orders), opened by the red **TC** button on the board toolbar
-  (next to "Alice Projects"/"Main Projects"). Nadia's list of incoming houses before they become construction projects.
-- **Nadia:** password `Nadia` (`USERS` role `tc`). Typing it at the board's gate sends her straight to `tc.html`; opening the
-  board again sends her back; the board's data is never requested for her. Owner/schedulers pressing TC are not asked again
-  (`stb_tc_auth_v1` in localStorage, set by the board). Roberto (viewer) has no TC button. TC has its own gate for direct visits.
-- **Data:** one cloud row `stb_tc_v1` = `{projects:[...], removedIds:[...]}` in `stb_app_state`. Project =
-  `{id,name,code,notes,items:{<lineId>:{c,na,files:[{url,name,at}],t,by}},sent:{area,at,by}|null,...}`. Same compare-and-set
-  save as the board; conflicts merge per field (each field keeps the copy changed last, by `nameAt`/`notesAt`/`items[id].t`).
-- **Checklist:** from the CFS "Doc Checklist" PDF (Borrower 13 / Builder 5 / Lender 11 lines). Ids (`b01…`, `d01…`, `l01…`) are
-  permanent — edit `TC_SECTIONS` in `tc.html` to change wording/add lines. Each line: check, N/A, optional PDF/photo (stored in
-  `stb-blueprints` under `tc/<last>-<house>/`). Per-house **Notes** button holds everything else (lender, title co., etc.).
-  Builder line 1 of the PDF (insurance + contract + plans + specs ran together) was split into 4 lines.
-- **Ready for Construction:** Nadia picks **Main / Valley** or **Alice**; `sendToBoard()` adds `{name, code, phase:'Pre Phase', tcId, tcNotes}`
-  to `stb_board_v1` or `stb_board_alice_v1` with compare-and-set (never duplicates: it checks `tcId`). The board gives it
-  its Pre Phase checklist on load (`normalizeProject`). A stale board tab saving later keeps the house (`stbMergeBoards` restores cloud-only projects).
-  The TC house then sits in the "Sent to Construction" tab. Missing checklist lines only warn; they never block.
-- **Not done yet:** the board card does not display `tcNotes` or link back to the TC checklist; no "undo send"; no notification when a house is sent.
+## Transaction Coordination (TC) — the board's third "area" (Nov 2026)
+- **What it is:** a third board in `index.html`, not a separate page. Same cards, render, address, sqft, Blueprint / Windstorm /
+  Selections / Building Permits / **Contract** PDF slots, phase bar and checklist rows. Only the checklist is different.
+  Areas are `main`, `alice`, `tc` (`BOARD_AREA`); TC reads/writes cloud row `stb_board_tc_v1`.
+- **Phase:** houses on the TC board sit in phase `Transaction Coordination` (`TC_PHASE`, list `TC_TASKS`, from the CFS Doc
+  Checklist: 13 borrower lines, 5 `BUILDER DOCS:` lines, 11 `LENDER DOCS:` lines). On the TC board only, `PHASES=[TC,'Pre Phase']`
+  so the card shows `TC | Pre` and "Viewing: Transaction Coordination / Next: Pre Phase". Main and Alice are unchanged (7 phases).
+  `advanceCurrentPhaseIfComplete` returns false on TC: a TC house never advances by itself.
+- **Who:** the red **TC** button on the toolbar switches to the TC board (confirm, then reload — same mechanism as Alice) and
+  becomes **Back to Projects** (returns to the board you came from, `stb_board_area_prev_v1`). **Nadia** (password `Nadia`, role `tc`):
+  `BOARD_AREA` is forced to `tc` from her session, she is reloaded onto it at sign-in, and she has no TC/Alice/Orders/Change
+  Orders/Subs/Completed/Meeting buttons (`body.tc-area`, `body.role-tc`). Roberto (viewer) has no TC button.
+- **Ready for Construction** (replaces "Move to Completed" on TC): pick Main / Valley or Alice. `tcPushToBoard()` copies the WHOLE
+  house (same id, render, blueprint, PDFs, contract, address, TC checklist history in `phaseTaskState['Transaction Coordination']`)
+  into the chosen board's row with compare-and-set, `phase:'Pre Phase'`, `phaseTasks:[]` (the board rebuilds the Pre Phase list on load),
+  `tcSentAt/tcSentBy/tcArea`. Then it removes the house from the TC board and adds its id to `removedProjectIds`. Never duplicates.
+  Missing TC lines only warn.
+- **Contract PDF slot:** added to `DOC_KINDS` like Permits (`contractUrl/contractName/contractUpdatedAt`, merge line in `stbMergeProject`).
+  Not added to the bot summary (`summary.js`) — add `contract: p.contractUrl` there if wanted, then re-paste the bot files.
+- **Not done:** per-checklist-line PDF (use the line's Notes + the house PDF slots for now); the Who/Subcontractor dropdown is hidden on TC lines;
+  TC board has no Budget/Delays/Command Center (hidden); "Person in charge" in the header still says Ramiro.
+- Tests live outside the repo (Playwright with a fake Supabase): Nadia sign-in, TC checklist, contract upload, send to Alice, owner TC toggle, Roberto.

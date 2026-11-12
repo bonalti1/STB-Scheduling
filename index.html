@@ -474,6 +474,23 @@
     cursor:pointer;
   }
   .complete-proj:active{filter:brightness(.92);}
+  /* TC board: same cards, minus what only matters once a house is being built */
+  body.tc-area #startMeeting, body.tc-area #openExport, body.tc-area #openAI, body.tc-area #areaToggle,
+  body.tc-area #openSubs, body.tc-area #openLessons, body.tc-area #openHistory,
+  body.tc-area #openChangeOrders, body.tc-area #openOrders,
+  body.tc-area .stats, body.tc-area .ops-layout, body.tc-area .delay-panel,
+  body.tc-area .budget-open-btn, body.tc-area .delay-open-btn, body.tc-area .nowork-badge,
+  body.role-tc #openTC{display:none!important;}
+  body.tc-area .board-layout{display:block;}
+  body.tc-area .daytask-panel{display:none;}
+  body.tc-area .card-row{grid-template-columns:minmax(0,1fr);}
+  body.tc-area .card.no-work-today{background:var(--card);border-color:var(--line);}
+  body.tc-area .card.no-work-today .card-top::before{background:var(--phc);}
+  .item[data-phase="Transaction Coordination"] .sub-select{display:none;}
+  .tc-ready{background:var(--green)!important;color:#fff!important;border:1px solid var(--green)!important;}
+  .tc-area-pick{display:flex;gap:10px;margin:12px 0;}
+  .tc-area-pick button{flex:1;border:2px solid var(--line);background:#fff;border-radius:12px;padding:14px;font:inherit;font-weight:700;color:var(--navy);cursor:pointer;}
+  .tc-area-pick button.sel{border-color:var(--green);background:#E6F2EA;color:var(--green);}
   .complete-proj.manual{background:#fff;color:var(--green);border:1px solid var(--green);}
   .load-phase{
     background:#fff;border:1px solid var(--line);color:var(--navy);border-radius:7px;
@@ -842,7 +859,7 @@
     <button class="tbtn go" id="openExport"><span class="ic">📤</span> Export Report</button>
     <button class="tbtn" id="openAI"><span class="ic">🧠</span> Operations AI</button>
     <button class="tbtn go" id="areaToggle"><span class="ic" id="areaToggleIc">🏘</span> <span id="areaToggleLbl">Alice Projects</span></button>
-    <button class="tbtn go" id="openTC" title="Transaction Coordination"><span class="ic">📋</span> TC</button>
+    <button class="tbtn go" id="openTC" title="Transaction Coordination: houses before Pre Phase"><span class="ic" id="openTCIc">📋</span> <span id="openTCLbl">TC</span></button>
     <button class="tbtn" id="openSubs"><span class="ic">👷</span> Subcontractors</button>
     <button class="tbtn" id="openLessons"><span class="ic">📘</span> Lessons Learned</button>
     <button class="tbtn" id="openHistory"><span class="ic">🗂</span> Completed Houses</button>
@@ -1084,6 +1101,27 @@
   </div>
 </div>
 
+<div class="ovl" id="tcSendOvl">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h2 id="tcSendTitle">Ready for Construction</h2>
+      <button class="close" data-close>✕</button>
+    </div>
+    <div class="sheet-body">
+      <div class="empty" style="text-align:left;">
+        <div class="big">Where is this house being built?</div>
+        It moves to that board in <b>Pre Phase</b> with its render, blueprint, PDFs and address, and leaves the TC list.
+      </div>
+      <div class="tc-area-pick" id="tcAreaPick">
+        <button type="button" data-area="main">Main / Valley</button>
+        <button type="button" data-area="alice">Alice</button>
+      </div>
+      <div id="tcSendWarn" class="empty" style="text-align:left;display:none;"></div>
+      <div id="tcSendErr" style="color:#BE2C1D;font-weight:600;margin:8px 0;display:none;"></div>
+      <button class="tbtn go" id="tcSendGo" disabled style="width:100%;margin-top:6px;background:var(--green);border-color:var(--green);">Send to Construction</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1247,13 +1285,60 @@ var SUBCONTRACTORS = {
     {trade:'Final Clean',name:'Final Clean Crew',phone:'Add phone',charge:'Add charge'}
   ]
 };
-/* Two build areas share this app: Main (original) and Alice. The active area
-   picks which cloud row the board reads/writes — data never mixes. Completed
-   houses, subs, lessons and renders stay shared across areas. */
-var BOARD_AREA = (function(){ try{ return localStorage.getItem('stb_board_area_v1')==='alice' ? 'alice' : 'main'; }catch(e){ return 'main'; } })();
-var AREA_SUFFIX = BOARD_AREA==='alice' ? '_alice' : '';
-var AREA_LABEL  = BOARD_AREA==='alice' ? ' — Alice' : '';
-var BOARD_KEY = BOARD_AREA==='alice' ? 'stb_board_alice_v1' : 'stb_board_v1';
+/* Three boards share this app: Main (original), Alice, and TC (Transaction Coordination: houses that are
+   not in construction yet). The active area picks which cloud row the board reads/writes — data never mixes.
+   Completed houses, subs, lessons and renders stay shared across areas. Nadia (role 'tc') is always on TC. */
+var BOARD_AREA = (function(){
+  try{
+    var su=JSON.parse(sessionStorage.getItem('stb_auth_user_v1')||'null');
+    if(su && su.role==='tc') return 'tc';
+    var a=localStorage.getItem('stb_board_area_v1');
+    return (a==='alice'||a==='tc') ? a : 'main';
+  }catch(e){ return 'main'; }
+})();
+var AREA_SUFFIX = BOARD_AREA==='alice' ? '_alice' : (BOARD_AREA==='tc' ? '_tc' : '');
+var AREA_LABEL  = BOARD_AREA==='alice' ? ' — Alice' : (BOARD_AREA==='tc' ? ' — TC' : '');
+var BOARD_KEY = BOARD_AREA==='alice' ? 'stb_board_alice_v1' : (BOARD_AREA==='tc' ? 'stb_board_tc_v1' : 'stb_board_v1');
+var BOARD_KEYS = {main:'stb_board_v1', alice:'stb_board_alice_v1', tc:'stb_board_tc_v1'};
+/* TC board: its houses sit in a "Transaction Coordination" phase that comes BEFORE Pre Phase. The card, render,
+   blueprint, PDFs, address and checklist rows are the normal board ones — only this checklist is different. */
+var TC_PHASE = 'Transaction Coordination';
+var TC_TASKS = [
+  'INCOME: Paystubs for most recent full month [from both borrower and co-borrower if applicable]',
+  'INCOME: W2 Statements for past 2 years [from both borrower and co-borrower if applicable]',
+  'ASSETS: Bank Statements for Checking & Saving Accounts for past 2 months',
+  'ASSETS: Bank Statements for Investment Accounts for past 2 months',
+  'ASSETS: Explanation of Current Residence \u2013 if own, need mortgage, insurance and tax statements',
+  'FINANCIAL HISTORY: Tax Returns - 2 most recent years',
+  'FINANCIAL HISTORY: Letter or Email Explanation for any unusual bank transactions [large deposits or withdraws]',
+  'FINANCIAL HISTORY: Letter or Email Explanation for inquiries and derogatory items on credit report',
+  "IDENTITY: Social Security Card & Driver's License for borrower, co-borrower and non-qualifying spouse [if applicable]",
+  'PROPERTY: Land Contract, Current Payoff or Warranty Deed with Lot Purchase HUD/CD',
+  'PROPERTY: Land Survey or Plat Showing Lot Dimensions and Set-Backs',
+  'SELF-EMPLOYED: Business P&L and Balance Sheet for current year To-Date / Expanded Reports for Distributions & Wages',
+  'SELF-EMPLOYED: Business Tax Returns for Previous 2 Years',
+  'BUILDER DOCS: General Liability Insurance Certificate or Confirmation (will get Supplemental Liability to the Builder\u2019s Risk after loan approval)',
+  'BUILDER DOCS: House Contract between Builder and Borrower, including allowances',
+  'BUILDER DOCS: House Floor Plans',
+  'BUILDER DOCS: House Specifications - Detailed w/ Materials and Upgrades',
+  'BUILDER DOCS: Construction Budget Breakdown - include separate line item for admin/profit',
+  'LENDER DOCS: Loan Application - 1003 / 1008 [signed & dated] WITH Mortgage Lender Income Calculation Worksheet',
+  'LENDER DOCS: If own current home, include mortgage in DTI. Apply rental income if necessary',
+  'LENDER DOCS: Loan Disclosures / Loan Estimate',
+  'LENDER DOCS: Credit Report - within 90 days',
+  'LENDER DOCS: SELF-EMPLOYED: Tax Transcripts for 2 most recent years [Personal and Business if filed separately]',
+  'LENDER DOCS: If borrower obtaining VA mortgage, need Certificate of Eligibility',
+  'LENDER DOCS: If land is in either FEMA Zone A or V [100 Year], Flood Insurance will be required',
+  'LENDER DOCS: Loan DU Submission Report [w/ accurate debt per credit report and correct Appraised Amt & Improved Taxes]',
+  'LENDER DOCS: Title Commitment [within 3 months \u2013 CFS can order if provided Title Co. contact information]',
+  'LENDER DOCS: Appraisal [as-built - within 12 months]',
+  'LENDER DOCS: ** Fully Underwritten Conditional Mortgage Loan Approval [within 3 months] listing Conditions, with underwriter\u2019s name. Any reserve or financial conditions listed will be required at Construction Loan closing.'
+];
+if(BOARD_AREA==='tc'){
+  PHASES = [TC_PHASE,'Pre Phase'];
+  PHASE_COLOR[TC_PHASE] = '#6B4FA0';
+  PHASE_TASKS = (function(){ var o={}; o[TC_PHASE]=TC_TASKS; o['Pre Phase']=PHASE_TASKS['Pre Phase']; return o; })();
+}
 var ARCH_KEY  = 'stb_archive_v1'+AREA_SUFFIX;
 var COMP_KEY  = 'stb_completed_v1';
 var SUBS_KEY  = 'stb_subcontractors_v1';
@@ -1271,7 +1356,7 @@ var USERS = [
   {role:'scheduler',name:'Cristo',password:'Cristo'},
   {role:'scheduler',name:'Jackie',password:'Jackie'},
   {role:'viewer',name:'Roberto',password:'916303'},   /* view-only: field employee */
-  {role:'tc',name:'Nadia',password:'Nadia'}           /* Transaction Coordination only: signs in straight to tc.html, never sees the board */
+  {role:'tc',name:'Nadia',password:'Nadia'}           /* Transaction Coordination: always lands on the TC board */
 ];
 var SUPABASE_URL = 'https://ttpkyepzzpxctajrhwvx.supabase.co';
 var SUPABASE_KEY = 'sb_publishable_bnhfaLTxNe2ApJ94myqtIg_uHjo3_B1';
@@ -1293,7 +1378,7 @@ var ROLE_CAPS={
   /* ownTasks: reserved for "a viewer may check off only the tasks assigned to him"
      (task state would carry assignedTo:<name>). Off for now - see HANDOFF "Viewer role". */
   viewer:{write:false, ownTasks:false},
-  tc:{write:false}      /* Nadia: the board is never opened for her (she is sent to tc.html); read-only if it ever were */
+  tc:{write:true}       /* Nadia edits the TC board only: she has no buttons to reach Main / Alice / Orders / Change Orders */
 };
 function sessionUser(){
   try{ var u=JSON.parse(sessionStorage.getItem(AUTH_USER_KEY)||'null'); return (u && u.role) ? u : null; }catch(e){ return null; }
@@ -1650,6 +1735,7 @@ function stbMergeProject(mineP,baseP){
   mineP.dayTasks=Object.keys(byId).map(function(k){ return byId[k]; }).filter(function(t){ return !mineP.dayTasksRemoved[t.id]; });
   if(!mineP.selectionsUrl && baseP.selectionsUrl && !docWasRemoved('selections')){ mineP.selectionsUrl=baseP.selectionsUrl; mineP.selectionsName=mineP.selectionsName||baseP.selectionsName; }
   if(!mineP.permitsUrl && baseP.permitsUrl && !docWasRemoved('permits')){ mineP.permitsUrl=baseP.permitsUrl; mineP.permitsName=mineP.permitsName||baseP.permitsName; }
+  if(!mineP.contractUrl && baseP.contractUrl && !docWasRemoved('contract')){ mineP.contractUrl=baseP.contractUrl; mineP.contractName=mineP.contractName||baseP.contractName; }
   return mineP;
 }
 function stbMergeBoards(mine,base){
@@ -2020,7 +2106,8 @@ function uploadBlueprintPdf(p,file){ return uploadProjectPdf(p,file,'blueprint')
 var DOC_KINDS={
   windstorm:{url:'windstormUrl',name:'windstormName',at:'windstormUpdatedAt',label:'Windstorm',icon:'🌀'},
   selections:{url:'selectionsUrl',name:'selectionsName',at:'selectionsUpdatedAt',label:'Selections',icon:'🎨'},
-  permits:{url:'permitsUrl',name:'permitsName',at:'permitsUpdatedAt',label:'Building Permits',icon:'📋'}
+  permits:{url:'permitsUrl',name:'permitsName',at:'permitsUpdatedAt',label:'Building Permits',icon:'📋'},
+  contract:{url:'contractUrl',name:'contractName',at:'contractUpdatedAt',label:'Contract',icon:'📑'}
 };
 function handleDocUpload(p,file,input,kind){
   var k=DOC_KINDS[kind];
@@ -2289,6 +2376,7 @@ function phaseComplete(p,phase){
 }
 function advanceCurrentPhaseIfComplete(p){
   if(!p || !p.phase) return false;
+  if(BOARD_AREA==='tc') return false;     /* TC houses leave only through the Ready for Construction button */
   var moved=false;
   while(p.phase!=='Phase 6' && phaseComplete(p,p.phase)){
     var next=nextPhaseName(p.phase);
@@ -2317,10 +2405,10 @@ function overallProgress(p){
   return {total:total,done:done,pct:total?Math.round(done/total*100):0};
 }
 function phaseShortLabel(phase){
-  return phase==='Pre Phase'?'Pre':phase.replace('Phase ','');
+  return phase===TC_PHASE?'TC':(phase==='Pre Phase'?'Pre':phase.replace('Phase ',''));
 }
 function phaseNavLabel(phase){
-  return phase==='Pre Phase'?'Pre':'P'+phase.replace('Phase ','');
+  return phase===TC_PHASE?'TC':(phase==='Pre Phase'?'Pre':'P'+phase.replace('Phase ',''));
 }
 function viewPhase(p){
   return phaseView[p.id] || p.phase || 'Pre Phase';
@@ -2564,7 +2652,7 @@ async function init(){
   var raw=await Store.get(BOARD_KEY);
   if(raw){ try{ board=JSON.parse(raw); }catch(e){ board=null; } }
   /* A brand-new Alice board starts EMPTY — the demo seed is only for the original main board. */
-  if(!board || !board.projects){ board=(BOARD_AREA==='alice')?{dayDate:isoToday(),projects:[]}:seedBoard(); await persistBoard(); }
+  if(!board || !board.projects){ board=(BOARD_AREA==='alice'||BOARD_AREA==='tc')?{dayDate:isoToday(),projects:[]}:seedBoard(); await persistBoard(); }
   board.dayDate=isoToday();
   board.dailyLog=board.dailyLog||{};
   board.dailyReports=board.dailyReports||{};
@@ -3006,9 +3094,11 @@ function projectCard(p){
   var meta=document.createElement('div'); meta.className='card-meta edit-meta';
   meta.innerHTML=
     '<button class="edit-proj'+(isEdit?' on':'')+'" data-act="editproj">'+(isEdit?'Done Editing':'Edit')+'</button>'+
-    '<button class="complete-proj'+(canCompleteProject(p)? '' : ' manual')+'" data-act="completeproj">'+
-      (canCompleteProject(p)? 'Complete House' : 'Move to Completed')+
-    '</button>'+
+    (BOARD_AREA==='tc'
+      ? '<button class="complete-proj tc-ready" data-act="readyproj">\u2713 Ready for Construction</button>'
+      : '<button class="complete-proj'+(canCompleteProject(p)? '' : ' manual')+'" data-act="completeproj">'+
+          (canCompleteProject(p)? 'Complete House' : 'Move to Completed')+
+        '</button>')+
     '<button class="del-proj" data-act="delproj">Remove</button>';
   card.appendChild(meta);
 
@@ -3044,7 +3134,7 @@ function projectCard(p){
               '<option value="scheduled"'+(st.status==='scheduled'?' selected':'')+'>Scheduled</option>'+
               '<option value="alert"'+(st.status==='alert'?' selected':'')+'>Alert</option>'+
             '</select>'+
-            '<select class="sub-select" data-act="phase-sub">'+subOptions(ph,st.sub,isSelectionPhaseTask(txt)?'Client':'Subcontractor')+'</select>'+
+            '<select class="sub-select" data-act="phase-sub">'+subOptions(ph,st.sub,isSelectionPhaseTask(txt)?'Client':(ph===TC_PHASE?'Who':'Subcontractor'))+'</select>'+
             '<button class="note-btn '+((st.note||st.noteImage)?'has-note':'')+'" data-act="tasknote">'+(st.noteImage?'📷 ':'')+((st.note||st.noteImage)?'Note':'Notes')+'</button>'+
             '<button class="x" data-act="delphasetask" aria-label="Delete task">\u00D7</button>'+
           '</div>';
@@ -3194,6 +3284,7 @@ document.getElementById('projectList').addEventListener('click',function(e){
     render();
     return;
   }
+  if(act==='readyproj'){ openTcSend(pid); return; }
   if(act==='completeproj'){
     var msg=canCompleteProject(p)?
       'Move \u201C'+p.name+'\u201D to Completed Houses?' :
@@ -3661,7 +3752,7 @@ document.getElementById('removeRender').addEventListener('click',function(){
 
 /* ============ Toolbar ============ */
 document.getElementById('addProject').addEventListener('click',function(){
-  var p={id:uid(),name:'New Project',code:'',phase:'Pre Phase',startDate:'',goalDate:'',phaseTasks:[],progress:[],scheduled:[]};
+  var p={id:uid(),name:'New Project',code:'',phase:(BOARD_AREA==='tc'?TC_PHASE:'Pre Phase'),startDate:'',goalDate:'',phaseTasks:[],progress:[],scheduled:[]};
   addPhaseTasks(p);
   saveCurrentPhaseWork(p);
   board.projects.push(p);
@@ -4335,7 +4426,94 @@ document.querySelectorAll('[data-aiq]').forEach(function(btn){
     try{ localStorage.setItem('stb_board_area_v1', toAlice?'alice':'main'); }catch(e){}
     location.reload();
   });
+  /* TC button: opens the Transaction Coordination board; on that board it becomes the way back. */
+  var tcBtn=document.getElementById('openTC');
+  document.body.classList.toggle('tc-area',BOARD_AREA==='tc');
+  if(BOARD_AREA==='tc'){
+    document.getElementById('openTCLbl').textContent='Back to Projects';
+    document.getElementById('openTCIc').textContent='🏠';
+    document.title='STB Scheduling — TC';
+    var h2=document.querySelector('header h1');
+    if(h2){ var b2=document.createElement('span'); b2.className='area-badge'; b2.textContent='TC'; h2.appendChild(b2); }
+  }
+  tcBtn.addEventListener('click',function(){
+    if(BOARD_AREA!=='tc'){
+      if(!confirm('Open TRANSACTION COORDINATION (houses before Pre Phase)?')) return;
+      try{ localStorage.setItem('stb_board_area_prev_v1',BOARD_AREA); localStorage.setItem('stb_board_area_v1','tc'); }catch(e){}
+    } else {
+      var back='main'; try{ back=localStorage.getItem('stb_board_area_prev_v1')||'main'; }catch(e){}
+      if(back==='tc') back='main';
+      try{ localStorage.setItem('stb_board_area_v1',back); }catch(e){}
+    }
+    location.reload();
+  });
 })();
+
+/* ============ TC: Ready for Construction ============
+   Moves the whole house (render, blueprint, PDFs, address, notes, TC checklist history) from the TC board
+   to the chosen board in Pre Phase. Compare-and-set like every board save; never duplicates a house. */
+var tcSendPid='', tcSendArea='';
+function openTcSend(pid){
+  var p=board.projects.filter(function(x){ return x.id===pid; })[0]; if(!p) return;
+  tcSendPid=pid; tcSendArea='';
+  document.getElementById('tcSendTitle').textContent='Ready for Construction \u00B7 '+(p.name||'New project');
+  var tasks=visiblePhaseTasks(p,TC_PHASE), open=tasks.filter(function(t){ return !phaseItemState(p,TC_PHASE,t).done; });
+  var w=document.getElementById('tcSendWarn');
+  if(open.length){ w.style.display='block'; w.innerHTML='<b>'+open.length+' of '+tasks.length+' TC checklist lines are not done yet.</b> You can still send it.'; }
+  else { w.style.display='block'; w.innerHTML='<b>Every TC checklist line is done.</b>'; }
+  document.getElementById('tcSendErr').style.display='none';
+  Array.prototype.forEach.call(document.querySelectorAll('#tcAreaPick button'),function(b){ b.classList.remove('sel'); });
+  var go=document.getElementById('tcSendGo'); go.disabled=true; go.textContent='Send to Construction';
+  document.getElementById('tcSendOvl').classList.add('show');
+}
+document.getElementById('tcAreaPick').addEventListener('click',function(e){
+  var b=e.target.closest('button[data-area]'); if(!b) return;
+  tcSendArea=b.dataset.area;
+  Array.prototype.forEach.call(this.querySelectorAll('button'),function(x){ x.classList.toggle('sel',x===b); });
+  document.getElementById('tcSendGo').disabled=false;
+});
+async function tcPushToBoard(proj,area){
+  var key=BOARD_KEYS[area], base=SUPABASE_URL+'/rest/v1/'+SUPABASE_TABLE;
+  var H={apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY};
+  function hh(){ return {apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY,'Content-Type':'application/json',Prefer:'return=representation'}; }
+  for(var attempt=0; attempt<6; attempt++){
+    var rr=await fetch(base+'?id=eq.'+encodeURIComponent(key)+'&select=data,updated_at',{headers:H});
+    if(!rr.ok) throw new Error('Could not read the board.');
+    var rows=await rr.json(), row=rows&&rows[0], tgt=null;
+    if(row){ try{ tgt=JSON.parse(row.data.value); }catch(e){} if(!tgt||!Array.isArray(tgt.projects)) throw new Error('That board could not be read.'); }
+    if(tgt && tgt.projects.some(function(x){ return x && x.id===proj.id; })) return;           // already there
+    if(!row){
+      var ins=await fetch(base,{method:'POST',headers:hh(),body:JSON.stringify({id:key,data:{value:JSON.stringify({dayDate:isoToday(),projects:[proj]})},updated_at:new Date().toISOString()})});
+      if(ins.ok) return; if(ins.status===409) continue; throw new Error('Could not reach that board.');
+    }
+    tgt.projects.push(proj);
+    var pr=await fetch(base+'?id=eq.'+encodeURIComponent(key)+'&updated_at=eq.'+encodeURIComponent(row.updated_at),
+      {method:'PATCH',headers:hh(),body:JSON.stringify({data:{value:JSON.stringify(tgt)},updated_at:new Date().toISOString()})});
+    if(!pr.ok) throw new Error('Could not reach that board.');
+    var out=await pr.json().catch(function(){return[];});
+    if(out&&out.length) return;
+  }
+  throw new Error('The board was busy. Try again in a moment.');
+}
+document.getElementById('tcSendGo').addEventListener('click',async function(){
+  var p=board.projects.filter(function(x){ return x.id===tcSendPid; })[0]; if(!p||!tcSendArea) return;
+  var go=this, err=document.getElementById('tcSendErr'); go.disabled=true; go.textContent='Sending...'; err.style.display='none';
+  try{
+    saveCurrentPhaseState(p); saveCurrentPhaseWork(p);
+    var proj=JSON.parse(JSON.stringify(p));
+    proj.phase='Pre Phase'; proj.phaseTasks=[]; proj.tcSentAt=new Date().toISOString(); proj.tcSentBy=currentUserName()||''; proj.tcArea=tcSendArea;
+    await tcPushToBoard(proj,tcSendArea);
+    logDailyActivity(p,{type:'project',toStatus:'completed',note:'Sent to '+(tcSendArea==='alice'?'Alice':'Main / Valley')+' for construction'});
+    board.projects=board.projects.filter(function(x){ return x.id!==tcSendPid; });
+    board.removedProjectIds=Array.isArray(board.removedProjectIds)?board.removedProjectIds:[];
+    if(board.removedProjectIds.indexOf(tcSendPid)<0) board.removedProjectIds.push(tcSendPid);
+    persistBoard(); document.getElementById('tcSendOvl').classList.remove('show'); render();
+    toast('Sent to '+(tcSendArea==='alice'?'Alice':'Main / Valley')+' \u2014 it is now in Pre Phase');
+  }catch(e){
+    err.textContent=(e&&e.message?e.message:'Could not send.')+' Nothing was changed.'; err.style.display='block';
+    go.disabled=false; go.textContent='Send to Construction';
+  }
+});
 /* ============ Daily History (feature retired — kept for data compatibility) ============ */
 function renderDailyHistory(){
   var body=document.getElementById('dailyHistoryBody');
@@ -4390,15 +4568,6 @@ document.getElementById('openChangeOrders').addEventListener('click',function(){
 });
 document.getElementById('openOrders').addEventListener('click',function(){
   window.open('ordenes.html','_blank');
-});
-/* Transaction Coordination (before Pre Phase) lives on its own page, like Orders. Whoever is signed in here
-   does not have to type a password again. */
-function rememberTcAccess(u){
-  try{ localStorage.setItem('stb_tc_auth_v1',JSON.stringify({name:u.name,role:u.role,t:Date.now()})); }catch(e){}
-}
-document.getElementById('openTC').addEventListener('click',function(){
-  var u=sessionUser(); if(u && (u.role==='owner'||u.role==='scheduler')) rememberTcAccess(u);
-  window.open('tc.html','_blank');
 });
 function backupPayload(){
   captureDailyReport();
@@ -5018,6 +5187,7 @@ function applyRoleUI(){
   var u=sessionUser();
   var viewer=isViewerSession();
   document.body.classList.toggle('viewer',viewer);
+  document.body.classList.toggle('role-tc',!!(u&&u.role==='tc'));
   var b=document.getElementById('viewerBadge');
   if(b){ b.textContent='View only · '+((u&&u.name)||'viewer'); }
   if(viewer && !window._viewerStarted){
@@ -5058,7 +5228,7 @@ function tryPassword(){
   if(user){
     sessionStorage.setItem(AUTH_USER_KEY,JSON.stringify({role:user.role,name:user.name}));
     err.classList.remove('show');
-    if(user.role==='tc'){ sessionStorage.setItem(AUTH_KEY,'yes'); rememberTcAccess(user); location.replace('tc.html'); return; }   /* Nadia: home page is TC, the board never loads */
+    if(user.role==='tc' && BOARD_AREA!=='tc'){ sessionStorage.setItem(AUTH_KEY,'yes'); location.reload(); return; }   /* Nadia: reload straight onto the TC board */
     unlockApp();
   } else {
     err.classList.add('show');
@@ -5069,9 +5239,7 @@ document.getElementById('gateEnter').addEventListener('click',tryPassword);
 document.getElementById('gatePassword').addEventListener('keydown',function(e){
   if(e.key==='Enter'){ tryPassword(); }
 });
-if(sessionStorage.getItem(AUTH_KEY)==='yes' && (sessionUser()||{}).role==='tc'){
-  rememberTcAccess(sessionUser()); location.replace('tc.html');
-} else if(sessionStorage.getItem(AUTH_KEY)==='yes'){
+if(sessionStorage.getItem(AUTH_KEY)==='yes'){
   if(!sessionStorage.getItem(AUTH_USER_KEY)){
     sessionStorage.setItem(AUTH_USER_KEY,JSON.stringify({role:'owner',name:'Owner'}));
   }
