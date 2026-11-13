@@ -540,7 +540,10 @@
   }
   .load-phase:active{background:var(--line-soft);}
 
-  .card.collapsed .edit-meta,.card.collapsed .sections{display:none;}
+  .card.collapsed .edit-meta,.card.collapsed .sections,.card.collapsed .goal-note{display:none;}
+  .goal-note{display:flex;align-items:center;justify-content:center;gap:8px;margin:2px 13px 13px;padding:9px 12px;border-radius:10px;
+    background:#FFF0D5;border:1px solid #EBC76F;color:#7a4f00;font-size:.84rem;font-weight:600;text-align:center;line-height:1.3;}
+  .goal-note b{font-weight:800;color:#5e3c00;}
 
   .sections{border-top:1px solid var(--line-soft);}
   .section{padding:11px 14px 6px;border-bottom:1px dashed var(--line-soft);}
@@ -3315,6 +3318,13 @@ function projectCard(p){
     secWrap.appendChild(sec);
   });
   card.appendChild(secWrap);
+
+  /* the reminder at the bottom of every house on Main / Alice */
+  if(BOARD_AREA!=='tc'){
+    var goal=document.createElement('div'); goal.className='goal-note';
+    goal.innerHTML='<span class="gn-ic">🎯</span><span><b>Goal = 4-5 months</b> · we lose money if we take longer</span>';
+    card.appendChild(goal);
+  }
 
   /* house card + Today's Tasks panel side by side (panel stacks below on narrow screens) */
   var row=document.createElement('div'); row.className='card-row';
