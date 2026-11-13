@@ -424,17 +424,27 @@
   @media(max-width:620px){
     .progress-mini{font-size:1.25rem;min-width:48px;}
   }
-  .progress-col{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex:none;}
-  .build-timer{display:flex;flex-direction:column;align-items:flex-end;border-radius:9px;padding:4px 9px;font-size:.74rem;line-height:1.25;white-space:nowrap;border:1px solid var(--line);background:#fff;color:#516079;}
-  .build-timer .bt-main{font-weight:800;font-size:.82rem;display:flex;align-items:center;gap:6px;}
-  .build-timer.ok{background:#E6F2EA;border-color:#BFE0CC;color:#1d6b49;}
-  .build-timer.warn{background:#FFF0D5;border-color:#E8A21C;color:#8a5a00;}
-  .build-timer.over{background:#FDEAE7;border-color:#F4C3BB;color:#BE2C1D;}
-  .build-timer.done{background:#EEF2F8;border-color:#DDE3EF;color:var(--navy);}
-  .build-timer.idle{border-style:dashed;color:#9aa1b3;font-weight:600;background:transparent;}
-  .build-timer .bt-edit{border:none;background:none;color:inherit;opacity:.7;font:inherit;font-weight:700;cursor:pointer;padding:0;margin-top:1px;}
-  .build-timer .bt-edit:hover{opacity:1;text-decoration:underline;}
-  .build-timer.need{border-color:#E8A21C;background:#FFF0D5;color:#8a5a00;}
+  .progress-col{display:flex;flex-direction:column;align-items:flex-end;gap:7px;flex:none;}
+  .build-timer{display:flex;flex-direction:column;gap:3px;min-width:176px;max-width:230px;border-radius:12px;padding:8px 11px 9px;
+    border:1px solid var(--bt-line,#DDE3EF);background:var(--bt-bg,#fff);color:var(--bt-ink,#516079);box-shadow:0 1px 2px rgba(14,27,54,.05);text-align:left;}
+  .build-timer .bt-label{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:.62rem;font-weight:800;letter-spacing:.9px;text-transform:uppercase;opacity:.8;}
+  .build-timer .bt-main{display:flex;align-items:baseline;gap:6px;white-space:nowrap;}
+  .build-timer .bt-num{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:2rem;line-height:.95;letter-spacing:.01em;font-variant-numeric:tabular-nums;}
+  .build-timer .bt-unit{font-size:.78rem;font-weight:700;opacity:.85;}
+  .build-timer .bt-bar{position:relative;display:block;height:7px;border-radius:99px;overflow:hidden;margin:2px 0 1px;
+    background:linear-gradient(90deg,rgba(0,0,0,.07) 0,rgba(0,0,0,.07) calc(100% - var(--zone,25%)),rgba(232,162,28,.28) calc(100% - var(--zone,25%)),rgba(232,162,28,.28) 100%);}
+  .build-timer .bt-fill{display:block;height:100%;border-radius:99px;background:var(--bt-fill,#2E9166);transition:width .3s;}
+  .build-timer .bt-sub{font-size:.72rem;font-weight:700;white-space:nowrap;}
+  .build-timer .bt-edit{border:none;background:rgba(255,255,255,.65);color:inherit;border-radius:6px;font:inherit;font-size:.78rem;line-height:1;padding:3px 5px;cursor:pointer;opacity:.85;}
+  .build-timer .bt-edit:hover{opacity:1;background:#fff;}
+  .build-timer .bt-set{border:none;background:var(--bt-fill,#E8A21C);color:#fff;border-radius:8px;font:inherit;font-weight:800;font-size:.82rem;padding:7px 10px;cursor:pointer;margin-top:2px;}
+  .build-timer.ok{--bt-bg:#EEF8F2;--bt-line:#BFE0CC;--bt-ink:#1d6b49;--bt-fill:#2E9166;}
+  .build-timer.warn{--bt-bg:#FFF6E3;--bt-line:#EBC76F;--bt-ink:#8a5a00;--bt-fill:#E8A21C;}
+  .build-timer.over{--bt-bg:#FDEEEC;--bt-line:#F0B9B0;--bt-ink:#BE2C1D;--bt-fill:#E23B2A;}
+  .build-timer.done{--bt-bg:#EEF2F8;--bt-line:#CFD9EC;--bt-ink:#16294D;--bt-fill:#16294D;}
+  .build-timer.need{--bt-bg:#FFF6E3;--bt-line:#EBC76F;--bt-ink:#8a5a00;}
+  .build-timer.idle{border-style:dashed;background:transparent;box-shadow:none;--bt-ink:#9aa1b3;min-width:0;padding:5px 10px;}
+  .build-timer.idle .bt-sub{font-weight:600;}
   .overall-label{
     font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:.9rem;
     color:var(--navy);white-space:nowrap;letter-spacing:.03em;
@@ -3067,14 +3077,19 @@ function buildInfo(p){
 function buildTimerHtml(p){
   if(BOARD_AREA==='tc') return '';
   var b=buildInfo(p);
-  if(!b){ return '<div class="build-timer idle">\u23F1 Starts when permits are obtained</div>'; }
-  var edit=(b.frozen?'':'<button class="bt-edit" data-act="setbuildstart" title="Change the permit date">\u270E</button>');
-  if(b.needStart){ return '<div class="build-timer need"><button class="bt-edit" data-act="setbuildstart">\u23F1 Set permit date</button></div>'; }
-  var cls=b.left<0?'over':(b.left<=30?'warn':'ok'), l1, l2;
-  if(b.frozen){ cls='done'; l1='\u23F1 Built in '+b.inDays+' days'; l2=(b.left<0?(-b.left)+' days over':b.left+' days under')+' the 4-month goal'; }
-  else if(b.left<0){ l1='\u23F1 '+b.inDays+' days in'; l2=(-b.left)+' days OVER \u00B7 was due '+buildShort(b.end); }
-  else { l1='\u23F1 '+b.inDays+' days in'; l2=b.left+' days left \u00B7 due '+buildShort(b.end); }
-  return '<div class="build-timer '+cls+'" title="Permit obtained '+attr(buildShort(b.start))+' \u00B7 4-month goal"><span class="bt-main">'+l1+edit+'</span><span class="bt-sub">'+l2+'</span></div>';
+  if(!b){ return '<div class="build-timer idle"><span class="bt-label">⏱ Build clock</span><span class="bt-sub">Starts when permits are obtained</span></div>'; }
+  if(b.needStart){ return '<div class="build-timer need"><span class="bt-label">⏱ Build clock</span><button class="bt-set" data-act="setbuildstart">Set permit date</button></div>'; }
+  var edit=(b.frozen?'':'<button class="bt-edit" data-act="setbuildstart" title="Change the permit date">✎</button>');
+  var cls=b.left<0?'over':(b.left<=30?'warn':'ok'), unit='days in', sub;
+  var pct=Math.max(2,Math.min(100,Math.round(100*b.inDays/b.total))), zone=Math.round(100*30/b.total);
+  if(b.frozen){ cls='done'; unit='days to build'; sub='✓ '+(b.left<0?(-b.left)+' days over':b.left+' days under')+' the 4-month goal'; }
+  else if(b.left<0){ sub=(-b.left)+' days OVER · was due '+buildShort(b.end); }
+  else { sub=b.left+' days left · due '+buildShort(b.end); }
+  return '<div class="build-timer '+cls+'" title="Permit obtained '+attr(buildShort(b.start))+' · goal: 4 months">'+
+    '<span class="bt-label">⏱ Build clock'+edit+'</span>'+
+    '<span class="bt-main"><span class="bt-num">'+b.inDays+'</span> <span class="bt-unit">'+unit+'</span></span>'+
+    '<span class="bt-bar" style="--zone:'+zone+'%"><span class="bt-fill" style="width:'+pct+'%"></span></span>'+
+    '<span class="bt-sub">'+sub+'</span></div>';
 }
 /* Loom videos: Nadia records them on the TC board; they travel with the house, so every board shows them. */
 function loomChips(p){
