@@ -1762,6 +1762,7 @@ function stbMergeProject(mineP,baseP){
   })();
   /* Hand-set permit date (owner): the most recent change wins, so a stale device can't undo it. */
   if((baseP.buildStartSetAt||'')>(mineP.buildStartSetAt||'')){ mineP.buildStartDay=baseP.buildStartDay||''; mineP.buildStartSetAt=baseP.buildStartSetAt; }
+  try{ if(!mineP.permitDoneDay && !mineP.buildStartDay && baseP.permitDoneDay && permitIsChecked(mineP)){ mineP.permitDoneDay=baseP.permitDoneDay; if(baseP.permitDoneAuto) mineP.permitDoneAuto=true; } }catch(e){}
   if(!mineP.contractUrl && baseP.contractUrl && !docWasRemoved('contract')){ mineP.contractUrl=baseP.contractUrl; mineP.contractName=mineP.contractName||baseP.contractName; }
   return mineP;
 }
@@ -2690,11 +2691,13 @@ async function init(){
     normalizeProject(p);
     if(p._phaseAutoAdvanced){ phaseMoved=true; delete p._phaseAutoAdvanced; }
   });
+  var permitStamped=false;      // every house with the permits box checked gets its build clock started
+  if(!isViewerSession()){ board.projects.forEach(function(p){ if(syncPermitClock(p,'load')) permitStamped=true; }); }
   if(board.cleanStartVersion!==CLEAN_START_VERSION){
     board.projects.forEach(cleanStartProject);
     board.cleanStartVersion=CLEAN_START_VERSION;
     await persistBoard();
-  } else if(phaseMoved){
+  } else if(phaseMoved || permitStamped){
     await persistBoard();
   }
   var ar=await Store.get(ARCH_KEY);
@@ -3063,11 +3066,29 @@ function buildShort(iso){
   var a=String(iso).split('-'), now=isoToday().split('-')[0];
   return MON[+a[1]-1]+' '+(+a[2])+(a[0]!==now?', '+a[0]:'');
 }
-function buildStartDay(p){ return p.buildStartDay || permitDayFromLog(p) || ''; }
+function buildStartDay(p){ return p.buildStartDay || p.permitDoneDay || permitDayFromLog(p) || ''; }
+/* The clock starts by itself: the moment "Obtain Building Permits" is checked its day is stamped on the house
+   (permitDoneDay). Houses whose box was checked before this existed take the day from the activity log, or - if
+   there is none - the first day the app sees it checked (flagged as an estimate; the owner can correct it).
+   Un-checking the box (user click) clears the clock. */
+function syncPermitClock(p,how){
+  if(BOARD_AREA==='tc' || !p) return false;
+  if(permitIsChecked(p)){
+    if(p.permitDoneDay || p.buildStartDay) return false;
+    var lg=permitDayFromLog(p);
+    p.permitDoneDay=lg||isoToday(); if(!lg && how==='load') p.permitDoneAuto=true; else delete p.permitDoneAuto;
+    return true;
+  }
+  if(how==='click' && (p.permitDoneDay || p.buildStartDay || p.permitDoneAuto)){
+    delete p.permitDoneDay; delete p.permitDoneAuto; p.buildStartDay=''; p.buildStartSetAt=new Date().toISOString();
+    return true;
+  }
+  return false;
+}
 /* Only the owner account sets the permit date by hand (houses that started before this checklist existed). */
 function isOwnerSession(){ var u=sessionUser(); return !!u && u.role==='owner'; }
 function buildInfo(p){
-  if(!p.buildEndDay && !p.buildStartDay && !permitIsChecked(p)) return null;   // no hand-set date, box not checked: no clock
+  if(!p.buildEndDay && !permitIsChecked(p)) return null;          // box not checked: no clock
   var start=buildStartDay(p);
   if(!start) return {needStart:true};
   var end=addMonthsIso(start,BUILD_GOAL_MONTHS), now=p.buildEndDay||isoToday();
@@ -3077,7 +3098,7 @@ function buildTimerHtml(p){
   if(BOARD_AREA==='tc') return '';
   var b=buildInfo(p);
   var owner=isOwnerSession();
-  if(!b){ return '<div class="build-timer idle" title="The 4-month clock starts when Obtain Building Permits is checked">⏱ Starts at permits'+(owner?' <button class="bt-set" data-act="setbuildstart">Set date</button>':'')+'</div>'; }
+  if(!b){ return '<div class="build-timer idle" title="The 4-month clock starts when Obtain Building Permits is checked">⏱ Starts at permits</div>'; }
   if(b.needStart){ return '<div class="build-timer need">⏱ '+(owner?'<button class="bt-set" data-act="setbuildstart">Set permit date</button>':'Permit date not set')+'</div>'; }
   var edit=(b.frozen||!owner?'':'<button class="bt-edit" data-act="setbuildstart" title="Change the permit date (owner only)">✎</button>');
   var cls=b.left<0?'over':(b.left<=30?'warn':'ok'), txt;
@@ -3085,7 +3106,7 @@ function buildTimerHtml(p){
   if(b.frozen){ cls='done'; txt='<b>Built in '+b.inDays+'d</b> · due '+buildShort(b.end)+' · '+(b.left<0?(-b.left)+'d over':b.left+'d under'); }
   else if(b.left<0){ txt='<b>'+b.inDays+'d in</b> · due '+buildShort(b.end)+' · '+(-b.left)+'d OVER'; }
   else { txt='<b>'+b.inDays+'d in</b> · due <b>'+buildShort(b.end)+'</b>'; }
-  var tip='Permit '+buildShort(b.start)+' → due '+buildShort(b.end)+' (goal: 4 months) · '+(b.frozen?'finished':(b.left<0?(-b.left)+' days over':b.left+' days left'));
+  var tip=(p.permitDoneAuto&&!p.buildStartDay?'ESTIMATE (permits were checked before the clock existed) \u00B7 ':'')+'Permit '+buildShort(b.start)+' → due '+buildShort(b.end)+' (goal: 4 months) · '+(b.frozen?'finished':(b.left<0?(-b.left)+' days over':b.left+' days left'));
   return '<div class="build-timer '+cls+'" title="'+attr(tip)+'">⏱ <span class="bt-txt">'+txt+'</span>'+
     '<span class="bt-bar" style="--zone:'+zone+'%"><span class="bt-fill" style="width:'+pct+'%"></span></span>'+edit+'</div>';
 }
@@ -3520,6 +3541,7 @@ document.getElementById('projectList').addEventListener('click',function(e){
     if(st.done){ st.status='done'; }
     else if(st.status==='done'){ st.status=''; }
     setPhaseItemState(p,ph,task,st);
+    if(ph==='Pre Phase' && String(task).trim().toLowerCase()===PERMIT_TASK_KEY){ syncPermitClock(p,'click'); }
     advanceCurrentPhaseIfComplete(p);
     saveBoardNow(); render(); return;
   }

@@ -232,7 +232,9 @@ Two connected web apps for South Texas Builders (STB):
 - **Move to Completed** freezes it (`buildEndDay`); Completed Houses shows "built in N days" and the completed report has a BUILD TIME line.
   Moving a house back to the board removes `buildEndDay` so the clock runs again. Viewers see the timer but not the edit pencil.
 - Look: a slim one-line pill under the % (`73d in · due Jan 14` + mini bar with the 30-day zone shaded; days left in the hover tooltip; past due adds `· 18d OVER`). Idle houses show a faint `Starts at permits`.
-- **Owner-only date:** only the owner account (`isOwnerSession()`, password 1226) sees/uses the "Set date" / "Set permit date" / ✎ controls; schedulers and viewers see the clock only,
-  and a forced click is refused. The owner can start the clock on a house whose permits box was never checked (houses that started before the checklist):
-  `p.buildStartDay` alone starts it. Merge: `buildStartSetAt` — the most recent change wins (a stale device can't wipe it; clearing is `buildStartDay=''`).
-  Client-side only, like the other roles (the publishable key can still write).
+- **Automatic start (no manual entry):** checking "Obtain Building Permits" stamps `p.permitDoneDay` = today (`syncPermitClock(p,'click')`), so the clock starts at once on every
+  house, including future ones. Un-checking it (needs a reason, as always) clears the clock. On load, every non-viewer session stamps houses whose box was already checked:
+  the day comes from the activity log, else the first day the app sees it (`permitDoneAuto` = estimate, tooltip says ESTIMATE) and is saved.
+  Start-day order: owner's `buildStartDay` > `permitDoneDay` > activity log.
+- **Owner-only edit:** only the owner account (`isOwnerSession()`, password 1226) gets the ✎ pencil to correct the start date (houses that started before the checklist). Schedulers/viewers see the clock only;
+  a forced click is refused. Merge: `buildStartSetAt` (latest change wins) and a stamped `permitDoneDay` is adopted by a stale copy. Client-side only, like the other roles.
