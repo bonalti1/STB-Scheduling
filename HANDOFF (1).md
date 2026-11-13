@@ -238,4 +238,4 @@ Two connected web apps for South Texas Builders (STB):
   Start-day order: owner's `buildStartDay` > `permitDoneDay` > activity log.
 - **Owner-only edit:** only the owner account (`isOwnerSession()`, password 1226) gets the ✎ pencil to correct the start date (houses that started before the checklist). Schedulers/viewers see the clock only;
   a forced click is refused. Merge: `buildStartSetAt` (latest change wins) and a stamped `permitDoneDay` is adopted by a stale copy. Client-side only, like the other roles.
-- Look: a small square tile under the % (`344d in`, progress bar, `started Dec 4, 2025`, `due Apr 4`, then `93d left` or `7mo OVER`). Over/under are whole calendar months only (`spanM`; `<1mo` when under a month). Hover shows the exact days.
+- Look: a small square tile under the % (`5mo 25d in`, progress bar, `started May 19`, `due Sep 19`, then `2mo 20d left` or `1mo 25d OVER`). Everything is months + days (`spanMD`; days only under a month, `6mo` when exact). Hover shows the exact day count.

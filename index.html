@@ -425,11 +425,11 @@
     .progress-mini{font-size:1.25rem;min-width:48px;}
   }
   .progress-col{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:none;}
-  .build-timer{display:flex;flex-direction:column;gap:2px;width:122px;min-height:118px;box-sizing:border-box;border-radius:12px;padding:7px 9px 8px;text-align:left;
+  .build-timer{display:flex;flex-direction:column;gap:2px;width:134px;min-height:118px;box-sizing:border-box;border-radius:12px;padding:7px 9px 8px;text-align:left;
     border:1px solid var(--bt-line,#DDE3EF);background:var(--bt-bg,#fff);color:var(--bt-ink,#516079);box-shadow:0 1px 2px rgba(14,27,54,.05);}
   .build-timer .bt-label{display:flex;align-items:center;justify-content:space-between;gap:4px;font-size:.56rem;font-weight:800;letter-spacing:.8px;text-transform:uppercase;opacity:.8;white-space:nowrap;}
-  .build-timer .bt-main{display:flex;align-items:baseline;gap:4px;white-space:nowrap;margin-top:1px;}
-  .build-timer .bt-num{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.65rem;line-height:1;letter-spacing:.01em;font-variant-numeric:tabular-nums;}
+  .build-timer .bt-main{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 4px;margin-top:1px;}
+  .build-timer .bt-num{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.5rem;line-height:1;letter-spacing:.01em;font-variant-numeric:tabular-nums;}
   .build-timer .bt-unit{font-size:.7rem;font-weight:700;opacity:.85;}
   .build-timer .bt-bar{position:relative;display:block;height:5px;border-radius:99px;overflow:hidden;margin:3px 0 2px;
     background:linear-gradient(90deg,rgba(0,0,0,.08) 0,rgba(0,0,0,.08) calc(100% - var(--zone,25%)),rgba(232,162,28,.32) calc(100% - var(--zone,25%)),rgba(232,162,28,.32) 100%);}
@@ -3094,12 +3094,14 @@ function syncPermitClock(p,how){
 }
 /* Only the owner account sets the permit date by hand (houses that started before this checklist existed). */
 function isOwnerSession(){ var u=sessionUser(); return !!u && u.role==='owner'; }
-/* Whole calendar months only ("7mo"); under a month shows "<1mo". */
-function spanM(aIso,bIso){
+/* Months and days between two ISO days (a <= b): "5mo 25d"; days only under a month; "6mo" when it lands exactly. */
+function spanMD(aIso,bIso){
   var a=aIso.split('-').map(Number), b=bIso.split('-').map(Number);
   var m=(b[0]-a[0])*12+(b[1]-a[1]);
   while(m>0 && addMonthsIso(aIso,m)>bIso) m--;
-  return m>0 ? m+'mo' : '<1mo';
+  var d=daysBetween(m>0?addMonthsIso(aIso,m):aIso,bIso);
+  if(m<=0) return d+'d';
+  return m+'mo'+(d?' '+d+'d':'');
 }
 function buildInfo(p){
   if(!p.buildEndDay && !permitIsChecked(p)) return null;          // box not checked: no clock
@@ -3116,13 +3118,13 @@ function buildTimerHtml(p){
   var edit=(b.frozen||!owner?'':'<button class="bt-edit" data-act="setbuildstart" title="Change the permit date (owner only)">✎</button>');
   var cls=b.left<0?'over':(b.left<=30?'warn':'ok'), unit='in', last;
   var pct=Math.max(4,Math.min(100,Math.round(100*b.inDays/b.total))), zone=Math.round(100*30/b.total);
-  if(b.frozen){ cls='done'; unit='to build'; last=(b.left<0?spanM(b.end,b.now)+' over':spanM(b.now,b.end)+' under'); }
-  else if(b.left<0){ last='<b>'+spanM(b.end,b.now)+' OVER</b>'; }
-  else { last='<b>'+b.left+'d left</b>'; }
+  if(b.frozen){ cls='done'; unit='to build'; last=(b.left<0?spanMD(b.end,b.now)+' over':spanMD(b.now,b.end)+' under'); }
+  else if(b.left<0){ last='<b>'+spanMD(b.end,b.now)+' OVER</b>'; }
+  else { last='<b>'+spanMD(b.now,b.end)+' left</b>'; }
   var tip=(p.permitDoneAuto&&!p.buildStartDay?'ESTIMATE (permits were checked before the clock existed) · ':'')+'Permit '+buildShort(b.start)+' → due '+buildShort(b.end)+' (goal: 4 months) · '+(b.frozen?'finished':(b.left<0?(-b.left)+' days over':b.left+' days left'));
   return '<div class="build-timer '+cls+'" title="'+attr(tip)+'">'+
     '<span class="bt-label">⏱ Build clock'+edit+'</span>'+
-    '<span class="bt-main"><span class="bt-num">'+b.inDays+'d</span> <span class="bt-unit">'+unit+'</span></span>'+
+    '<span class="bt-main"><span class="bt-num">'+spanMD(b.start,b.now)+'</span> <span class="bt-unit">'+unit+'</span></span>'+
     '<span class="bt-bar" style="--zone:'+zone+'%"><span class="bt-fill" style="width:'+pct+'%"></span></span>'+
     '<span class="bt-line">started '+buildShort(b.start)+'</span>'+
     '<span class="bt-line">due <b>'+buildShort(b.end)+'</b></span>'+
