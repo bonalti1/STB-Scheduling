@@ -223,3 +223,11 @@ Two connected web apps for South Texas Builders (STB):
 - **Loom videos:** `p.looms=[{id,url,title,at,by}]` (+ `loomsRemoved` tombstones, merged by id in `stbMergeProject`). The **🎥 Add Loom** button and the × remove
   appear on the TC board only (link must be `https://(www.)loom.com/share|embed|i/...`, then a short title). Links travel with the house, so Main/Alice
   cards show them as read-only chips (`loomChips()`); viewers may open them.
+
+## Build timer (Nov 2026)
+- Goal: finish within **4 calendar months** of the building permit (`BUILD_GOAL_MONTHS`). Shown under the % on Main/Alice cards (`buildTimerHtml`, hidden on TC).
+- Starts when the Pre Phase task **"Obtain Building Permits"** is checked; the date comes from the activity log (latest time it was checked). A hand-entered
+  date (`p.buildStartDay`, pencil button / "Set permit date") wins; houses checked before logging existed ask for the date once. Un-checking the box clears the clock.
+- Colors: green, amber in the last 30 days, red once past the due date (`N days OVER`). Due date = start + 4 months, month-end clamped (Oct 31 -> Feb 28).
+- **Move to Completed** freezes it (`buildEndDay`); Completed Houses shows "built in N days" and the completed report has a BUILD TIME line.
+  Moving a house back to the board removes `buildEndDay` so the clock runs again. Viewers see the timer but not the edit pencil.
