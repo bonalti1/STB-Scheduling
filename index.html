@@ -455,14 +455,14 @@
     .progress-mini{order:2;align-self:flex-start;}
     .card-top .chev{order:3;align-self:flex-start;margin-top:6px;}
     .build-timer{order:10;flex:0 0 100%;width:100%;min-height:0;}
-    .build-timer:not(.idle):not(.need){display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:auto auto auto auto;column-gap:10px;row-gap:1px;align-items:center;padding:8px 12px 9px;}
+    .build-timer:not(.idle):not(.need){display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto auto auto auto;column-gap:12px;row-gap:1px;align-items:center;padding:8px 12px 9px;}
     .build-timer .bt-label{grid-column:1/-1;grid-row:1;font-size:.6rem;}
     .build-timer .bt-main{grid-column:1;grid-row:2/4;margin:0;align-self:center;flex-wrap:nowrap;white-space:nowrap;}
     .build-timer .bt-num{font-size:1.55rem;}
     .build-timer .bt-start{grid-column:2;grid-row:2;align-self:end;font-size:.68rem;}
     .build-timer .bt-due{grid-column:2;grid-row:3;align-self:start;font-size:.68rem;}
-    .build-timer .bt-last{grid-column:3;grid-row:2/4;align-self:center;margin:0;text-align:right;font-size:.76rem;}
-    .build-timer .bt-bar{grid-column:1/-1;grid-row:4;margin:6px 0 0;height:6px;}
+    .build-timer .bt-last{grid-column:1/-1;grid-row:4;margin:5px 0 0;text-align:left;font-size:.86rem;}
+    .build-timer .bt-bar{grid-column:1/-1;grid-row:5;margin:5px 0 0;height:6px;}
     .build-timer.idle,.build-timer.need{flex-direction:row;align-items:center;gap:10px;padding:6px 12px;}
   }
   .overall-label{
@@ -540,10 +540,14 @@
   }
   .load-phase:active{background:var(--line-soft);}
 
-  .card.collapsed .edit-meta,.card.collapsed .sections,.card.collapsed .goal-note{display:none;}
-  .goal-note{display:flex;align-items:center;justify-content:center;gap:8px;margin:2px 13px 13px;padding:9px 12px;border-radius:10px;
-    background:#FFF0D5;border:1px solid #EBC76F;color:#7a4f00;font-size:.84rem;font-weight:600;text-align:center;line-height:1.3;}
-  .goal-note b{font-weight:800;color:#5e3c00;}
+  .card.collapsed .edit-meta,.card.collapsed .sections{display:none;}
+  /* bottom-right corner of every house card, open or collapsed */
+  .goal-note{display:flex;justify-content:flex-end;padding:2px 13px 12px;}
+  .goal-note .gn-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:10px;background:#F5A623;border:2px solid #C98200;
+    color:#3d2600;font-size:.95rem;font-weight:700;line-height:1.25;text-align:right;box-shadow:0 2px 6px rgba(201,130,0,.35);}
+  .goal-note .gn-badge b{font-weight:800;font-size:1.02rem;letter-spacing:.01em;}
+  .goal-note .gn-ic{font-size:1.25rem;line-height:1;}
+  @media(max-width:620px){ .goal-note{padding:2px 10px 10px;} .goal-note .gn-badge{font-size:.82rem;padding:7px 10px;} .goal-note .gn-badge b{font-size:.9rem;} }
 
   .sections{border-top:1px solid var(--line-soft);}
   .section{padding:11px 14px 6px;border-bottom:1px dashed var(--line-soft);}
@@ -3322,7 +3326,7 @@ function projectCard(p){
   /* the reminder at the bottom of every house on Main / Alice */
   if(BOARD_AREA!=='tc'){
     var goal=document.createElement('div'); goal.className='goal-note';
-    goal.innerHTML='<span class="gn-ic">🎯</span><span><b>Goal = 4-5 months</b> · we lose money if we take longer</span>';
+    goal.innerHTML='<span class="gn-badge"><span class="gn-ic">🎯</span><span><b>Goal = 4-5 months</b> — we lose money if we take longer</span></span>';
     card.appendChild(goal);
   }
 
