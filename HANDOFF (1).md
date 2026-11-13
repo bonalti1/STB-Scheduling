@@ -231,4 +231,4 @@ Two connected web apps for South Texas Builders (STB):
 - Colors: green, amber in the last 30 days, red once past the due date (`N days OVER`). Due date = start + 4 months, month-end clamped (Oct 31 -> Feb 28).
 - **Move to Completed** freezes it (`buildEndDay`); Completed Houses shows "built in N days" and the completed report has a BUILD TIME line.
   Moving a house back to the board removes `buildEndDay` so the clock runs again. Viewers see the timer but not the edit pencil.
-- Look: a slim one-line pill under the % (`72d in · 49d left` + mini bar with the 30-day zone shaded; due date in the hover tooltip). Idle houses show a faint `Starts at permits`.
+- Look: a slim one-line pill under the % (`73d in · due Jan 14` + mini bar with the 30-day zone shaded; days left in the hover tooltip; past due adds `· 18d OVER`). Idle houses show a faint `Starts at permits`.
