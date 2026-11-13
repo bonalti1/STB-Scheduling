@@ -1760,6 +1760,8 @@ function stbMergeProject(mineP,baseP){
     if(out.length||mineP.looms||baseP.looms){ mineP.looms=out.sort(function(a,b){ return String(b.at||'').localeCompare(String(a.at||'')); }); }
     if(Object.keys(rm).length) mineP.loomsRemoved=rm;
   })();
+  /* Hand-set permit date (owner): the most recent change wins, so a stale device can't undo it. */
+  if((baseP.buildStartSetAt||'')>(mineP.buildStartSetAt||'')){ mineP.buildStartDay=baseP.buildStartDay||''; mineP.buildStartSetAt=baseP.buildStartSetAt; }
   if(!mineP.contractUrl && baseP.contractUrl && !docWasRemoved('contract')){ mineP.contractUrl=baseP.contractUrl; mineP.contractName=mineP.contractName||baseP.contractName; }
   return mineP;
 }
@@ -3062,8 +3064,10 @@ function buildShort(iso){
   return MON[+a[1]-1]+' '+(+a[2])+(a[0]!==now?', '+a[0]:'');
 }
 function buildStartDay(p){ return p.buildStartDay || permitDayFromLog(p) || ''; }
+/* Only the owner account sets the permit date by hand (houses that started before this checklist existed). */
+function isOwnerSession(){ var u=sessionUser(); return !!u && u.role==='owner'; }
 function buildInfo(p){
-  if(!p.buildEndDay && !permitIsChecked(p)) return null;          // not started (or un-checked): no clock
+  if(!p.buildEndDay && !p.buildStartDay && !permitIsChecked(p)) return null;   // no hand-set date, box not checked: no clock
   var start=buildStartDay(p);
   if(!start) return {needStart:true};
   var end=addMonthsIso(start,BUILD_GOAL_MONTHS), now=p.buildEndDay||isoToday();
@@ -3072,9 +3076,10 @@ function buildInfo(p){
 function buildTimerHtml(p){
   if(BOARD_AREA==='tc') return '';
   var b=buildInfo(p);
-  if(!b){ return '<div class="build-timer idle" title="The 4-month clock starts when Obtain Building Permits is checked">⏱ Starts at permits</div>'; }
-  if(b.needStart){ return '<div class="build-timer need">⏱ <button class="bt-set" data-act="setbuildstart">Set permit date</button></div>'; }
-  var edit=(b.frozen?'':'<button class="bt-edit" data-act="setbuildstart" title="Change the permit date">✎</button>');
+  var owner=isOwnerSession();
+  if(!b){ return '<div class="build-timer idle" title="The 4-month clock starts when Obtain Building Permits is checked">⏱ Starts at permits'+(owner?' <button class="bt-set" data-act="setbuildstart">Set date</button>':'')+'</div>'; }
+  if(b.needStart){ return '<div class="build-timer need">⏱ '+(owner?'<button class="bt-set" data-act="setbuildstart">Set permit date</button>':'Permit date not set')+'</div>'; }
+  var edit=(b.frozen||!owner?'':'<button class="bt-edit" data-act="setbuildstart" title="Change the permit date (owner only)">✎</button>');
   var cls=b.left<0?'over':(b.left<=30?'warn':'ok'), txt;
   var pct=Math.max(4,Math.min(100,Math.round(100*b.inDays/b.total))), zone=Math.round(100*30/b.total);
   if(b.frozen){ cls='done'; txt='<b>Built in '+b.inDays+'d</b> · due '+buildShort(b.end)+' · '+(b.left<0?(-b.left)+'d over':b.left+'d under'); }
@@ -3360,16 +3365,19 @@ document.getElementById('projectList').addEventListener('click',function(e){
     return;
   }
   if(act==='setbuildstart'){
+    if(!isOwnerSession()){ toast('Only the owner account can change the permit date.'); return; }
     var cur=buildStartDay(p);
     var ans=prompt('Date the building permit was obtained (YYYY-MM-DD).\nThe 4-month clock counts from this day. Leave empty to use the date the box was checked.',cur||'');
     if(ans===null) return;
     ans=String(ans).trim();
-    if(!ans){ delete p.buildStartDay; }
+    if(!ans){ p.buildStartDay=''; }
     else {
       var ok=/^\d{4}-\d{2}-\d{2}$/.test(ans) && !isNaN(new Date(ans+'T12:00:00').getTime()) && addMonthsIso(ans,0)===ans;
       if(!ok){ toast('Use the format YYYY-MM-DD, for example 2026-11-05'); return; }
       p.buildStartDay=ans;
     }
+    p.buildStartSetAt=new Date().toISOString();
+    logDailyActivity(p,{type:'project',toStatus:'permitdate',note:p.buildStartDay?'Permit date set to '+p.buildStartDay:'Permit date cleared (uses the date the box was checked)'});
     queueSave(); render(); toast('Permit date updated');
     return;
   }
