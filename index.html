@@ -447,6 +447,24 @@
   .build-timer.need{--bt-bg:#FFF6E3;--bt-line:#EBC76F;--bt-ink:#8a5a00;--bt-fill:#E8A21C;min-height:0;}
   .build-timer.idle{border-style:dashed;background:transparent;box-shadow:none;--bt-ink:#a3aabb;min-height:0;padding:6px 9px;}
   .build-timer.idle .bt-line{white-space:normal;}
+  /* Phone: the clock leaves the narrow right column and becomes a full-width strip under the house name,
+     so the buttons keep their room. */
+  @media(max-width:620px){
+    .card-top{flex-wrap:wrap;row-gap:8px;}
+    .progress-col{display:contents;}
+    .progress-mini{order:2;align-self:flex-start;}
+    .card-top .chev{order:3;align-self:flex-start;margin-top:6px;}
+    .build-timer{order:10;flex:0 0 100%;width:100%;min-height:0;}
+    .build-timer:not(.idle):not(.need){display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:auto auto auto auto;column-gap:10px;row-gap:1px;align-items:center;padding:8px 12px 9px;}
+    .build-timer .bt-label{grid-column:1/-1;grid-row:1;font-size:.6rem;}
+    .build-timer .bt-main{grid-column:1;grid-row:2/4;margin:0;align-self:center;flex-wrap:nowrap;white-space:nowrap;}
+    .build-timer .bt-num{font-size:1.55rem;}
+    .build-timer .bt-start{grid-column:2;grid-row:2;align-self:end;font-size:.68rem;}
+    .build-timer .bt-due{grid-column:2;grid-row:3;align-self:start;font-size:.68rem;}
+    .build-timer .bt-last{grid-column:3;grid-row:2/4;align-self:center;margin:0;text-align:right;font-size:.76rem;}
+    .build-timer .bt-bar{grid-column:1/-1;grid-row:4;margin:6px 0 0;height:6px;}
+    .build-timer.idle,.build-timer.need{flex-direction:row;align-items:center;gap:10px;padding:6px 12px;}
+  }
   .overall-label{
     font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:.9rem;
     color:var(--navy);white-space:nowrap;letter-spacing:.03em;
@@ -3126,8 +3144,8 @@ function buildTimerHtml(p){
     '<span class="bt-label">⏱ Build clock'+edit+'</span>'+
     '<span class="bt-main"><span class="bt-num">'+spanMD(b.start,b.now)+'</span> <span class="bt-unit">'+unit+'</span></span>'+
     '<span class="bt-bar" style="--zone:'+zone+'%"><span class="bt-fill" style="width:'+pct+'%"></span></span>'+
-    '<span class="bt-line">started '+buildShort(b.start)+'</span>'+
-    '<span class="bt-line">due <b>'+buildShort(b.end)+'</b></span>'+
+    '<span class="bt-line bt-start">started '+buildShort(b.start)+'</span>'+
+    '<span class="bt-line bt-due">due <b>'+buildShort(b.end)+'</b></span>'+
     '<span class="bt-line bt-last">'+last+'</span></div>';
 }
 /* Loom videos: Nadia records them on the TC board; they travel with the house, so every board shows them. */
