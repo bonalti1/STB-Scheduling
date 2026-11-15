@@ -241,3 +241,11 @@ Two connected web apps for South Texas Builders (STB):
 - Look: a small square tile under the % (`5mo 25d in`, progress bar, `started May 19`, `due Sep 19`, then `2mo 20d left` or `1mo 25d OVER`). Everything is months + days (`spanMD`; days only under a month, `6mo` when exact). Hover shows the exact day count.
 - **Phone (<=620px):** the clock leaves the narrow right column and becomes a full-width strip under the house name (big `5mo 25d in` left, started/due in the middle, `1mo 25d OVER` right, bar underneath); `.progress-col{display:contents}` keeps the % and arrow at the top right. Desktop unchanged.
 - **Goal reminder:** every house card on Main/Alice (open or collapsed) ends with a small, muted grey chip in the bottom-right corner (deliberately quiet): `🎯 Goal = 4-5 months — we lose money if we take longer` (`.goal-note`; not on the TC board). The clock itself still counts 4 months as the due date (`BUILD_GOAL_MONTHS`). On phones the clock strip puts the over/left line on its own row.
+
+## Pre-construction presentation (Nov 2026) — `precon/` (separate from the scheduling app)
+- Standalone page `precon/index.html` ("Your Build Journey"): 12 full-screen slides (welcome with client/address/date, overview, Pre + Phases 1–6, "your part",
+  questions/contact, sign-off), STB colors/fonts/logo and the app's phase colors, EN/ES toggle, phone layout, arrow keys/swipe/full screen.
+  Deploy it as its OWN Netlify site (zip of the `precon/` files); the main site zip does not include it. See `precon/README.md`.
+- Phase content comes from `PHASE_TASKS` but client-friendly (internal items left out). Images: 8 AI illustrations in `precon/media/` (welcome, pre, p1–p6), one consistent style —
+  replace any by dropping a file with the same name. Video slots reserved: paste links in `MEDIA` at the top of the script (or `?edit=1` to try on one device).
+- Sign-off slide saves a record (names, address, phases reviewed, signature PNG(s)) to cloud row `stb_precon_signoffs_v1` and prints a PDF record. Wording is an acknowledgment, not a contract change (attorney review advised).

@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Your Build Journey · South Texas Builders</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="south-texas-builders-logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --navy:#16294D; --navy-deep:#0E1B36; --red:#E23B2A; --red-dark:#BE2C1D;
+    --paper:#F2F1EA; --card:#FFFFFF; --ink:#1B2233; --muted:#717A8C;
+    --line:#E3E1D7; --line-soft:#EDEBE2; --green:#2E9166; --amber:#E8A21C;
+    --shadow:0 1px 2px rgba(14,27,54,.06), 0 14px 34px -16px rgba(14,27,54,.28);
+    --pc:#8A93A6; /* current phase color */
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    font-family:'Barlow',system-ui,sans-serif;color:var(--ink);background-color:var(--paper);
+    background-image:linear-gradient(rgba(22,41,77,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(22,41,77,.035) 1px,transparent 1px);
+    background-size:26px 26px;-webkit-font-smoothing:antialiased;line-height:1.45;overflow:hidden;
+  }
+  button{font-family:inherit;cursor:pointer;}
+  button:focus{outline:none;} button:focus-visible,input:focus-visible{outline:3px solid #3E78C2;outline-offset:2px;}
+  #app{display:flex;flex-direction:column;height:100%;height:100dvh;}
+
+  /* ---------- top bar ---------- */
+  header.bar{background:var(--navy);background-image:linear-gradient(180deg,var(--navy) 0%,var(--navy-deep) 100%);color:#fff;
+    border-bottom:4px solid var(--red);padding:9px 16px;flex:none;}
+  header.bar .in{max-width:1500px;margin:0 auto;display:flex;align-items:center;gap:14px;}
+  header.bar img{height:42px;width:auto;background:#fff;border-radius:9px;padding:3px 7px;flex:none;}
+  header.bar h1{font-family:'Barlow Condensed',sans-serif;font-size:1.45rem;letter-spacing:.6px;text-transform:uppercase;line-height:1.05;white-space:nowrap;}
+  header.bar h1 small{display:block;font-family:'Barlow',sans-serif;font-size:.66rem;letter-spacing:1.6px;opacity:.72;font-weight:500;}
+  .track{display:flex;gap:6px;margin:0 auto;flex-wrap:nowrap;}
+  .dot{border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.08);color:#fff;border-radius:99px;min-width:44px;height:34px;padding:0 12px;
+    font-weight:700;font-size:.84rem;letter-spacing:.3px;transition:background .15s,transform .1s;}
+  .dot:hover{background:rgba(255,255,255,.2);}
+  .dot.seen{border-color:rgba(255,255,255,.7);}
+  .dot.on{background:var(--pc);border-color:var(--pc);color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.28);}
+  .hbtn{border:1px solid rgba(255,255,255,.45);background:transparent;color:#fff;border-radius:9px;height:34px;padding:0 12px;font-weight:700;font-size:.8rem;letter-spacing:.4px;flex:none;}
+  .hbtn:hover{background:rgba(255,255,255,.14);}
+
+  /* ---------- stage ---------- */
+  main#stage{flex:1;position:relative;min-height:0;}
+  .slide{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding:26px 28px 22px;opacity:0;visibility:hidden;transform:translateY(14px);
+    transition:opacity .38s ease,transform .38s ease,visibility 0s linear .38s;}
+  .slide.active{opacity:1;visibility:visible;transform:none;transition:opacity .38s ease,transform .38s ease,visibility 0s;}
+  .slide.leaving-left{transform:translateX(-24px);}
+  .wrap{max-width:1360px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;justify-content:center;}
+  @media(prefers-reduced-motion:reduce){ .slide,.slide.active{transition:none;transform:none;} }
+
+  /* ---------- footer nav ---------- */
+  footer.nav{flex:none;background:#fff;border-top:1px solid var(--line);padding:10px 16px;box-shadow:0 -6px 20px rgba(14,27,54,.06);}
+  footer.nav .in{max-width:1500px;margin:0 auto;display:flex;align-items:center;gap:14px;}
+  .nbtn{border:none;border-radius:12px;height:48px;padding:0 24px;font-weight:700;font-size:1.02rem;letter-spacing:.3px;color:#fff;background:var(--navy);transition:transform .08s,filter .15s;}
+  .nbtn.next{background:var(--red);min-width:150px;}
+  .nbtn:active{transform:scale(.97);} .nbtn:hover{filter:brightness(1.08);}
+  .nbtn[disabled]{opacity:.35;cursor:default;}
+  .prog{flex:1;}
+  .prog .bar2{height:8px;background:var(--line-soft);border-radius:99px;overflow:hidden;}
+  .prog .fill{height:100%;background:var(--pc);width:0;border-radius:99px;transition:width .35s ease,background .35s;}
+  .prog .lbl{display:flex;justify-content:space-between;font-size:.76rem;color:var(--muted);font-weight:600;margin-top:4px;}
+
+  /* ---------- generic ---------- */
+  .eyebrow{font-weight:700;letter-spacing:2.2px;text-transform:uppercase;font-size:.82rem;color:var(--red);}
+  h2.big{font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--navy);line-height:1;font-size:clamp(2.2rem,5.2vw,4.4rem);}
+  .lead{font-size:clamp(1.05rem,1.7vw,1.4rem);color:#3a4560;max-width:60ch;margin-top:10px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);}
+
+  /* ---------- welcome ---------- */
+  .welcome{display:grid;grid-template-columns:1.05fr .95fr;gap:34px;align-items:center;}
+  .hero-img{position:relative;aspect-ratio:16/10;border-radius:22px;overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--line);background:linear-gradient(135deg,#dfe5f1,#f6f1e6);}
+  .hero-img img{width:100%;height:100%;object-fit:cover;display:block;}
+  .welcome h2.big{font-size:clamp(2.6rem,6vw,5.4rem);}
+  .welcome h2.big span{color:var(--red);display:block;}
+  .fields{display:grid;gap:12px;margin-top:22px;max-width:560px;}
+  .fld{display:grid;gap:3px;}
+  .fld label{font-size:.72rem;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);}
+  .fld input,.fld textarea{border:none;border-bottom:2px solid var(--line);background:rgba(255,255,255,.7);border-radius:8px 8px 0 0;padding:10px 12px;
+    font:inherit;font-size:1.2rem;color:var(--navy);font-weight:600;outline:none;transition:border-color .15s,background .15s;}
+  .fld input:focus,.fld textarea:focus{border-bottom-color:var(--red);background:#fff;}
+  .fld input::placeholder{color:#b3b8c4;font-weight:500;}
+  .cta{margin-top:24px;display:inline-flex;align-items:center;gap:10px;border:none;background:var(--red);color:#fff;border-radius:14px;height:56px;padding:0 32px;font-weight:700;font-size:1.2rem;letter-spacing:.4px;box-shadow:0 10px 24px -10px rgba(226,59,42,.7);}
+  .cta:hover{filter:brightness(1.07);} .cta:active{transform:scale(.98);}
+
+  /* ---------- overview ---------- */
+  .journey{display:grid;grid-template-columns:repeat(7,1fr);gap:12px;margin-top:40px;position:relative;}
+  .journey::before{content:"";position:absolute;left:4%;right:4%;top:34px;height:4px;background:linear-gradient(90deg,#8A93A6,#3E78C2,#2C8FB0,#2E9166,#C99020,#D9682C,#B6452F);border-radius:4px;opacity:.55;}
+  .stage-card{position:relative;background:#fff;border:1px solid var(--line);border-radius:16px;padding:70px 12px 18px;text-align:center;box-shadow:var(--shadow);cursor:pointer;transition:transform .15s;}
+  .stage-card:hover{transform:translateY(-4px);}
+  .stage-card .num{position:absolute;left:50%;top:-4px;transform:translateX(-50%);width:62px;height:62px;border-radius:50%;background:var(--c);color:#fff;border:5px solid var(--paper);
+    display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.5rem;}
+  .stage-card h4{min-height:2.45em;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;font-size:1.22rem;color:var(--navy);line-height:1.1;margin-top:8px;}
+  .stage-card p{font-size:.86rem;color:#5a6479;margin-top:6px;line-height:1.35;}
+  .goalbox{margin-top:26px;display:flex;align-items:center;gap:16px;background:var(--navy);color:#fff;border-radius:16px;padding:16px 22px;max-width:980px;}
+  .goalbox b{font-family:'Barlow Condensed',sans-serif;font-size:1.9rem;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap;}
+  .goalbox span{opacity:.88;font-size:1.02rem;}
+  .fine{font-size:.78rem;color:var(--muted);margin-top:10px;max-width:980px;}
+
+  /* ---------- phase slides ---------- */
+  .phase{display:grid;grid-template-columns:1.1fr .9fr;gap:30px;align-items:start;}
+  .ph-head{display:flex;align-items:center;gap:14px;margin-bottom:6px;}
+  .ph-badge{background:var(--pc);color:#fff;border-radius:12px;padding:8px 16px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;font-size:1.25rem;}
+  .ph-of{color:var(--muted);font-weight:700;letter-spacing:1.4px;text-transform:uppercase;font-size:.78rem;}
+  .phase h2.big{color:var(--navy);}
+  .phase .tag{font-size:clamp(1.05rem,1.7vw,1.4rem);color:#3a4560;margin:10px 0 16px;max-width:52ch;}
+  .what{list-style:none;display:grid;gap:11px;}
+  .what li{display:flex;gap:12px;align-items:flex-start;font-size:clamp(1rem,1.45vw,1.22rem);color:#27324a;}
+  .what li::before{content:"✓";flex:none;width:28px;height:28px;border-radius:50%;background:var(--pc);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.95rem;margin-top:1px;}
+  .crews{margin-top:18px;}
+  .crews .t,.see .t{font-size:.72rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;}
+  .chip{background:#fff;border:1px solid var(--line);border-left:4px solid var(--pc);border-radius:9px;padding:5px 11px;font-weight:600;font-size:.92rem;color:var(--navy);}
+  .media{display:grid;gap:14px;}
+  .img{position:relative;aspect-ratio:16/10;border-radius:20px;overflow:hidden;border:1px solid var(--line);box-shadow:var(--shadow);background:linear-gradient(135deg,color-mix(in srgb,var(--pc) 22%,#fff),color-mix(in srgb,var(--pc) 8%,#fff));}
+  .img img{position:absolute;inset:0;z-index:1;width:100%;height:100%;object-fit:cover;display:block;}
+  .img .ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--pc);}
+  .img .ph b{font-family:'Barlow Condensed',sans-serif;font-size:6.5rem;line-height:1;opacity:.55;}
+  .img .ph span{font-weight:700;letter-spacing:1.4px;text-transform:uppercase;font-size:.76rem;opacity:.7;}
+  .vid{display:flex;align-items:center;gap:14px;border-radius:16px;padding:14px 18px;border:2px dashed #cfd3dd;background:rgba(255,255,255,.6);color:#8a93a6;min-height:78px;width:100%;text-align:left;}
+  .vid .pl{flex:none;width:48px;height:48px;border-radius:50%;background:#e6e8ee;display:flex;align-items:center;justify-content:center;font-size:1.1rem;}
+  .vid b{display:block;font-size:1.05rem;color:#6b7488;} .vid small{font-size:.82rem;}
+  .vid.ready{border:none;background:var(--navy);color:#fff;box-shadow:var(--shadow);}
+  .vid.ready .pl{background:var(--red);color:#fff;} .vid.ready b{color:#fff;} .vid.ready:hover{filter:brightness(1.1);}
+  .need{border-radius:16px;background:#fff;border:1px solid var(--line);border-left:6px solid var(--pc);padding:13px 16px;box-shadow:var(--shadow);}
+  .need .t{font-size:.72rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--pc);margin-bottom:3px;}
+  .need p{font-size:1.08rem;font-weight:600;color:var(--navy);}
+  .see{margin-top:14px;} .see p{font-size:1.02rem;color:#3a4560;}
+  .editbox{margin-top:8px;border:1px dashed #b9bfce;border-radius:12px;padding:10px;background:#fff;font-size:.82rem;display:grid;gap:6px;}
+  .editbox input[type=text]{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:8px;font:inherit;}
+  .editbox .r{display:flex;gap:6px;flex-wrap:wrap;} .editbox button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 10px;font-weight:700;}
+
+  /* ---------- your part ---------- */
+  .part{display:grid;gap:10px;margin-top:22px;max-width:1100px;}
+  .part .row{display:grid;grid-template-columns:150px 1fr;align-items:center;gap:16px;background:#fff;border:1px solid var(--line);border-left:8px solid var(--c);border-radius:14px;padding:11px 16px;box-shadow:var(--shadow);}
+  .part .row b{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.6px;font-size:1.15rem;color:var(--c);}
+  .part .row span{font-size:1.1rem;color:#27324a;font-weight:500;}
+  .note-soft{margin-top:16px;font-weight:700;color:var(--navy);font-size:1.15rem;}
+
+  /* ---------- questions ---------- */
+  .contact{display:grid;grid-template-columns:1fr 1fr;gap:34px;align-items:center;}
+  .qmark{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:clamp(5rem,15vw,12rem);line-height:.8;color:var(--red);}
+
+  /* ---------- sign-off ---------- */
+  .sign{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start;}
+  .ack{font-size:1.02rem;color:#27324a;margin:12px 0 14px;}
+  .rev{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .rv{display:flex;align-items:center;gap:10px;background:#fff;border:2px solid var(--line);border-radius:12px;padding:9px 12px;font-weight:600;color:var(--navy);text-align:left;font-size:.98rem;transition:border-color .15s,background .15s;}
+  .rv i{flex:none;width:26px;height:26px;border-radius:7px;border:2px solid #c3c8d4;background:#fff;display:flex;align-items:center;justify-content:center;color:#fff;font-style:normal;font-weight:800;}
+  .rv.on{border-color:var(--c);background:color-mix(in srgb,var(--c) 9%,#fff);} .rv.on i{background:var(--c);border-color:var(--c);}
+  .markall{margin-top:8px;border:none;background:none;color:var(--red-dark);font-weight:700;text-decoration:underline;font-size:.92rem;}
+  .sigcard{padding:16px;}
+  .sigcard .fld{margin-bottom:10px;}
+  .pad{position:relative;border:2px dashed #b9bfce;border-radius:14px;background:#fff;height:150px;touch-action:none;}
+  .pad canvas{width:100%;height:100%;display:block;border-radius:12px;}
+  .pad .hint{position:absolute;left:14px;bottom:8px;color:#b3b8c4;font-weight:600;font-size:.86rem;pointer-events:none;}
+  .pad .x{position:absolute;left:14px;bottom:30px;right:14px;border-bottom:1px solid #d6dae3;pointer-events:none;}
+  .row2{display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap;}
+  .linkbtn{border:none;background:none;color:var(--navy);font-weight:700;text-decoration:underline;font-size:.9rem;}
+  .qa{display:flex;gap:10px;align-items:center;margin:10px 0;font-weight:600;color:var(--navy);}
+  .qa input{width:22px;height:22px;accent-color:var(--green);}
+  .finish{width:100%;margin-top:12px;border:none;background:var(--green);color:#fff;border-radius:14px;height:56px;font-weight:700;font-size:1.15rem;letter-spacing:.3px;}
+  .finish[disabled]{background:#c9ceda;cursor:not-allowed;}
+  .missing{font-size:.86rem;color:var(--red-dark);font-weight:600;margin-top:8px;min-height:1.2em;}
+  .thanks{text-align:center;max-width:760px;margin:0 auto;}
+  .thanks .big-check{width:110px;height:110px;border-radius:50%;background:var(--green);color:#fff;font-size:3.6rem;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;box-shadow:0 14px 30px -12px rgba(46,145,102,.7);}
+  .thanks .btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:22px;}
+  .btn{border:1px solid var(--line);background:#fff;color:var(--navy);border-radius:12px;height:50px;padding:0 22px;font-weight:700;font-size:1rem;}
+  .btn.pri{background:var(--navy);border-color:var(--navy);color:#fff;}
+  .cloudnote{margin-top:14px;font-size:.9rem;font-weight:600;color:var(--muted);}
+
+  /* ---------- modal ---------- */
+  .ovl{position:fixed;inset:0;background:rgba(14,27,54,.82);display:none;align-items:center;justify-content:center;padding:20px;z-index:50;}
+  .ovl.show{display:flex;}
+  .vbox{width:min(1100px,100%);aspect-ratio:16/9;background:#000;border-radius:16px;overflow:hidden;position:relative;box-shadow:0 30px 80px rgba(0,0,0,.6);}
+  .vbox iframe,.vbox video{width:100%;height:100%;border:0;}
+  .vclose{position:absolute;right:-6px;top:-50px;border:none;background:#fff;border-radius:99px;height:38px;padding:0 16px;font-weight:700;}
+  .toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%) translateY(16px);background:var(--navy);color:#fff;padding:10px 18px;border-radius:99px;font-weight:600;font-size:.9rem;opacity:0;transition:all .25s;z-index:60;pointer-events:none;}
+  .toast.show{opacity:1;transform:translateX(-50%);}
+
+  /* ---------- responsive ---------- */
+  @media(max-width:1100px){
+    .journey{grid-template-columns:repeat(4,1fr);row-gap:44px;} .journey::before{display:none;}
+    .goalbox{flex-wrap:wrap;}
+  }
+  @media(max-width:900px){
+    body{overflow:auto;}
+    .welcome,.phase,.contact,.sign{grid-template-columns:minmax(0,1fr);gap:20px;}
+    .phase>div,.media{display:contents;} .pa{order:1;} .media .img{order:2;} .pb{order:3;} .media .vid{order:4;} .media .need{order:5;} .media .see{order:6;} .media .editbox{order:7;}
+    .phase{display:flex;flex-direction:column;align-items:stretch;gap:16px;} .media .img{width:100%;}
+    .welcome>*,.phase>*,.contact>*,.sign>*,.fields>*,.fields>div>*{min-width:0;}
+    .fld input,.fld textarea{width:100%;min-width:0;font-size:1.1rem;}
+    h2.big{font-size:clamp(1.9rem,9vw,3rem);} .welcome h2.big{font-size:clamp(2.2rem,11vw,3.4rem);}
+    #progName{display:none;} .prog .lbl{justify-content:flex-end;} .prog .lbl span{white-space:nowrap;}
+    .journey{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .slide{padding:18px 16px 16px;} .wrap{justify-content:flex-start;}
+    header.bar .in{flex-wrap:wrap;gap:8px;} .track{order:5;width:100%;justify-content:space-between;margin:0;} .dot{min-width:0;padding:0 9px;flex:1;}
+    header.bar h1{font-size:1.15rem;} header.bar img{height:34px;}
+    .rev{grid-template-columns:1fr;}
+    .part .row{grid-template-columns:1fr;gap:4px;}
+    .img .ph b{font-size:4rem;} .nbtn{padding:0 16px;height:46px;} .nbtn.next{min-width:110px;}
+    .vclose{right:0;}
+  }
+  @media(max-width:560px){ .journey{grid-template-columns:repeat(2,1fr);} .hbtn.hide-sm{display:none;} }
+
+  /* ---------- printed record ---------- */
+  #printDoc{display:none;}
+  @media print{
+    body{background:#fff;overflow:visible;} #app,.ovl,.toast{display:none!important;}
+    #printDoc{display:block;font-family:'Barlow',Arial,sans-serif;color:#111;padding:6mm 4mm;}
+    #printDoc .ph{display:flex;align-items:center;gap:14px;border-bottom:4px solid #E23B2A;padding-bottom:10px;margin-bottom:16px;}
+    #printDoc .ph img{height:54px;} #printDoc h1{font-family:'Barlow Condensed',Arial,sans-serif;font-size:24pt;color:#16294D;text-transform:uppercase;letter-spacing:.5px;}
+    #printDoc table{width:100%;border-collapse:collapse;margin:8px 0 14px;font-size:11pt;} #printDoc td{padding:5px 8px;border-bottom:1px solid #ddd;vertical-align:top;} #printDoc td:first-child{width:34%;color:#555;font-weight:700;}
+    #printDoc .ck{display:grid;grid-template-columns:1fr 1fr;gap:4px 18px;font-size:11pt;margin:6px 0 14px;} #printDoc .sigs{display:flex;gap:30px;margin-top:14px;} #printDoc .sigs div{flex:1;}
+    #printDoc .sigs img{height:80px;border-bottom:1px solid #333;width:100%;object-fit:contain;} #printDoc .small{font-size:9pt;color:#555;margin-top:12px;}
+    @page{size:letter;margin:12mm;}
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header class="bar"><div class="in">
+    <img src="south-texas-builders-logo.png" alt="South Texas Builders" />
+    <h1 id="hTitle">Your Build Journey<small id="hSub">Pre-Construction Meeting</small></h1>
+    <nav class="track" id="track" aria-label="Phases"></nav>
+    <button class="hbtn" id="langBtn" title="Language / Idioma">EN | ES</button>
+    <button class="hbtn hide-sm" id="fsBtn" title="Full screen (F)">⛶</button>
+  </div></header>
+
+  <main id="stage"></main>
+
+  <footer class="nav"><div class="in">
+    <button class="nbtn" id="prevBtn">‹ <span id="prevLbl">Back</span></button>
+    <div class="prog"><div class="bar2"><div class="fill" id="fill"></div></div>
+      <div class="lbl"><span id="progName"></span><span id="progNum"></span></div></div>
+    <button class="nbtn next" id="nextBtn"><span id="nextLbl">Next</span> ›</button>
+  </div></footer>
+</div>
+
+<div class="ovl" id="vOvl"><div class="vbox" id="vBox"><button class="vclose" id="vClose">✕ Close</button></div></div>
+<div class="toast" id="toast"></div>
+<div id="printDoc"></div>
+<input type="file" id="imgIn" accept="image/*" style="display:none" />
+
+<script>
+/* =====================================================================
+   MEDIA — add pictures and videos here (or use ?edit=1 on the page for this device only).
+   image: file in the media/ folder (tries .jpg, .png, .webp)   video: a Loom / YouTube / Vimeo link or an .mp4 link
+   ===================================================================== */
+var MEDIA = {
+  welcome:{ image:'media/welcome' },
+  pre:{ image:'media/pre', video:'' },
+  p1: { image:'media/p1',  video:'' },
+  p2: { image:'media/p2',  video:'' },
+  p3: { image:'media/p3',  video:'' },
+  p4: { image:'media/p4',  video:'' },
+  p5: { image:'media/p5',  video:'' },
+  p6: { image:'media/p6',  video:'' }
+};
+
+/* Cloud copy of the signed acknowledgments (same project as the scheduling app; its own row). */
+var SUPABASE_URL='https://ttpkyepzzpxctajrhwvx.supabase.co';
+var SUPABASE_KEY='sb_publishable_bnhfaLTxNe2ApJ94myqtIg_uHjo3_B1';
+var TABLE='stb_app_state', REC_KEY='stb_precon_signoffs_v1';
+var LS_KEY='stb_precon_v1', LS_MEDIA='stb_precon_media_v1', LS_RECS='stb_precon_records_v1';
+
+var PCOLOR={pre:'#8A93A6',p1:'#3E78C2',p2:'#2C8FB0',p3:'#2E9166',p4:'#C99020',p5:'#D9682C',p6:'#B6452F'};
+var PHASE_IDS=['pre','p1','p2','p3','p4','p5','p6'];
+var PLABEL={pre:'Pre',p1:'P1',p2:'P2',p3:'P3',p4:'P4',p5:'P5',p6:'P6'};
+
+/* ============================ Words (English / Español) ============================ */
+var UI={
+  en:{
+    title:'Your Build Journey', sub:'Pre-Construction Meeting', back:'Back', next:'Next', begin:'Begin',
+    welcomeA:'Welcome to', welcomeB:'your build', welcomeLead:'Today we will walk through how your home goes from permit to keys, one stage at a time.',
+    fClient:'Client name(s)', fAddr:'Property address', fDate:'Meeting date', fBy:'Presented by', fClientPh:'Type the client’s name', fAddrPh:'Type the property address', fByPh:'Your name',
+    ovEyebrow:'The big picture', ovTitle:'From permit to keys', ovLead:'Seven stages. Each one builds on the one before it. Tap any stage to jump to it.',
+    goalB:'Our goal:', goalT:'about 4–5 months from permit to move-in.', goalFine:'*This is an estimate. Weather, inspections, material availability and how quickly selections are made can change the timeline.',
+    stage:'Stage', phaseWord:'Phase', preWord:'Before we start', whatHappens:'What happens', crewsOn:'Crews on site', youllSee:'What you’ll see', weNeed:'What we’ll need from you',
+    vidReady:'Watch the short video', vidReadySub:'About a minute', vidSoon:'Short video', vidSoonSub:'Coming soon', imgSoon:'Image coming soon',
+    partEyebrow:'Working together', partTitle:'Your part in the process', partLead:'A few decisions along the way keep everything moving.', partNote:'Timely decisions keep your build on schedule.',
+    qTitle:'Questions?', qLead:'We are happy to go over anything again. Here is who to call.', cName:'Your point of contact', cPhone:'Phone', cEmail:'Email',
+    cNamePh:'Name', cPhonePh:'Phone number', cEmailPh:'Email',
+    signEyebrow:'Last step', signTitle:'Acknowledgment', signLead:'Please check each phase you reviewed today, then sign below.',
+    ack:'I attended the pre-construction meeting with South Texas Builders and reviewed each phase of the home-building process shown in this presentation. I understand that timelines are estimates and may change with weather, inspections, material availability and the timing of my selections. This acknowledgment confirms that the presentation was provided; it does not change my construction contract.',
+    reviewed:'Reviewed', markAll:'Mark all as reviewed', qAnswered:'My questions were answered.', printedName:'Printed name', sig1:'Sign here', addSecond:'+ Add a second signer', secondName:'Second signer’s printed name', clear:'Clear',
+    finish:'Sign & finish', needName:'Type the client name', needAll:'Check every phase', needSig:'Please sign', needQ:'Confirm your questions were answered', missingPrefix:'Still needed: ',
+    thanksTitle:'Thank you!', thanksLead:'Your acknowledgment is saved. We are excited to build your home.', printBtn:'Print / save a PDF copy', newBtn:'Start a new meeting',
+    cloudOk:'Saved to South Texas Builders ✓', cloudWait:'Saved on this device. It will upload when the connection is back.', cloudRetry:'Try upload again',
+    meetingOn:'Meeting date', property:'Property', client:'Client', presentedBy:'Presented by', phasesRev:'Phases reviewed', signedAt:'Signed', recTitle:'Pre-Construction Meeting Acknowledgment',
+    welcomeName:'Welcome', overviewName:'The big picture', partName:'Your part', qName:'Questions', signName:'Acknowledgment', fsTip:'Full screen (F)',
+    editSaved:'Saved on this device', editVid:'Video link (Loom, YouTube, Vimeo or .mp4)', editImg:'Choose an image', editRemove:'Remove', editSave:'Save', illus:'Illustration'
+  },
+  es:{
+    title:'Su camino de construcción', sub:'Reunión de preconstrucción', back:'Atrás', next:'Siguiente', begin:'Comenzar',
+    welcomeA:'Bienvenidos a', welcomeB:'su construcción', welcomeLead:'Hoy recorreremos cómo su casa pasa del permiso a las llaves, etapa por etapa.',
+    fClient:'Nombre(s) del cliente', fAddr:'Dirección de la propiedad', fDate:'Fecha de la reunión', fBy:'Presentado por', fClientPh:'Escriba el nombre del cliente', fAddrPh:'Escriba la dirección', fByPh:'Su nombre',
+    ovEyebrow:'La visión general', ovTitle:'Del permiso a las llaves', ovLead:'Siete etapas. Cada una se apoya en la anterior. Toque cualquier etapa para ir a ella.',
+    goalB:'Nuestra meta:', goalT:'unos 4–5 meses del permiso a la mudanza.', goalFine:'*Es un estimado. El clima, las inspecciones, la disponibilidad de materiales y qué tan rápido se hagan las selecciones pueden cambiar el tiempo.',
+    stage:'Etapa', phaseWord:'Fase', preWord:'Antes de empezar', whatHappens:'Qué sucede', crewsOn:'Cuadrillas en la obra', youllSee:'Lo que verá', weNeed:'Lo que necesitamos de usted',
+    vidReady:'Ver el video corto', vidReadySub:'Aproximadamente un minuto', vidSoon:'Video corto', vidSoonSub:'Próximamente', imgSoon:'Imagen próximamente',
+    partEyebrow:'Trabajando juntos', partTitle:'Su parte en el proceso', partLead:'Algunas decisiones a lo largo del camino mantienen todo en marcha.', partNote:'Las decisiones a tiempo mantienen su obra en el calendario.',
+    qTitle:'¿Preguntas?', qLead:'Con gusto repasamos cualquier punto. Esta es la persona a quien llamar.', cName:'Su contacto', cPhone:'Teléfono', cEmail:'Correo',
+    cNamePh:'Nombre', cPhonePh:'Número de teléfono', cEmailPh:'Correo electrónico',
+    signEyebrow:'Último paso', signTitle:'Constancia', signLead:'Marque cada fase que revisó hoy y firme abajo.',
+    ack:'Asistí a la reunión de preconstrucción con South Texas Builders y revisé cada fase del proceso de construcción mostrado en esta presentación. Entiendo que los tiempos son estimados y pueden cambiar por el clima, las inspecciones, la disponibilidad de materiales y el momento de mis selecciones. Esta constancia confirma que se dio la presentación; no modifica mi contrato de construcción.',
+    reviewed:'Revisada', markAll:'Marcar todas como revisadas', qAnswered:'Mis preguntas fueron contestadas.', printedName:'Nombre en letra de molde', sig1:'Firme aquí', addSecond:'+ Agregar un segundo firmante', secondName:'Nombre del segundo firmante', clear:'Borrar',
+    finish:'Firmar y terminar', needName:'Escriba el nombre del cliente', needAll:'Marque todas las fases', needSig:'Falta la firma', needQ:'Confirme que sus preguntas fueron contestadas', missingPrefix:'Falta: ',
+    thanksTitle:'¡Gracias!', thanksLead:'Su constancia quedó guardada. Estamos muy contentos de construir su casa.', printBtn:'Imprimir / guardar copia en PDF', newBtn:'Empezar una reunión nueva',
+    cloudOk:'Guardado en South Texas Builders ✓', cloudWait:'Guardado en este dispositivo. Se enviará cuando regrese la conexión.', cloudRetry:'Reintentar envío',
+    meetingOn:'Fecha de la reunión', property:'Propiedad', client:'Cliente', presentedBy:'Presentado por', phasesRev:'Fases revisadas', signedAt:'Firmado', recTitle:'Constancia de reunión de preconstrucción',
+    welcomeName:'Bienvenida', overviewName:'La visión general', partName:'Su parte', qName:'Preguntas', signName:'Constancia', fsTip:'Pantalla completa (F)',
+    editSaved:'Guardado en este dispositivo', editVid:'Enlace del video (Loom, YouTube, Vimeo o .mp4)', editImg:'Elegir una imagen', editRemove:'Quitar', editSave:'Guardar', illus:'Ilustración'
+  }
+};
+var PH={
+  pre:{ en:{ name:'Getting Ready', short:'Permits, insurance and your site sign', tag:'Before the first shovel, we get the paperwork, protection and jobsite ready.',
+      what:['Building permits are filed and approved','Builder’s risk insurance is put in place to protect your project','A project sign with your address goes up on the lot','A jobsite camera is installed so progress is documented and the site stays secure'],
+      crews:['Permit runner','Utility coordinator','Site setup crew'], see:'A sign and a camera pole on your lot.', need:'Approve your final plans and complete any remaining paperwork.' },
+        es:{ name:'Preparación', short:'Permisos, seguro y el letrero de obra', tag:'Antes de mover la primera pala, preparamos los permisos, la protección y el terreno.',
+      what:['Se tramitan y aprueban los permisos de construcción','Se contrata el seguro de riesgo del constructor para proteger su proyecto','Se coloca en el terreno un letrero con su dirección','Se instala una cámara en la obra para documentar el avance y mantener el sitio seguro'],
+      crews:['Gestor de permisos','Coordinador de servicios (utilities)','Cuadrilla de preparación del sitio'], see:'Un letrero y un poste con cámara en su terreno.', need:'Aprobar sus planos finales y completar cualquier trámite pendiente.' } },
+  p1:{ en:{ name:'Site & Foundation', short:'Ground prep and the concrete slab', tag:'We prepare the ground and pour the slab your whole home sits on.',
+      what:['The site is laid out and staked, and a portable restroom is set up for the crews','Fill dirt is brought in and compacted so the ground is solid','Footings and trenches are dug; plumbing lines go in below the slab','Steel rebar is set, the soil is treated for termites, and a vapor barrier goes down','Electrical lines are placed in the slab where needed','Inspections are passed (including windstorm), then the concrete is poured'],
+      crews:['Surveyor','Excavation','Plumber','Electrician','Termite treatment','Concrete crew','Inspectors'], see:'Dirt work, forms and rebar, then your slab.', need:'Confirm any special shower floor (such as a sunken shower) before the pour.' },
+        es:{ name:'Terreno y cimentación', short:'Preparación del terreno y losa de concreto', tag:'Preparamos el terreno y vaciamos la losa sobre la que descansa toda su casa.',
+      what:['Se traza y marca el terreno, y se coloca un baño portátil para las cuadrillas','Se trae y compacta el relleno para que el suelo quede firme','Se excavan zapatas y zanjas; las tuberías de plomería se instalan bajo la losa','Se coloca la varilla de acero, se trata el suelo contra termitas y se tiende la barrera de vapor','Las líneas eléctricas se colocan en la losa donde se necesite','Se aprueban las inspecciones (incluida la de vientos fuertes) y se vacía el concreto'],
+      crews:['Topógrafo','Excavación','Plomero','Electricista','Tratamiento contra termitas','Cuadrilla de concreto','Inspectores'], see:'Movimiento de tierra, cimbra y varilla, y luego su losa.', need:'Confirmar cualquier piso especial de regadera (como una regadera hundida) antes del vaciado.' } },
+  p2:{ en:{ name:'Framing & Dry-In', short:'Walls, roof, windows and doors', tag:'Your floor plan stands up: walls, roof, windows and doors, and the house is protected from the weather.',
+      what:['The lumber package arrives and the walls are framed room by room','Shower niches are built in and ceiling designs are framed as planned','The roof is framed, sheathed and covered with shingles','Windows and exterior doors are installed and the walls are wrapped','Windstorm hardware is added and inspected so your home is built for Valley weather','Quality checks along the way keep everything straight and square'],
+      crews:['Lumber supplier','Framers','Roofers','Window & door installers','Inspectors'], see:'The shape of your home, its rooms and roofline for the first time.', need:'Confirm your ceiling design (tray, beams, etc.) and shower niches before framing.' },
+        es:{ name:'Estructura y techo cerrado', short:'Paredes, techo, ventanas y puertas', tag:'Su plano cobra forma: paredes, techo, ventanas y puertas, y la casa queda protegida del clima.',
+      what:['Llega el paquete de madera y se arman las paredes cuarto por cuarto','Se construyen los nichos de las regaderas y se enmarcan los diseños de plafón según lo planeado','Se arma la estructura del techo, se cubre con triplay y se colocan las tejas','Se instalan ventanas y puertas exteriores y se envuelven las paredes','Se agrega y se inspecciona el herraje contra vientos fuertes, para que su casa resista el clima del Valle','Revisiones de calidad durante el proceso mantienen todo derecho y a escuadra'],
+      crews:['Proveedor de madera','Carpinteros (framers)','Techadores','Instaladores de ventanas y puertas','Inspectores'], see:'La forma de su casa, sus cuartos y su techo por primera vez.', need:'Confirmar el diseño de su plafón (tray, vigas, etc.) y los nichos de regadera antes de enmarcar.' } },
+  p3:{ en:{ name:'Rough-Ins & Walls', short:'Wiring, plumbing, A/C and drywall', tag:'The systems that make a house work go inside the walls, then the walls close up.',
+      what:['Electrical wiring, plumbing and A/C ductwork are run through the framing (the “rough-in”)','The framing is treated and sealed for energy efficiency','Insulation goes in and is inspected','Sheetrock is delivered and hung','The exterior receives its paint','Your cabinet layout is finalized at the cabinet meeting'],
+      crews:['Electrician','Plumber','A/C crew','Insulation crew','Sheetrock crew','Painters'], see:'Wires and pipes in the walls, then smooth walls going up.', need:'All your selections finalized, plus the cabinet meeting and your garage door choice.' },
+        es:{ name:'Instalaciones y paredes', short:'Cableado, plomería, A/C y tablaroca', tag:'Los sistemas que hacen funcionar una casa van dentro de las paredes y luego las paredes se cierran.',
+      what:['El cableado eléctrico, la plomería y los ductos del aire acondicionado se pasan por la estructura (la “instalación en bruto”)','La estructura se trata y se sella para mayor eficiencia energética','Se coloca y se inspecciona el aislante','Se entrega y se instala el tablaroca','Se pinta el exterior','La distribución de sus gabinetes se define en la reunión de gabinetes'],
+      crews:['Electricista','Plomero','Cuadrilla de A/C','Cuadrilla de aislamiento','Cuadrilla de tablaroca','Pintores'], see:'Cables y tubos dentro de las paredes y luego paredes lisas.', need:'Todas sus selecciones finalizadas, la reunión de gabinetes y la elección de su puerta de cochera.' } },
+  p4:{ en:{ name:'Wall Finishes', short:'Texture, paint and stone', tag:'Walls and ceilings get their smooth, finished look.',
+      what:['Seams are taped and floated for a smooth surface','Texture is applied to walls and ceilings','Stone and rock are installed inside and out where selected','Ceilings are primed and painted','Light and plumbing fixture selections are confirmed with our team'],
+      crews:['Drywall finishers','Texture crew','Stone masons','Painters'], see:'Rooms that finally look like rooms.', need:'Your final light and plumbing fixture selections.' },
+        es:{ name:'Acabado de paredes', short:'Textura, pintura y piedra', tag:'Paredes y plafones reciben su acabado liso y terminado.',
+      what:['Las uniones se enmasillan y se lijan para lograr una superficie lisa','Se aplica textura en paredes y plafones','Se instala piedra en interior y exterior donde fue seleccionada','Los plafones se sellan y se pintan','Las selecciones de lámparas y accesorios de plomería se confirman con nuestro equipo'],
+      crews:['Acabadores de tablaroca','Cuadrilla de textura','Albañiles de piedra','Pintores'], see:'Cuartos que por fin se ven como cuartos.', need:'Sus selecciones finales de lámparas y accesorios de plomería.' } },
+  p5:{ en:{ name:'Interior Finishes', short:'Tile, cabinets and countertops', tag:'This is where your home’s personality shows up.',
+      what:['Tile is delivered and installed on floors and in showers','Glass shower doors are scheduled','Trim, interior doors and shelving go in; cedar beams and mantels are installed where planned','Cabinets are installed','Countertops are purchased, templated and installed','Interior paint goes on, and all hardware is ordered'],
+      crews:['Tile setters','Carpenters','Cabinet installers','Countertop fabricators','Glass vendor','Painters'], see:'Color, tile, cabinets and counters bring the rooms to life.', need:'Your countertop pick, cabinet hardware and tile confirmed, so nothing waits on a decision.' },
+        es:{ name:'Acabados interiores', short:'Azulejo, gabinetes y cubiertos', tag:'Aquí es donde aparece la personalidad de su casa.',
+      what:['Se entrega e instala el azulejo en pisos y regaderas','Se programan las puertas de cristal de las regaderas','Se instalan molduras, puertas interiores y repisas; vigas de cedro y repisa de chimenea donde estén planeadas','Se instalan los gabinetes','Se compran, se miden y se instalan los cubiertos (countertops)','Se pinta el interior y se ordenan todos los herrajes'],
+      crews:['Instaladores de azulejo','Carpinteros','Instaladores de gabinetes','Fabricantes de cubiertos','Proveedor de cristal','Pintores'], see:'Color, azulejo, gabinetes y cubiertos le dan vida a los cuartos.', need:'Su elección de cubierta, los herrajes de gabinetes y el azulejo confirmados, para que nada espere una decisión.' } },
+  p6:{ en:{ name:'Final Details & Handoff', short:'Final touches, inspections and keys', tag:'The final touches, the final inspections, and the keys.',
+      what:['Light fixtures, plumbing fixtures, mirrors and hardware are installed','The A/C compressor and grills go in','A thorough final cleaning','Final inspections are passed, including windstorm','Walk through your home with us and note anything to perfect (the punch list)','We complete the punch list and obtain your certificate of occupancy'],
+      crews:['Electrician','Plumber','A/C crew','Cleaning crew','Inspectors','Our team'], see:'A finished, clean, move-in-ready home.', need:'Join the owner walkthrough and tell us anything you would like perfected.' },
+        es:{ name:'Detalles finales y entrega', short:'Detalles finales, inspecciones y llaves', tag:'Los últimos detalles, las inspecciones finales y las llaves.',
+      what:['Se instalan lámparas, accesorios de plomería, espejos y herrajes','Se instalan el compresor y las rejillas del aire acondicionado','Una limpieza final a fondo','Se aprueban las inspecciones finales, incluida la de vientos fuertes','Recorrido de su casa con nosotros para anotar cualquier detalle por perfeccionar (lista de pendientes)','Completamos la lista de pendientes y obtenemos su certificado de ocupación'],
+      crews:['Electricista','Plomero','Cuadrilla de A/C','Cuadrilla de limpieza','Inspectores','Nuestro equipo'], see:'Una casa terminada, limpia y lista para mudarse.', need:'Acompañarnos en el recorrido y decirnos todo lo que quiera perfeccionar.' } }
+};
+
+/* ============================ State ============================ */
+var S=load();
+function load(){
+  var d={lang:'en',client:'',address:'',date:todayIso(),presenter:'',contact:{name:'',phone:'',email:''},reviewed:{},qa:false,second:false,name1:'',name2:''};
+  try{ var j=JSON.parse(localStorage.getItem(LS_KEY)||'null'); if(j) for(var k in j) d[k]=j[k]; }catch(e){}
+  if(!d.contact) d.contact={name:'',phone:'',email:''};
+  if(!d.reviewed) d.reviewed={};
+  return d;
+}
+function save(){ try{ localStorage.setItem(LS_KEY,JSON.stringify(S)); }catch(e){} }
+function todayIso(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function fmtDate(iso){ try{ var a=iso.split('-'); return new Date(+a[0],+a[1]-1,+a[2]).toLocaleDateString(S.lang==='es'?'es-MX':'en-US',{year:'numeric',month:'long',day:'numeric'}); }catch(e){ return iso; } }
+function T(k){ return (UI[S.lang]||UI.en)[k]; }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function toast(m){ var t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(function(){ t.classList.remove('show'); },2400); }
+var EDIT=/[?&]edit=1/.test(location.search);
+var mediaOv={}; try{ mediaOv=JSON.parse(localStorage.getItem(LS_MEDIA)||'{}')||{}; }catch(e){}
+function saveMedia(){ try{ localStorage.setItem(LS_MEDIA,JSON.stringify(mediaOv)); }catch(e){ toast('Not enough space to keep that image on this device'); } }
+function mediaVideo(id){ return (mediaOv[id]&&mediaOv[id].video)||(MEDIA[id]&&MEDIA[id].video)||''; }
+
+/* ============================ Slides ============================ */
+var SLIDES=[{k:'welcome'},{k:'overview'}].concat(PHASE_IDS.map(function(id){ return {k:'phase',id:id}; })).concat([{k:'part'},{k:'questions'},{k:'sign'}]);
+var cur=0;
+function slideName(s){ if(s.k==='phase') return PH[s.id][S.lang].name; return T({welcome:'welcomeName',overview:'overviewName',part:'partName',questions:'qName',sign:'signName'}[s.k]); }
+
+function imgTag(id,cls){
+  var ov=mediaOv[id]&&mediaOv[id].image;
+  if(ov) return '<img src="'+ov+'" alt="">';
+  var base=(MEDIA[id]&&MEDIA[id].image)||'';
+  if(!base) return '';
+  return '<img data-base="'+esc(base)+'" data-try="0" alt="" onerror="imgFallback(this)" src="'+esc(base)+'.jpg">';
+}
+function imgFallback(el){
+  var exts=['.jpg','.png','.webp'], i=(+el.dataset.try||0)+1;
+  if(i<exts.length){ el.dataset.try=i; el.src=el.dataset.base+exts[i]; } else { el.remove(); }
+}
+window.imgFallback=imgFallback;
+
+function buildSlide(s,idx){
+  var el=document.createElement('section'); el.className='slide'; el.dataset.i=idx;
+  var h='';
+  if(s.k==='welcome'){
+    h='<div class="wrap"><div class="welcome"><div>'+
+        '<div class="eyebrow">South Texas Builders</div>'+
+        '<h2 class="big">'+esc(T('welcomeA'))+'<span>'+esc(T('welcomeB'))+'</span></h2>'+
+        '<p class="lead">'+esc(T('welcomeLead'))+'</p>'+
+        '<div class="fields">'+
+          fld('client',T('fClient'),T('fClientPh'),'text')+fld('address',T('fAddr'),T('fAddrPh'),'text')+
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'+fld('date',T('fDate'),'','date')+fld('presenter',T('fBy'),T('fByPh'),'text')+'</div>'+
+        '</div>'+
+        '<button class="cta" data-go="1">'+esc(T('begin'))+' ›</button></div>'+
+        '<div class="hero-img">'+imgTag('welcome')+'</div></div></div>';
+  } else if(s.k==='overview'){
+    h='<div class="wrap"><div class="eyebrow">'+esc(T('ovEyebrow'))+'</div><h2 class="big">'+esc(T('ovTitle'))+'</h2><p class="lead">'+esc(T('ovLead'))+'</p>'+
+      '<div class="journey">'+PHASE_IDS.map(function(id,i){
+        var p=PH[id][S.lang]; return '<div class="stage-card" style="--c:'+PCOLOR[id]+'" data-go="'+(2+i)+'"><div class="num">'+(i===0?'★':i)+'</div><h4>'+esc(p.name)+'</h4><p>'+esc(p.short)+'</p></div>';
+      }).join('')+'</div>'+
+      '<div class="goalbox"><b>'+esc(T('goalB'))+'</b><span>'+esc(T('goalT'))+'</span></div><div class="fine">'+esc(T('goalFine'))+'</div></div>';
+  } else if(s.k==='phase'){
+    var id=s.id, p=PH[id][S.lang], n=PHASE_IDS.indexOf(id), vid=mediaVideo(id);
+    h='<div class="wrap" style="--pc:'+PCOLOR[id]+'"><div class="phase"><div>'+
+        '<div class="pa"><div class="ph-head"><span class="ph-badge">'+(n===0?esc(T('preWord')):esc(T('phaseWord'))+' '+n)+'</span><span class="ph-of">'+esc(T('stage'))+' '+(n+1)+' / 7</span></div>'+
+        '<h2 class="big">'+esc(p.name)+'</h2><p class="tag">'+esc(p.tag)+'</p></div><div class="pb">'+
+        '<div class="t" style="font-size:.72rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#717A8C;margin-bottom:8px">'+esc(T('whatHappens'))+'</div>'+
+        '<ul class="what">'+p.what.map(function(w){ return '<li><span>'+esc(w)+'</span></li>'; }).join('')+'</ul>'+
+        '<div class="crews"><div class="t">'+esc(T('crewsOn'))+'</div><div class="chips">'+p.crews.map(function(c){ return '<span class="chip">'+esc(c)+'</span>'; }).join('')+'</div></div></div>'+
+      '</div><div class="media">'+
+        '<div class="img"><div class="ph"><b>'+(n===0?'★':n)+'</b><span>'+esc(T('imgSoon'))+'</span></div>'+imgTag(id)+'</div>'+
+        (vid?'<button class="vid ready" data-vid="'+id+'"><span class="pl">▶</span><span><b>'+esc(T('vidReady'))+'</b><small>'+esc(T('vidReadySub'))+'</small></span></button>'
+            :'<div class="vid"><span class="pl">▶</span><span><b>'+esc(T('vidSoon'))+'</b><small>'+esc(T('vidSoonSub'))+'</small></span></div>')+
+        '<div class="need"><div class="t">'+esc(T('weNeed'))+'</div><p>'+esc(p.need)+'</p></div>'+
+        '<div class="see" style="margin-top:0"><div class="t">'+esc(T('youllSee'))+'</div><p>'+esc(p.see)+'</p></div>'+
+        (EDIT?editBox(id):'')+
+      '</div></div></div>';
+  } else if(s.k==='part'){
+    h='<div class="wrap"><div class="eyebrow">'+esc(T('partEyebrow'))+'</div><h2 class="big">'+esc(T('partTitle'))+'</h2><p class="lead">'+esc(T('partLead'))+'</p><div class="part">'+
+      PHASE_IDS.map(function(id,i){ var p=PH[id][S.lang]; return '<div class="row" style="--c:'+PCOLOR[id]+'"><b>'+(i===0?esc(T('preWord')):esc(T('phaseWord'))+' '+i)+'</b><span>'+esc(p.need)+'</span></div>'; }).join('')+
+      '</div><div class="note-soft">'+esc(T('partNote'))+'</div></div>';
+  } else if(s.k==='questions'){
+    h='<div class="wrap"><div class="contact"><div><div class="qmark">?</div><h2 class="big">'+esc(T('qTitle'))+'</h2><p class="lead">'+esc(T('qLead'))+'</p></div>'+
+      '<div class="card" style="padding:22px"><div class="fields" style="margin-top:0;max-width:none">'+fld('c.name',T('cName'),T('cNamePh'),'text')+fld('c.phone',T('cPhone'),T('cPhonePh'),'tel')+fld('c.email',T('cEmail'),T('cEmailPh'),'email')+'</div></div></div></div>';
+  } else if(s.k==='sign'){
+    h='<div class="wrap" id="signWrap"></div>';
+  }
+  el.innerHTML=h; return el;
+}
+function fld(key,label,ph,type){
+  var v=key.indexOf('c.')===0?S.contact[key.slice(2)]:S[key];
+  return '<div class="fld"><label>'+esc(label)+'</label><input type="'+type+'" data-f="'+key+'" value="'+esc(v||'')+'" placeholder="'+esc(ph)+'" autocomplete="off"></div>';
+}
+function editBox(id){
+  return '<div class="editbox"><b>Edit media (this device only)</b><input type="text" data-evid="'+id+'" placeholder="'+esc(T('editVid'))+'" value="'+esc(mediaVideo(id))+'">'+
+    '<div class="r"><button data-esave="'+id+'">'+esc(T('editSave'))+'</button><button data-eimg="'+id+'">'+esc(T('editImg'))+'</button><button data-erm="'+id+'">'+esc(T('editRemove'))+'</button></div></div>';
+}
+
+/* ============================ Render + navigation ============================ */
+var stage=document.getElementById('stage');
+function renderAll(keep){
+  stage.innerHTML='';
+  SLIDES.forEach(function(s,i){ stage.appendChild(buildSlide(s,i)); });
+  renderSign();
+  buildTrack(); applyChrome(); show(cur,true);
+}
+function buildTrack(){
+  var tr=document.getElementById('track'); tr.innerHTML='';
+  PHASE_IDS.forEach(function(id,i){
+    var b=document.createElement('button'); b.className='dot'; b.textContent=PLABEL[id]; b.dataset.id=id; b.title=PH[id][S.lang].name;
+    b.addEventListener('click',function(){ go(2+i); }); tr.appendChild(b);
+  });
+}
+function applyChrome(){
+  document.documentElement.lang=S.lang;
+  document.getElementById('hTitle').firstChild.nodeValue=T('title');
+  document.getElementById('hSub').textContent=T('sub');
+  document.getElementById('prevLbl').textContent=T('back'); document.getElementById('nextLbl').textContent=T('next');
+  document.getElementById('fsBtn').title=T('fsTip');
+  document.getElementById('langBtn').innerHTML=S.lang==='en'?'<b>EN</b> | ES':'EN | <b>ES</b>';
+}
+function show(i,instant){
+  cur=Math.max(0,Math.min(SLIDES.length-1,i));
+  var slides=stage.children, s=SLIDES[cur];
+  for(var k=0;k<slides.length;k++){ slides[k].classList.toggle('active',k===cur); if(k===cur) slides[k].scrollTop=0; }
+  var pid=s.k==='phase'?s.id:null;
+  document.documentElement.style.setProperty('--pc',pid?PCOLOR[pid]:(s.k==='sign'?'#2E9166':'#E23B2A'));
+  Array.prototype.forEach.call(document.querySelectorAll('.dot'),function(d){
+    var di=2+PHASE_IDS.indexOf(d.dataset.id); d.classList.toggle('on',d.dataset.id===pid); d.classList.toggle('seen',di<cur);
+  });
+  document.getElementById('fill').style.width=(100*(cur+1)/SLIDES.length)+'%';
+  document.getElementById('progName').textContent=slideName(s); document.getElementById('progNum').textContent=(cur+1)+' / '+SLIDES.length;
+  document.getElementById('prevBtn').disabled=cur===0; var nb=document.getElementById('nextBtn');
+  nb.style.visibility=cur===SLIDES.length-1?'hidden':'visible';
+  try{ history.replaceState(null,'','#'+(cur+1)); }catch(e){}
+}
+function go(i){ show(i); }
+document.getElementById('prevBtn').addEventListener('click',function(){ go(cur-1); });
+document.getElementById('nextBtn').addEventListener('click',function(){ go(cur+1); });
+document.addEventListener('keydown',function(e){
+  var t=e.target, typing=t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA');
+  if(typing) return;
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){ e.preventDefault(); go(cur+1); }
+  else if(e.key==='ArrowLeft'||e.key==='PageUp'){ e.preventDefault(); go(cur-1); }
+  else if(e.key==='Home'){ go(0); } else if(e.key==='End'){ go(SLIDES.length-1); }
+  else if(e.key==='f'||e.key==='F'){ toggleFs(); } else if(e.key==='l'||e.key==='L'){ toggleLang(); }
+  else if(e.key==='Escape'){ closeVideo(); }
+});
+var tx=null;
+stage.addEventListener('touchstart',function(e){ var t=e.target; if(t.closest('.pad,input,textarea,.editbox')){ tx=null; return; } tx=[e.touches[0].clientX,e.touches[0].clientY]; },{passive:true});
+stage.addEventListener('touchend',function(e){ if(!tx) return; var dx=e.changedTouches[0].clientX-tx[0], dy=e.changedTouches[0].clientY-tx[1]; tx=null;
+  if(Math.abs(dx)>70 && Math.abs(dx)>Math.abs(dy)*1.6){ go(cur+(dx<0?1:-1)); } },{passive:true});
+function toggleFs(){ var d=document, el=d.documentElement; if(!d.fullscreenElement){ (el.requestFullscreen||el.webkitRequestFullscreen||function(){}).call(el); } else { (d.exitFullscreen||d.webkitExitFullscreen||function(){}).call(d); } }
+document.getElementById('fsBtn').addEventListener('click',toggleFs);
+function toggleLang(){ S.lang=S.lang==='en'?'es':'en'; save(); renderAll(); }
+document.getElementById('langBtn').addEventListener('click',toggleLang);
+
+/* inputs, jumps, video, edit */
+stage.addEventListener('input',function(e){
+  var f=e.target.dataset&&e.target.dataset.f; if(!f) return;
+  if(f.indexOf('c.')===0) S.contact[f.slice(2)]=e.target.value; else S[f]=e.target.value;
+  if(f==='client' && !S.name1_touched){ S.name1=e.target.value; }
+  save();
+});
+stage.addEventListener('click',function(e){
+  var g=e.target.closest('[data-go]'); if(g){ go(+g.dataset.go); return; }
+  var v=e.target.closest('[data-vid]'); if(v){ openVideo(mediaVideo(v.dataset.vid)); return; }
+  var sv=e.target.closest('[data-esave]'); if(sv){ var id=sv.dataset.esave, inp=stage.querySelector('[data-evid="'+id+'"]'); mediaOv[id]=mediaOv[id]||{}; mediaOv[id].video=inp.value.trim(); saveMedia(); toast(T('editSaved')); renderAll(); return; }
+  var im=e.target.closest('[data-eimg]'); if(im){ pendingImg=im.dataset.eimg; document.getElementById('imgIn').click(); return; }
+  var rm=e.target.closest('[data-erm]'); if(rm){ delete mediaOv[rm.dataset.erm]; saveMedia(); renderAll(); return; }
+});
+var pendingImg=null;
+document.getElementById('imgIn').addEventListener('change',function(){
+  var f=this.files&&this.files[0], id=pendingImg; this.value=''; if(!f||!id) return;
+  var r=new FileReader(); r.onload=function(){ var img=new Image(); img.onload=function(){
+    var m=1400,w=img.width,h=img.height,k=Math.min(1,m/Math.max(w,h)); var c=document.createElement('canvas'); c.width=Math.round(w*k); c.height=Math.round(h*k);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height); mediaOv[id]=mediaOv[id]||{}; mediaOv[id].image=c.toDataURL('image/jpeg',.82); saveMedia(); toast(T('editSaved')); renderAll(); };
+    img.src=r.result; }; r.readAsDataURL(f);
+});
+function embedUrl(u){
+  u=String(u||'').trim(); var m;
+  if((m=u.match(/loom\.com\/(?:share|embed)\/([A-Za-z0-9]+)/))) return {type:'iframe',src:'https://www.loom.com/embed/'+m[1]};
+  if((m=u.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{6,})/))) return {type:'iframe',src:'https://www.youtube.com/embed/'+m[1]+'?rel=0'};
+  if((m=u.match(/vimeo\.com\/(\d+)/))) return {type:'iframe',src:'https://player.vimeo.com/video/'+m[1]};
+  if(/\.(mp4|webm|mov)(\?|$)/i.test(u)) return {type:'video',src:u};
+  return {type:'iframe',src:u};
+}
+function openVideo(url){
+  var e=embedUrl(url), box=document.getElementById('vBox');
+  Array.prototype.forEach.call(box.querySelectorAll('iframe,video'),function(n){ n.remove(); });
+  var node=document.createElement(e.type==='video'?'video':'iframe'); node.src=e.src;
+  if(e.type==='video'){ node.controls=true; node.autoplay=true; node.playsInline=true; } else { node.allow='autoplay; fullscreen; picture-in-picture'; node.allowFullscreen=true; }
+  box.appendChild(node); document.getElementById('vOvl').classList.add('show');
+}
+function closeVideo(){ var o=document.getElementById('vOvl'); o.classList.remove('show'); Array.prototype.forEach.call(o.querySelectorAll('iframe,video'),function(n){ n.remove(); }); }
+document.getElementById('vClose').addEventListener('click',closeVideo);
+document.getElementById('vOvl').addEventListener('click',function(e){ if(e.target===this) closeVideo(); });
+
+/* ============================ Sign-off ============================ */
+var pads=[null,null], lastRec=null;
+function makePad(canvas,onChange){
+  var ctx=canvas.getContext('2d'), drawing=false, last=null, has=false, ratio=Math.max(1,window.devicePixelRatio||1);
+  function size(){ var r=canvas.getBoundingClientRect(); if(!r.width) return; var img=has?canvas.toDataURL():null; canvas.width=Math.round(r.width*ratio); canvas.height=Math.round(r.height*ratio);
+    ctx.setTransform(ratio,0,0,ratio,0,0); ctx.lineWidth=2.6; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.strokeStyle='#16294D';
+    if(img){ var im=new Image(); im.onload=function(){ ctx.drawImage(im,0,0,r.width,r.height); }; im.src=img; } }
+  function pt(e){ var r=canvas.getBoundingClientRect(); return {x:e.clientX-r.left,y:e.clientY-r.top}; }
+  canvas.addEventListener('pointerdown',function(e){ e.preventDefault(); canvas.setPointerCapture(e.pointerId); drawing=true; last=pt(e); ctx.beginPath(); ctx.arc(last.x,last.y,1.3,0,6.3); ctx.fillStyle='#16294D'; ctx.fill(); has=true; onChange&&onChange(); });
+  canvas.addEventListener('pointermove',function(e){ if(!drawing) return; var p=pt(e); ctx.beginPath(); ctx.moveTo(last.x,last.y); ctx.lineTo(p.x,p.y); ctx.stroke(); last=p; });
+  function end(){ drawing=false; } canvas.addEventListener('pointerup',end); canvas.addEventListener('pointercancel',end);
+  size(); window.addEventListener('resize',size); setTimeout(size,60); setTimeout(size,400);
+  return { has:function(){ return has; }, clear:function(){ var r=canvas.getBoundingClientRect(); ctx.clearRect(0,0,r.width,r.height); has=false; onChange&&onChange(); }, data:function(){ return has?canvas.toDataURL('image/png'):''; }, resize:size };
+}
+function renderSign(){
+  var w=document.getElementById('signWrap'); if(!w) return;
+  if(lastRec){ showThanks(lastRec); return; }
+  var revHtml=PHASE_IDS.map(function(id,i){ var on=!!S.reviewed[id]; var nm=PH[id][S.lang].name;
+    return '<button class="rv'+(on?' on':'')+'" style="--c:'+PCOLOR[id]+'" data-rv="'+id+'"><i>'+(on?'✓':'')+'</i><span>'+(i===0?'':(i)+'. ')+esc(nm)+'</span></button>'; }).join('');
+  w.innerHTML='<div class="sign"><div><div class="eyebrow">'+esc(T('signEyebrow'))+'</div><h2 class="big">'+esc(T('signTitle'))+'</h2><p class="lead" style="margin-top:8px">'+esc(T('signLead'))+'</p>'+
+    '<p class="ack">'+esc(T('ack'))+'</p><div class="rev">'+revHtml+'</div><button class="markall" id="markAll">'+esc(T('markAll'))+'</button></div>'+
+    '<div class="card sigcard"><div class="fld"><label>'+esc(T('printedName'))+'</label><input type="text" id="n1" value="'+esc(S.name1||S.client||'')+'" placeholder="'+esc(T('fClientPh'))+'"></div>'+
+    '<div class="pad"><canvas id="pad0"></canvas><div class="x"></div><div class="hint">'+esc(T('sig1'))+'</div></div>'+
+    '<div class="row2"><button class="linkbtn" id="clr0">'+esc(T('clear'))+'</button><button class="linkbtn" id="add2">'+(S.second?'':esc(T('addSecond')))+'</button></div>'+
+    '<div id="second" style="display:'+(S.second?'block':'none')+';margin-top:10px"><div class="fld"><label>'+esc(T('secondName'))+'</label><input type="text" id="n2" value="'+esc(S.name2||'')+'"></div>'+
+    '<div class="pad"><canvas id="pad1"></canvas><div class="x"></div><div class="hint">'+esc(T('sig1'))+'</div></div><div class="row2"><button class="linkbtn" id="clr1">'+esc(T('clear'))+'</button></div></div>'+
+    '<label class="qa"><input type="checkbox" id="qa"'+(S.qa?' checked':'')+'> '+esc(T('qAnswered'))+'</label>'+
+    '<button class="finish" id="finish" disabled>'+esc(T('finish'))+'</button><div class="missing" id="missing"></div></div></div>';
+  pads[0]=makePad(document.getElementById('pad0'),validate); pads[1]=makePad(document.getElementById('pad1'),validate);
+  document.getElementById('clr0').onclick=function(){ pads[0].clear(); }; document.getElementById('clr1').onclick=function(){ pads[1].clear(); };
+  document.getElementById('add2').onclick=function(){ S.second=true; save(); document.getElementById('second').style.display='block'; this.textContent=''; pads[1].resize(); };
+  document.getElementById('n1').oninput=function(){ S.name1=this.value; save(); validate(); }; document.getElementById('n2').oninput=function(){ S.name2=this.value; save(); };
+  document.getElementById('qa').onchange=function(){ S.qa=this.checked; save(); validate(); };
+  document.getElementById('markAll').onclick=function(){ PHASE_IDS.forEach(function(id){ S.reviewed[id]=true; }); save(); paintRev(); validate(); };
+  Array.prototype.forEach.call(w.querySelectorAll('[data-rv]'),function(b){ b.onclick=function(){ S.reviewed[b.dataset.rv]=!S.reviewed[b.dataset.rv]; save(); paintRev(); validate(); }; });
+  document.getElementById('finish').onclick=finish; validate();
+}
+function paintRev(){ Array.prototype.forEach.call(document.querySelectorAll('[data-rv]'),function(b){ var on=!!S.reviewed[b.dataset.rv]; b.classList.toggle('on',on); b.firstChild.textContent=on?'✓':''; }); }
+function validate(){
+  var miss=[]; var nm=(document.getElementById('n1')||{}).value||'';
+  if(!nm.trim()) miss.push(T('needName'));
+  if(!PHASE_IDS.every(function(id){ return S.reviewed[id]; })) miss.push(T('needAll'));
+  if(!S.qa) miss.push(T('needQ'));
+  if(!pads[0]||!pads[0].has()) miss.push(T('needSig'));
+  var b=document.getElementById('finish'); if(!b) return; b.disabled=miss.length>0;
+  document.getElementById('missing').textContent=miss.length?T('missingPrefix')+miss.join(' · '):'';
+}
+function finish(){
+  var rec={ id:'so_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), at:new Date().toISOString(), lang:S.lang,
+    client:S.client||S.name1||'', address:S.address||'', meetingDate:S.date||todayIso(), presenter:S.presenter||'',
+    name1:(document.getElementById('n1').value||'').trim(), name2:S.second?(S.name2||'').trim():'',
+    phases:PHASE_IDS.filter(function(id){ return S.reviewed[id]; }), questionsAnswered:!!S.qa,
+    sig1:pads[0].data(), sig2:(S.second&&pads[1].has())?pads[1].data():'', contact:S.contact };
+  var list=[]; try{ list=JSON.parse(localStorage.getItem(LS_RECS)||'[]')||[]; }catch(e){} list.push(rec); try{ localStorage.setItem(LS_RECS,JSON.stringify(list)); }catch(e){ toast('Could not keep a copy on this device'); }
+  lastRec=rec; showThanks(rec); uploadRecord(rec);
+}
+function showThanks(rec){
+  var w=document.getElementById('signWrap');
+  w.innerHTML='<div class="thanks"><div class="big-check">✓</div><h2 class="big">'+esc(T('thanksTitle'))+'</h2><p class="lead" style="margin:10px auto 0">'+esc(T('thanksLead'))+'</p>'+
+    '<div class="btns"><button class="btn pri" id="prBtn">🖨 '+esc(T('printBtn'))+'</button><button class="btn" id="newBtn">'+esc(T('newBtn'))+'</button></div><div class="cloudnote" id="cloudNote"></div></div>';
+  document.getElementById('prBtn').onclick=function(){ buildPrint(rec); setTimeout(function(){ window.print(); },60); };
+  document.getElementById('newBtn').onclick=function(){ if(!confirm(S.lang==='es'?'¿Empezar una reunión nueva? Se borrarán los datos de esta pantalla.':'Start a new meeting? This clears what is on screen.')) return;
+    var lang=S.lang; S=load(); S.lang=lang; S.client='';S.address='';S.presenter='';S.date=todayIso();S.reviewed={};S.qa=false;S.second=false;S.name1='';S.name2='';S.contact={name:'',phone:'',email:''}; lastRec=null; save(); renderAll(); go(0); };
+  setCloudNote(rec._sent?'ok':'pending');
+}
+function setCloudNote(state,rec){ var n=document.getElementById('cloudNote'); if(!n) return;
+  if(state==='ok'){ n.textContent=T('cloudOk'); n.style.color='#2E9166'; }
+  else { n.innerHTML=esc(T('cloudWait'))+' <button class="linkbtn" id="retryUp">'+esc(T('cloudRetry'))+'</button>'; n.style.color='#717A8C'; var b=document.getElementById('retryUp'); if(b) b.onclick=function(){ retryPending(); }; } }
+function hdr(extra){ var h={apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY}; for(var k in (extra||{})) h[k]=extra[k]; return h; }
+async function uploadRecord(rec){
+  try{
+    for(var attempt=0;attempt<6;attempt++){
+      var res=await fetch(SUPABASE_URL+'/rest/v1/'+TABLE+'?id=eq.'+encodeURIComponent(REC_KEY)+'&select=data,updated_at',{headers:hdr()});
+      if(!res.ok) throw new Error('read'); var rows=await res.json(), row=rows&&rows[0], cloud={records:[]};
+      if(row){ try{ cloud=JSON.parse(row.data.value)||{records:[]}; }catch(e){} }
+      cloud.records=Array.isArray(cloud.records)?cloud.records:[];
+      if(cloud.records.some(function(r){ return r.id===rec.id; })){ markSent(rec.id); setCloudNote('ok'); return; }
+      cloud.records.push(rec); var val=JSON.stringify(cloud);
+      if(!row){ var ins=await fetch(SUPABASE_URL+'/rest/v1/'+TABLE,{method:'POST',headers:hdr({'Content-Type':'application/json',Prefer:'return=representation'}),body:JSON.stringify({id:REC_KEY,data:{value:val},updated_at:new Date().toISOString()})});
+        if(ins.ok){ markSent(rec.id); setCloudNote('ok'); return; } if(ins.status===409) continue; throw new Error('insert'); }
+      var pr=await fetch(SUPABASE_URL+'/rest/v1/'+TABLE+'?id=eq.'+encodeURIComponent(REC_KEY)+'&updated_at=eq.'+encodeURIComponent(row.updated_at),{method:'PATCH',headers:hdr({'Content-Type':'application/json',Prefer:'return=representation'}),body:JSON.stringify({data:{value:val},updated_at:new Date().toISOString()})});
+      if(!pr.ok) throw new Error('patch'); var out=await pr.json().catch(function(){return[];}); if(out&&out.length){ markSent(rec.id); setCloudNote('ok'); return; }
+    }
+    throw new Error('busy');
+  }catch(e){ setCloudNote('wait'); }
+}
+function markSent(id){ try{ var l=JSON.parse(localStorage.getItem(LS_RECS)||'[]'); l.forEach(function(r){ if(r.id===id) r._sent=true; }); localStorage.setItem(LS_RECS,JSON.stringify(l)); }catch(e){} }
+function retryPending(){ try{ JSON.parse(localStorage.getItem(LS_RECS)||'[]').filter(function(r){ return !r._sent; }).forEach(uploadRecord); }catch(e){} }
+window.addEventListener('online',retryPending); setTimeout(retryPending,2500);
+
+function buildPrint(rec){
+  var L=UI[rec.lang]||UI.en, nm=function(id){ return PH[id][rec.lang].name; };
+  document.getElementById('printDoc').innerHTML=
+    '<div class="ph"><img src="south-texas-builders-logo.png" alt=""><h1>'+esc(L.recTitle)+'</h1></div>'+
+    '<table><tr><td>'+esc(L.client)+'</td><td>'+esc(rec.name1||rec.client)+(rec.name2?' &amp; '+esc(rec.name2):'')+'</td></tr>'+
+    '<tr><td>'+esc(L.property)+'</td><td>'+esc(rec.address)+'</td></tr><tr><td>'+esc(L.meetingOn)+'</td><td>'+esc(fmtDate(rec.meetingDate))+'</td></tr>'+
+    '<tr><td>'+esc(L.presentedBy)+'</td><td>'+esc(rec.presenter)+'</td></tr></table>'+
+    '<div><b>'+esc(L.phasesRev)+'</b></div><div class="ck">'+PHASE_IDS.map(function(id,i){ return '<div>'+(rec.phases.indexOf(id)>=0?'☑':'☐')+' '+(i?i+'. ':'')+esc(nm(id))+'</div>'; }).join('')+'</div>'+
+    '<p>'+esc(L.ack)+'</p><p>'+(rec.questionsAnswered?'☑ ':'☐ ')+esc(L.qAnswered)+'</p>'+
+    '<div class="sigs"><div><img src="'+rec.sig1+'" alt=""><div>'+esc(rec.name1||rec.client)+'</div></div>'+(rec.sig2?'<div><img src="'+rec.sig2+'" alt=""><div>'+esc(rec.name2)+'</div></div>':'')+'</div>'+
+    '<div class="small">'+esc(L.signedAt)+': '+esc(new Date(rec.at).toLocaleString(rec.lang==='es'?'es-MX':'en-US'))+' · South Texas Builders</div>';
+}
+
+/* start */
+(function(){
+  var h=parseInt((location.hash||'').slice(1),10); if(h>=1&&h<=SLIDES.length) cur=h-1;
+  renderAll();
+})();
+</script>
+</body>
+</html>
