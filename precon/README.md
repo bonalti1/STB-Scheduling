@@ -4,7 +4,7 @@ Standalone page. NOT part of the scheduling app: it lives in this folder, and is
 (drag the zip made from this folder's files). The main site zip does not include it.
 
 ## Add / change pictures and videos
-- **Pictures:** put a file in `media/` named `welcome`, `pre`, `p1` … `p6` (`.jpg`, `.png` or `.webp`). It replaces the current one.
+- **Pictures (ultra-realistic close-ups of the craft; no landscape):** put a file in `media/` named `welcome`, `pre`, `p1` … `p6` (`.jpg`, `.png` or `.webp`). It replaces the current one.
 - **Videos:** open `index.html`, find `var MEDIA = {…}` at the top of the script and paste a Loom / YouTube / Vimeo / .mp4 link into the
   `video:''` of that phase. A phase with a link shows a "Watch the short video" button that opens a player; without one it shows "Coming soon".
 - **Quick test on one device:** open the page with `?edit=1` (e.g. `…/index.html?edit=1#4`) to paste a video link or choose an image for a
