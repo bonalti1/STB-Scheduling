@@ -246,6 +246,6 @@ Two connected web apps for South Texas Builders (STB):
 - Standalone page `precon/index.html` ("Your Build Journey"): 12 full-screen slides (welcome with client/address/date, overview, Pre + Phases 1–6, "your part",
   questions/contact, sign-off), STB colors/fonts/logo and the app's phase colors, EN/ES toggle, phone layout, arrow keys/swipe/full screen.
   Deploy it as its OWN Netlify site (zip of the `precon/` files); the main site zip does not include it. See `precon/README.md`.
-- Phase content comes from `PHASE_TASKS` but client-friendly (internal items left out). Images: 8 ultra-realistic AI photos in `precon/media/` (welcome, pre, p1–p6), close-ups of the craft only (no landscape/background), one consistent look —
+- Phase content comes from `PHASE_TASKS` but client-friendly (internal items left out). Pictures: Rolando adds his own (see `precon/media/README.txt`); until then each phase shows a clean colored panel and the welcome slide shows the STB logo. (Ultra-realistic AI close-ups were generated once and are in git history if ever wanted.) Video slots reserved: paste links in `MEDIA` at the top of the script (or `?edit=1` to try on one device).
   replace any by dropping a file with the same name. Video slots reserved: paste links in `MEDIA` at the top of the script (or `?edit=1` to try on one device).
 - Sign-off slide saves a record (names, address, phases reviewed, signature PNG(s)) to cloud row `stb_precon_signoffs_v1` and prints a PDF record. Wording is an acknowledgment, not a contract change (attorney review advised).

@@ -4,7 +4,7 @@ Standalone page. NOT part of the scheduling app: it lives in this folder, and is
 (drag the zip made from this folder's files). The main site zip does not include it.
 
 ## Add / change pictures and videos
-- **Pictures (ultra-realistic close-ups of the craft; no landscape):** put a file in `media/` named `welcome`, `pre`, `p1` … `p6` (`.jpg`, `.png` or `.webp`). It replaces the current one.
+- **Pictures:** put your own photos in `media/` named `welcome`, `pre`, `p1` … `p6` (`.jpg`, `.png` or `.webp`). A slot with no photo shows a clean colored panel (the welcome slide shows the STB logo).
 - **Videos:** open `index.html`, find `var MEDIA = {…}` at the top of the script and paste a Loom / YouTube / Vimeo / .mp4 link into the
   `video:''` of that phase. A phase with a link shows a "Watch the short video" button that opens a player; without one it shows "Coming soon".
 - **Quick test on one device:** open the page with `?edit=1` (e.g. `…/index.html?edit=1#4`) to paste a video link or choose an image for a
@@ -12,7 +12,7 @@ Standalone page. NOT part of the scheduling app: it lives in this folder, and is
 
 ## Words
 All text is in the `UI` and `PH` objects (English + Spanish). Phase content mirrors the scheduling app's PHASE_TASKS but leaves out
-internal items (QC visits, who is responsible, costs, the bank account, etc.).
+internal items (QC visits, who is responsible, costs, the bank account, the 4-5 month goal, etc.).
 
 ## Sign-off
 Last slide: client checks each phase, ticks "my questions were answered", signs on screen (a second signer is optional).

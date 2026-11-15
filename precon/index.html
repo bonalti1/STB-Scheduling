@@ -74,7 +74,9 @@
   /* ---------- welcome ---------- */
   .welcome{display:grid;grid-template-columns:1.05fr .95fr;gap:34px;align-items:center;}
   .hero-img{position:relative;aspect-ratio:16/10;border-radius:22px;overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--line);background:linear-gradient(135deg,#dfe5f1,#f6f1e6);}
-  .hero-img img{width:100%;height:100%;object-fit:cover;display:block;}
+  .hero-img img{position:absolute;inset:0;z-index:1;width:100%;height:100%;object-fit:cover;display:block;}
+  .hero-fb{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--navy),var(--navy-deep));}
+  .hero-fb img{position:static;width:46%;height:auto;max-height:70%;object-fit:contain;background:#fff;border-radius:18px;padding:18px 26px;}
   .welcome h2.big{font-size:clamp(2.6rem,6vw,5.4rem);}
   .welcome h2.big span{color:var(--red);display:block;}
   .fields{display:grid;gap:12px;margin-top:22px;max-width:560px;}
@@ -280,7 +282,7 @@ var UI={
     welcomeA:'Welcome to', welcomeB:'your build', welcomeLead:'Today we will walk through how your home goes from permit to keys, one stage at a time.',
     fClient:'Client name(s)', fAddr:'Property address', fDate:'Meeting date', fBy:'Presented by', fClientPh:'Type the client’s name', fAddrPh:'Type the property address', fByPh:'Your name',
     ovEyebrow:'The big picture', ovTitle:'From permit to keys', ovLead:'Seven stages. Each one builds on the one before it. Tap any stage to jump to it.',
-    goalB:'Our goal:', goalT:'about 4–5 months from permit to move-in.', goalFine:'*This is an estimate. Weather, inspections, material availability and how quickly selections are made can change the timeline.',
+    goalFine:'Timing varies with weather, inspections, material availability and how quickly selections are made.',
     stage:'Stage', phaseWord:'Phase', preWord:'Before we start', whatHappens:'What happens', crewsOn:'Crews on site', youllSee:'What you’ll see', weNeed:'What we’ll need from you',
     vidReady:'Watch the short video', vidReadySub:'About a minute', vidSoon:'Short video', vidSoonSub:'Coming soon', imgSoon:'Photo coming soon',
     partEyebrow:'Working together', partTitle:'Your part in the process', partLead:'A few decisions along the way keep everything moving.', partNote:'Timely decisions keep your build on schedule.',
@@ -301,7 +303,7 @@ var UI={
     welcomeA:'Bienvenidos a', welcomeB:'su construcción', welcomeLead:'Hoy recorreremos cómo su casa pasa del permiso a las llaves, etapa por etapa.',
     fClient:'Nombre(s) del cliente', fAddr:'Dirección de la propiedad', fDate:'Fecha de la reunión', fBy:'Presentado por', fClientPh:'Escriba el nombre del cliente', fAddrPh:'Escriba la dirección', fByPh:'Su nombre',
     ovEyebrow:'La visión general', ovTitle:'Del permiso a las llaves', ovLead:'Siete etapas. Cada una se apoya en la anterior. Toque cualquier etapa para ir a ella.',
-    goalB:'Nuestra meta:', goalT:'unos 4–5 meses del permiso a la mudanza.', goalFine:'*Es un estimado. El clima, las inspecciones, la disponibilidad de materiales y qué tan rápido se hagan las selecciones pueden cambiar el tiempo.',
+    goalFine:'Los tiempos varían según el clima, las inspecciones, la disponibilidad de materiales y qué tan rápido se hagan las selecciones.',
     stage:'Etapa', phaseWord:'Fase', preWord:'Antes de empezar', whatHappens:'Qué sucede', crewsOn:'Cuadrillas en la obra', youllSee:'Lo que verá', weNeed:'Lo que necesitamos de usted',
     vidReady:'Ver el video corto', vidReadySub:'Aproximadamente un minuto', vidSoon:'Video corto', vidSoonSub:'Próximamente', imgSoon:'Foto próximamente',
     partEyebrow:'Trabajando juntos', partTitle:'Su parte en el proceso', partLead:'Algunas decisiones a lo largo del camino mantienen todo en marcha.', partNote:'Las decisiones a tiempo mantienen su obra en el calendario.',
@@ -414,13 +416,13 @@ function buildSlide(s,idx){
           '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'+fld('date',T('fDate'),'','date')+fld('presenter',T('fBy'),T('fByPh'),'text')+'</div>'+
         '</div>'+
         '<button class="cta" data-go="1">'+esc(T('begin'))+' ›</button></div>'+
-        '<div class="hero-img">'+imgTag('welcome')+'</div></div></div>';
+        '<div class="hero-img"><div class="hero-fb"><img src="south-texas-builders-logo.png" alt=""></div>'+imgTag('welcome')+'</div></div></div>';
   } else if(s.k==='overview'){
     h='<div class="wrap"><div class="eyebrow">'+esc(T('ovEyebrow'))+'</div><h2 class="big">'+esc(T('ovTitle'))+'</h2><p class="lead">'+esc(T('ovLead'))+'</p>'+
       '<div class="journey">'+PHASE_IDS.map(function(id,i){
         var p=PH[id][S.lang]; return '<div class="stage-card" style="--c:'+PCOLOR[id]+'" data-go="'+(2+i)+'"><div class="num">'+(i===0?'★':i)+'</div><h4>'+esc(p.name)+'</h4><p>'+esc(p.short)+'</p></div>';
       }).join('')+'</div>'+
-      '<div class="goalbox"><b>'+esc(T('goalB'))+'</b><span>'+esc(T('goalT'))+'</span></div><div class="fine">'+esc(T('goalFine'))+'</div></div>';
+      '<div class="fine" style="margin-top:22px">'+esc(T('goalFine'))+'</div></div>';
   } else if(s.k==='phase'){
     var id=s.id, p=PH[id][S.lang], n=PHASE_IDS.indexOf(id), vid=mediaVideo(id);
     h='<div class="wrap" style="--pc:'+PCOLOR[id]+'"><div class="phase"><div>'+
@@ -430,7 +432,7 @@ function buildSlide(s,idx){
         '<ul class="what">'+p.what.map(function(w){ return '<li><span>'+esc(w)+'</span></li>'; }).join('')+'</ul>'+
         '<div class="crews"><div class="t">'+esc(T('crewsOn'))+'</div><div class="chips">'+p.crews.map(function(c){ return '<span class="chip">'+esc(c)+'</span>'; }).join('')+'</div></div></div>'+
       '</div><div class="media">'+
-        '<div class="img"><div class="ph"><b>'+(n===0?'★':n)+'</b><span>'+esc(T('imgSoon'))+'</span></div>'+imgTag(id)+'</div>'+
+        '<div class="img"><div class="ph"><b>'+(n===0?'★':n)+'</b></div>'+imgTag(id)+'</div>'+
         (vid?'<button class="vid ready" data-vid="'+id+'"><span class="pl">▶</span><span><b>'+esc(T('vidReady'))+'</b><small>'+esc(T('vidReadySub'))+'</small></span></button>'
             :'<div class="vid"><span class="pl">▶</span><span><b>'+esc(T('vidSoon'))+'</b><small>'+esc(T('vidSoonSub'))+'</small></span></div>')+
         '<div class="need"><div class="t">'+esc(T('weNeed'))+'</div><p>'+esc(p.need)+'</p></div>'+
