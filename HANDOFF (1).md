@@ -244,7 +244,7 @@ Two connected web apps for South Texas Builders (STB):
 
 ## Pre-construction presentation (Nov 2026) — `precon/` (separate from the scheduling app)
 - Standalone page `precon/index.html` ("Your Build Journey"): 12 full-screen slides (welcome with client/address/date, overview, Pre + Phases 1–6, "your part",
-  questions/contact, sign-off), STB colors/fonts/logo and the app's phase colors, EN/ES toggle, phone layout, arrow keys/swipe/full screen.
+  questions/contact, sign-off), STB navy + red (no per-phase rainbow; one red accent), Barlow fonts and logo, EN/ES toggle, phone layout, arrow keys/swipe/full screen.
   Deploy it as its OWN Netlify site (zip of the `precon/` files); the main site zip does not include it. See `precon/README.md`.
 - Phase content comes from `PHASE_TASKS` but client-friendly (internal items left out). Pictures: Rolando adds his own (see `precon/media/README.txt`); until then each phase shows a clean colored panel and the welcome slide shows the STB logo. (Ultra-realistic AI close-ups were generated once and are in git history if ever wanted.) Video slots reserved: paste links in `MEDIA` at the top of the script (or `?edit=1` to try on one device).
   replace any by dropping a file with the same name. Video slots reserved: paste links in `MEDIA` at the top of the script (or `?edit=1` to try on one device).
