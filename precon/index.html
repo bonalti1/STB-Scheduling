@@ -277,6 +277,7 @@ var MEDIA = {
 var SUPABASE_URL='https://ttpkyepzzpxctajrhwvx.supabase.co';
 var SUPABASE_KEY='sb_publishable_bnhfaLTxNe2ApJ94myqtIg_uHjo3_B1';
 var TABLE='stb_app_state', REC_KEY='stb_precon_signoffs_v1';
+var PREVIEW=(location.protocol==='file:');
 var LS_KEY='stb_precon_v1', LS_MEDIA='stb_precon_media_v1', LS_RECS='stb_precon_records_v1';
 
 var PCOLOR={pre:'#8A93A6',p1:'#3E78C2',p2:'#2C8FB0',p3:'#2E9166',p4:'#C99020',p5:'#D9682C',p6:'#B6452F'};
@@ -301,7 +302,7 @@ var UI={
     reviewed:'Reviewed', markAll:'Mark all as reviewed', qAnswered:'My questions were answered.', printedName:'Printed name', sig1:'Sign here', addSecond:'+ Add a second signer', secondName:'Second signer’s printed name', clear:'Clear',
     finish:'Sign & finish', needName:'Type the client name', needAll:'Check every phase', needSig:'Please sign', needQ:'Confirm your questions were answered', missingPrefix:'Still needed: ',
     thanksTitle:'Thank you!', thanksLead:'Your acknowledgment is saved. We are excited to build your home.', printBtn:'Print / save a PDF copy', newBtn:'Start a new meeting',
-    cloudOk:'Saved to South Texas Builders ✓', cloudWait:'Saved on this device. It will upload when the connection is back.', cloudRetry:'Try upload again',
+    cloudOk:'Saved to South Texas Builders ✓', cloudPreview:'Preview mode: this test was not sent to the cloud.', cloudWait:'Saved on this device. It will upload when the connection is back.', cloudRetry:'Try upload again',
     meetingOn:'Meeting date', property:'Property', client:'Client', presentedBy:'Presented by', phasesRev:'Phases reviewed', signedAt:'Signed', recTitle:'Pre-Construction Meeting Acknowledgment',
     welcomeName:'Welcome', overviewName:'The big picture', partName:'Your part', qName:'Questions', signName:'Acknowledgment', fsTip:'Full screen (F)',
     editSaved:'Saved on this device', editVid:'Video link (Loom, YouTube, Vimeo or .mp4)', editImg:'Choose an image', editRemove:'Remove', editSave:'Save', illus:'Illustration'
@@ -322,7 +323,7 @@ var UI={
     reviewed:'Revisada', markAll:'Marcar todas como revisadas', qAnswered:'Mis preguntas fueron contestadas.', printedName:'Nombre en letra de molde', sig1:'Firme aquí', addSecond:'+ Agregar un segundo firmante', secondName:'Nombre del segundo firmante', clear:'Borrar',
     finish:'Firmar y terminar', needName:'Escriba el nombre del cliente', needAll:'Marque todas las fases', needSig:'Falta la firma', needQ:'Confirme que sus preguntas fueron contestadas', missingPrefix:'Falta: ',
     thanksTitle:'¡Gracias!', thanksLead:'Su constancia quedó guardada. Estamos muy contentos de construir su casa.', printBtn:'Imprimir / guardar copia en PDF', newBtn:'Empezar una reunión nueva',
-    cloudOk:'Guardado en South Texas Builders ✓', cloudWait:'Guardado en este dispositivo. Se enviará cuando regrese la conexión.', cloudRetry:'Reintentar envío',
+    cloudOk:'Guardado en South Texas Builders ✓', cloudPreview:'Modo de prueba: esto no se envió a la nube.', cloudWait:'Guardado en este dispositivo. Se enviará cuando regrese la conexión.', cloudRetry:'Reintentar envío',
     meetingOn:'Fecha de la reunión', property:'Propiedad', client:'Cliente', presentedBy:'Presentado por', phasesRev:'Fases revisadas', signedAt:'Firmado', recTitle:'Constancia de reunión de preconstrucción',
     welcomeName:'Bienvenida', overviewName:'La visión general', partName:'Su parte', qName:'Preguntas', signName:'Constancia', fsTip:'Pantalla completa (F)',
     editSaved:'Guardado en este dispositivo', editVid:'Enlace del video (Loom, YouTube, Vimeo o .mp4)', editImg:'Elegir una imagen', editRemove:'Quitar', editSave:'Guardar', illus:'Ilustración'
@@ -505,6 +506,11 @@ function show(i,instant){
   document.getElementById('prevBtn').disabled=cur===0; var nb=document.getElementById('nextBtn');
   nb.style.visibility=cur===SLIDES.length-1?'hidden':'visible';
   try{ history.replaceState(null,'','#'+(cur+1)); }catch(e){}
+  if(s.k==='sign' && !lastRec){   /* the printed name follows what was typed on the welcome slide */
+    var n1=document.getElementById('n1');
+    if(n1 && !n1.value.trim()){ n1.value=S.name1||S.client||''; if(n1.value){ S.name1=n1.value; save(); } }
+    validate();
+  }
 }
 function go(i){ show(i); }
 document.getElementById('prevBtn').addEventListener('click',function(){ go(cur-1); });
@@ -634,10 +640,12 @@ function showThanks(rec){
   setCloudNote(rec._sent?'ok':'pending');
 }
 function setCloudNote(state,rec){ var n=document.getElementById('cloudNote'); if(!n) return;
-  if(state==='ok'){ n.textContent=T('cloudOk'); n.style.color='#16294D'; }
+  if(state==='preview'){ n.textContent=T('cloudPreview'); n.style.color='#717A8C'; }
+  else if(state==='ok'){ n.textContent=T('cloudOk'); n.style.color='#16294D'; }
   else { n.innerHTML=esc(T('cloudWait'))+' <button class="linkbtn" id="retryUp">'+esc(T('cloudRetry'))+'</button>'; n.style.color='#717A8C'; var b=document.getElementById('retryUp'); if(b) b.onclick=function(){ retryPending(); }; } }
 function hdr(extra){ var h={apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY}; for(var k in (extra||{})) h[k]=extra[k]; return h; }
 async function uploadRecord(rec){
+  if(PREVIEW){ setCloudNote('preview'); return; }
   try{
     for(var attempt=0;attempt<6;attempt++){
       var res=await fetch(SUPABASE_URL+'/rest/v1/'+TABLE+'?id=eq.'+encodeURIComponent(REC_KEY)+'&select=data,updated_at',{headers:hdr()});
@@ -656,7 +664,7 @@ async function uploadRecord(rec){
 }
 function markSent(id){ try{ var l=JSON.parse(localStorage.getItem(LS_RECS)||'[]'); l.forEach(function(r){ if(r.id===id) r._sent=true; }); localStorage.setItem(LS_RECS,JSON.stringify(l)); }catch(e){} }
 function retryPending(){ try{ JSON.parse(localStorage.getItem(LS_RECS)||'[]').filter(function(r){ return !r._sent; }).forEach(uploadRecord); }catch(e){} }
-window.addEventListener('online',retryPending); setTimeout(retryPending,2500);
+if(!PREVIEW){ window.addEventListener('online',retryPending); setTimeout(retryPending,2500); }
 
 function buildPrint(rec){
   var L=UI[rec.lang]||UI.en, nm=function(id){ return PH[id][rec.lang].name; };
