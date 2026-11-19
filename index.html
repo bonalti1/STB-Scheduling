@@ -184,7 +184,7 @@
   .loan-chip.low{background:#FFF0D5;color:#8a5a00;border:1px solid #E8A21C;}
   .build-timer.tc-clock.ok{--bt-bg:#EEF2F8;--bt-line:#CFD9EC;--bt-ink:#16294D;--bt-fill:#16294D;}
   .tc-clock.need{min-height:0;} .tc-clock .bt-last{margin-top:0;font-size:.64rem;}
-  input.dep-input{font-family:'Barlow',sans-serif;font-size:.72rem;font-weight:700;border:1px solid var(--bt-line,#DDE3EF);border-radius:6px;padding:2px 4px;background:#fff;color:var(--navy);width:100%;box-sizing:border-box;margin-top:2px;}
+  .dep-pick{position:relative;display:inline-flex;} input.dep-input{position:absolute;right:0;top:100%;width:1px;height:1px;opacity:0;pointer-events:none;border:0;padding:0;}
   .tc-took{background:#EEF2F8;border-color:#CFD9EC;color:var(--navy);font-weight:700;}
   .loan-wrap{display:inline-flex;align-items:center;gap:7px;margin-left:auto;}
   .loan-lbl{font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;white-space:nowrap;}
@@ -548,16 +548,12 @@
   }
   .complete-proj:active{filter:brightness(.92);}
   /* TC board: same cards, minus what only matters once a house is being built */
-  body.tc-area #startMeeting, body.tc-area #openExport, body.tc-area #openAI, body.tc-area #areaToggle,
+  body.tc-area #areaToggle,
   body.tc-area #openSubs, body.tc-area #openLessons, body.tc-area #openHistory,
   body.tc-area #openChangeOrders, body.tc-area #openOrders,
-  body.tc-area .ops-layout, body.tc-area .delay-panel,
-  body.tc-area .budget-open-btn, body.tc-area .delay-open-btn, body.tc-area .nowork-badge,
+  body.tc-area .budget-open-btn, body.tc-area .nowork-badge,
   body.role-tc #openTC{display:none!important;}
-  body.tc-area .board-layout{display:block;}
   body.tc-area .foot-note{display:none;}
-  body.tc-area .daytask-panel{display:none;}
-  body.tc-area .card-row{grid-template-columns:minmax(0,1fr);}
   body.tc-area .card.no-work-today{background:var(--card);border-color:var(--line);}
   body.tc-area .card.no-work-today .card-top::before{background:var(--phc);}
   .item[data-phase="Transaction Coordination"] .sub-select{display:none;}
@@ -3293,19 +3289,17 @@ function projectCard(p){
     '<div class="barwrap"><div class="bar" style="width:'+prog.pct+'%"></div></div>'+
     '<span class="overall-label">'+prog.pct+'%</span>'+
     '<button class="budget-open-btn" data-act="openbudget">'+budgetLabel+'</button>'+
-    '<button class="delay-open-btn" data-act="opendelays">Delays '+dst.open+'</button>'+
-    (BOARD_AREA==='tc'
-      ? '<span class="loan-wrap"><span class="loan-lbl">Loan status</span><select class="loan-select '+(p.loanStatus||'')+'" data-act="loanstatus" title="Loan status for this file">'+
-          '<option value=""'+(!p.loanStatus?' selected':'')+'>On track</option>'+
-          '<option value="bottleneck"'+(p.loanStatus==='bottleneck'?' selected':'')+'>Potential bottleneck</option>'+
-          '<option value="problem"'+(p.loanStatus==='problem'?' selected':'')+'>Potential problem</option></select>'+
-          (p.loanStatus?'<span class="loan-chip age '+p.loanStatus+'" title="Days since this status was set">'+esc(loanAgeText(p))+'</span>':'')+'</span>'
-      : '');
+    '<button class="delay-open-btn" data-act="opendelays">Delays '+dst.open+'</button>';
   card.appendChild(dash);
   if(BOARD_AREA==='tc'){            /* second row: loan stage, a short reason, and the low-progress hint */
     var lr=document.createElement('div'); lr.className='card-meta tc-loan-row';
     var low=lowProgress(p);
-    lr.innerHTML='<span class="loan-lbl">Loan stage</span><select class="stage-select" data-act="loanstage"><option value="">Not set</option>'+
+    lr.innerHTML='<span class="loan-lbl">Loan status</span><select class="loan-select '+(p.loanStatus||'')+'" data-act="loanstatus" title="Loan status for this file">'+
+      '<option value=""'+(!p.loanStatus?' selected':'')+'>On track</option>'+
+      '<option value="bottleneck"'+(p.loanStatus==='bottleneck'?' selected':'')+'>Potential bottleneck</option>'+
+      '<option value="problem"'+(p.loanStatus==='problem'?' selected':'')+'>Potential problem</option></select>'+
+      (p.loanStatus?'<span class="loan-chip age '+p.loanStatus+'" title="Days since this status was set">'+esc(loanAgeText(p))+'</span>':'')+
+      '<span class="loan-lbl">Loan stage</span><select class="stage-select" data-act="loanstage"><option value="">Not set</option>'+
       LOAN_STAGES.map(function(x){ return '<option value="'+x[0]+'"'+(p.loanStage===x[0]?' selected':'')+'>'+esc(x[1])+'</option>'; }).join('')+'</select>'+
       '<input class="loan-reason" data-act="loanreason" type="text" maxlength="160" placeholder="Why? (short note, e.g. waiting on appraisal)" value="'+attr(p.loanReason||'')+'">'+
       (low?'<span class="loan-chip low" title="Suggestion only: few documents collected for how long this file has been in TC">\u26A0 Low progress: '+low.done+' of '+low.total+' docs after '+low.days+' days</span>':'');
@@ -3519,6 +3513,11 @@ document.getElementById('projectList').addEventListener('click',function(e){
   if(act==='choosedoc'){
     var di=card.querySelector('.doc-file[data-kind="'+t.dataset.kind+'"]');
     if(di) di.click();
+    return;
+  }
+  if(act==='depositpick'){
+    var di=card.querySelector('input.dep-input');
+    if(di){ try{ di.showPicker(); }catch(e){ di.focus(); di.click(); } }
     return;
   }
   if(act==='setbuildstart'){
@@ -4085,15 +4084,17 @@ function depositInfo(p){
 }
 function tcTimerHtml(p){
   var d=depositInfo(p), today=isoToday();
+  var pick='<span class="dep-pick"><button class="bt-edit" data-act="depositpick" type="button" title="Set the deposit date">\u270E</button>'+
+    '<input type="date" class="dep-input" data-act="depositdate" tabindex="-1" aria-hidden="true" value="'+attr(d?d.start:'')+'" max="'+today+'"></span>';
   if(!d){
-    return '<div class="build-timer need tc-clock"><span class="bt-label">\u23F1 File clock</span><span class="bt-line">Deposit date?</span>'+
-      '<input type="date" class="dep-input" data-act="depositdate" max="'+today+'" title="Day the deposit was given"></div>';
+    return '<div class="build-timer need tc-clock"><span class="bt-label">\u23F1 File clock</span><button class="bt-set" data-act="depositpick" type="button">Set deposit date</button>'+
+      '<input type="date" class="dep-input" data-act="depositdate" tabindex="-1" aria-hidden="true" max="'+today+'"></div>';
   }
   return '<div class="build-timer '+(d.frozen?'done':'ok')+' tc-clock" title="Deposit '+attr(buildShort(d.start))+(d.frozen?' \u2192 sent to construction '+attr(buildShort(d.end)):' \u2192 today')+' ('+d.days+' days)">'+
-    '<span class="bt-label">\u23F1 File clock</span>'+
-    '<span class="bt-main"><span class="bt-num">'+spanMD(d.start,d.end)+'</span> <span class="bt-unit">'+(d.frozen?'on this file':'in TC')+'</span></span>'+
-    '<span class="bt-line">deposit <b>'+buildShort(d.start)+'</b></span>'+
-    '<span class="bt-line bt-last">'+(d.frozen?'sent '+buildShort(d.end):'<input type="date" class="dep-input" data-act="depositdate" value="'+attr(d.start)+'" max="'+today+'" title="Change the deposit date">')+'</span></div>';
+    '<span class="bt-label">\u23F1 File clock'+(d.frozen?'':pick)+'</span>'+
+    '<span class="bt-main"><span class="bt-num">'+spanMD(d.start,d.end)+'</span> <span class="bt-unit">'+(d.frozen?'on this file':'in')+'</span></span>'+
+    '<span class="bt-line bt-start">deposit '+buildShort(d.start)+'</span>'+
+    '<span class="bt-line bt-last">'+(d.frozen?'sent '+buildShort(d.end):'<b>'+d.days+(d.days===1?' day':' days')+' on this file</b>')+'</span></div>';
 }
 function tcDocCounts(p){ var t=visiblePhaseTasks(p,TC_PHASE), d=0; t.forEach(function(x){ if(phaseItemState(p,TC_PHASE,x).done) d++; }); return {done:d,total:t.length}; }
 function tcDaysIn(p){
@@ -4932,6 +4933,9 @@ document.getElementById('tcSendGo').addEventListener('click',async function(){
     saveCurrentPhaseState(p); saveCurrentPhaseWork(p);
     if(p.depositDay && !p.tcEndDay){ p.tcEndDay=isoToday(); }      // freeze the file clock
     var proj=JSON.parse(JSON.stringify(p));
+    proj.tcArchive={loanStatus:p.loanStatus||'',loanStage:p.loanStage||'',loanReason:p.loanReason||'',tcChecklist:(p.phaseTaskState&&p.phaseTaskState[TC_PHASE])||{},sentAt:new Date().toISOString()};
+    ['loanStatus','loanStatusAt','loanStage','loanStageAt','loanReason','loanReasonAt'].forEach(function(k){ delete proj[k]; });
+    [proj.phaseTaskState,proj.customPhaseTasks,proj.deletedPhaseTasks,proj.phaseWorkState].forEach(function(o){ if(o && typeof o==='object') delete o[TC_PHASE]; });
     proj.phase='Pre Phase'; proj.phaseTasks=[]; proj.tcSentAt=new Date().toISOString(); proj.tcSentBy=currentUserName()||''; proj.tcArea=tcSendArea;
     await tcPushToBoard(proj,tcSendArea);
     logDailyActivity(p,{type:'project',toStatus:'completed',note:'Sent to '+(tcSendArea==='alice'?'Alice':'Main / Valley')+' for construction'});
