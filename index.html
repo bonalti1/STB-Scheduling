@@ -1205,6 +1205,17 @@
     </div>
   </div>
 </div>
+<div class="ovl" id="tcPwOvl" style="align-items:center;padding:16px;">
+  <div class="sheet" style="max-width:420px;border-radius:18px;">
+    <div class="sheet-head"><h2>Transaction Coordination</h2><button class="close" data-close>✕</button></div>
+    <div class="sheet-body">
+      <div class="empty" style="text-align:left;"><div class="big">Password needed</div>This area is only for the TC team.</div>
+      <input id="tcPwInput" type="password" autocomplete="off" placeholder="Password" style="width:100%;margin-top:12px;padding:13px 14px;border:1px solid var(--line);border-radius:10px;font:inherit;font-size:1rem;">
+      <div id="tcPwErr" style="color:#BE2C1D;font-weight:600;font-size:.88rem;margin-top:8px;display:none;">Wrong password.</div>
+      <button class="tbtn primary" id="tcPwGo" style="width:100%;margin-top:12px;">Open TC</button>
+    </div>
+  </div>
+</div>
 <div class="ovl" id="tcSumOvl">
   <div class="sheet">
     <div class="sheet-head"><h2>TC Summary</h2><button class="close" data-close>✕</button></div>
@@ -1388,7 +1399,12 @@ var BOARD_AREA = (function(){
     var su=JSON.parse(sessionStorage.getItem('stb_auth_user_v1')||'null');
     if(su && su.role==='tc') return 'tc';
     var a=localStorage.getItem('stb_board_area_v1');
-    return (a==='alice'||a==='tc') ? a : 'main';
+    if(a==='tc'){
+      if(sessionStorage.getItem('stb_tc_unlock_v1')==='1') return 'tc';      /* the TC password was entered in this session */
+      var prev=localStorage.getItem('stb_board_area_prev_v1');               /* otherwise fall back to where they came from */
+      return prev==='alice' ? 'alice' : 'main';
+    }
+    return a==='alice' ? 'alice' : 'main';
   }catch(e){ return 'main'; }
 })();
 var AREA_SUFFIX = BOARD_AREA==='alice' ? '_alice' : (BOARD_AREA==='tc' ? '_tc' : '');
@@ -4869,8 +4885,9 @@ document.querySelectorAll('[data-aiq]').forEach(function(btn){
   }
   tcBtn.addEventListener('click',function(){
     if(BOARD_AREA!=='tc'){
-      if(!confirm('Open TRANSACTION COORDINATION (houses before Pre Phase)?')) return;
-      try{ localStorage.setItem('stb_board_area_prev_v1',BOARD_AREA); localStorage.setItem('stb_board_area_v1','tc'); }catch(e){}
+      var pw=document.getElementById('tcPwInput'); pw.value=''; document.getElementById('tcPwErr').style.display='none';
+      document.getElementById('tcPwOvl').classList.add('show'); setTimeout(function(){ pw.focus(); },60);
+      return;
     } else {
       var back='main'; try{ back=localStorage.getItem('stb_board_area_prev_v1')||'main'; }catch(e){}
       if(back==='tc') back='main';
@@ -4878,6 +4895,19 @@ document.querySelectorAll('[data-aiq]').forEach(function(btn){
     }
     location.reload();
   });
+})();
+
+/* TC is password protected: anyone can press the TC button, only people who know the password get in. */
+(function(){
+  var TC_PASSWORD='Nadia';
+  function tryTc(){
+    var v=String(document.getElementById('tcPwInput').value||'').trim();
+    if(v.toLowerCase()!==TC_PASSWORD.toLowerCase()){ var e=document.getElementById('tcPwErr'); e.style.display='block'; document.getElementById('tcPwInput').select(); return; }
+    try{ sessionStorage.setItem('stb_tc_unlock_v1','1'); localStorage.setItem('stb_board_area_prev_v1',BOARD_AREA); localStorage.setItem('stb_board_area_v1','tc'); }catch(e){}
+    location.reload();
+  }
+  document.getElementById('tcPwGo').addEventListener('click',tryTc);
+  document.getElementById('tcPwInput').addEventListener('keydown',function(e){ if(e.key==='Enter') tryTc(); });
 })();
 
 /* ============ TC: Ready for Construction ============
