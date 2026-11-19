@@ -159,6 +159,13 @@
   .stat .num{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.7rem;line-height:1;color:var(--navy);}
   .stat.open .num{color:var(--red);}
   .stat.done .num{color:var(--green);}
+  body.tc-area .stat{cursor:pointer;} body.tc-area .stat.on{box-shadow:0 0 0 2px var(--navy),var(--shadow);}
+  body.tc-area .stat.done::before{background:var(--amber);} body.tc-area .stat.done .num{color:#B07400;}
+  .loan-wrap{display:inline-flex;align-items:center;gap:7px;margin-left:auto;}
+  .loan-lbl{font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;white-space:nowrap;}
+  select.loan-select{font-family:'Barlow',sans-serif;font-weight:700;font-size:.82rem;border:1px solid var(--line);border-radius:9px;padding:7px 10px;background:#fff;color:var(--navy);cursor:pointer;}
+  select.loan-select.bottleneck{background:#FFF0D5;border-color:#E8A21C;color:#8a5a00;}
+  select.loan-select.problem{background:var(--red);border-color:var(--red);color:#fff;}
   .stat .lbl{font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-top:4px;}
 
   /* ---------- filter row ---------- */
@@ -519,10 +526,11 @@
   body.tc-area #startMeeting, body.tc-area #openExport, body.tc-area #openAI, body.tc-area #areaToggle,
   body.tc-area #openSubs, body.tc-area #openLessons, body.tc-area #openHistory,
   body.tc-area #openChangeOrders, body.tc-area #openOrders,
-  body.tc-area .stats, body.tc-area .ops-layout, body.tc-area .delay-panel,
+  body.tc-area .ops-layout, body.tc-area .delay-panel,
   body.tc-area .budget-open-btn, body.tc-area .delay-open-btn, body.tc-area .nowork-badge,
   body.role-tc #openTC{display:none!important;}
   body.tc-area .board-layout{display:block;}
+  body.tc-area .foot-note{display:none;}
   body.tc-area .daytask-panel{display:none;}
   body.tc-area .card-row{grid-template-columns:minmax(0,1fr);}
   body.tc-area .card.no-work-today{background:var(--card);border-color:var(--line);}
@@ -917,9 +925,9 @@
   </div>
 
   <div class="stats">
-    <div class="stat"><div class="num" id="stProjects">0</div><div class="lbl">Active Projects</div></div>
-    <div class="stat open"><div class="num" id="stOpen">0</div><div class="lbl">Open Delays</div></div>
-    <div class="stat done"><div class="num" id="stDone">0</div><div class="lbl">Marked Today</div></div>
+    <div class="stat" id="stat1" data-tcf=""><div class="num" id="stProjects">0</div><div class="lbl" id="stProjectsLbl">Active Projects</div></div>
+    <div class="stat open" id="stat2" data-tcf="problem"><div class="num" id="stOpen">0</div><div class="lbl" id="stOpenLbl">Open Delays</div></div>
+    <div class="stat done" id="stat3" data-tcf="bottleneck"><div class="num" id="stDone">0</div><div class="lbl" id="stDoneLbl">Marked Today</div></div>
   </div>
 
   <div class="ops-layout">
@@ -1792,6 +1800,7 @@ function stbMergeProject(mineP,baseP){
     if(out.length||mineP.looms||baseP.looms){ mineP.looms=out.sort(function(a,b){ return String(b.at||'').localeCompare(String(a.at||'')); }); }
     if(Object.keys(rm).length) mineP.loomsRemoved=rm;
   })();
+  if((baseP.loanStatusAt||'')>(mineP.loanStatusAt||'')){ mineP.loanStatus=baseP.loanStatus||''; mineP.loanStatusAt=baseP.loanStatusAt; }
   /* Hand-set permit date (owner): the most recent change wins, so a stale device can't undo it. */
   if((baseP.buildStartSetAt||'')>(mineP.buildStartSetAt||'')){ mineP.buildStartDay=baseP.buildStartDay||''; mineP.buildStartSetAt=baseP.buildStartSetAt; }
   try{ if(!mineP.permitDoneDay && !mineP.buildStartDay && baseP.permitDoneDay && permitIsChecked(mineP)){ mineP.permitDoneDay=baseP.permitDoneDay; if(baseP.permitDoneAuto) mineP.permitDoneAuto=true; } }catch(e){}
@@ -2888,6 +2897,12 @@ function render(){
   document.getElementById('stProjects').textContent=board.projects.length;
   document.getElementById('stOpen').textContent=openDelays;
   document.getElementById('stDone').textContent=today;
+  if(BOARD_AREA==='tc'){          /* TC dashboard: total files / possible problems / bottlenecks */
+    var tcP=0,tcB=0; board.projects.forEach(function(x){ if(x.loanStatus==='problem') tcP++; else if(x.loanStatus==='bottleneck') tcB++; });
+    document.getElementById('stOpen').textContent=tcP; document.getElementById('stDone').textContent=tcB;
+    document.getElementById('stProjectsLbl').textContent='Total Files'; document.getElementById('stOpenLbl').textContent='Possible Problem'; document.getElementById('stDoneLbl').textContent='Bottleneck';
+    [].forEach.call(document.querySelectorAll('.stats .stat'),function(el){ el.classList.toggle('on',(el.dataset.tcf||'')===tcFilter && !!tcFilter); });
+  }
   renderCommandCenter();
 
   var searchEl=document.getElementById('searchInput');
@@ -2898,6 +2913,7 @@ function render(){
   list.innerHTML='';
 
   var shown=board.projects.filter(function(p){
+    if(BOARD_AREA==='tc' && tcFilter && p.loanStatus!==tcFilter) return false;
     if(pf && p.phase!==pf) return false;
     if(q && (p.name+' '+p.code).toLowerCase().indexOf(q)<0) return false;
     return true;
@@ -3167,6 +3183,7 @@ function loomChips(p){
 }
 function projectCard(p){
   var phc=PHASE_COLOR[p.phase]||'#8A93A6';
+  if(BOARD_AREA==='tc'){ phc=p.loanStatus==='problem'?'#E23B2A':(p.loanStatus==='bottleneck'?'#E8A21C':phc); }
   var prog=overallProgress(p);
   var isCol=!!collapsed[p.id];
   var isEdit=!!editing[p.id];
@@ -3225,7 +3242,13 @@ function projectCard(p){
     '<div class="barwrap"><div class="bar" style="width:'+prog.pct+'%"></div></div>'+
     '<span class="overall-label">'+prog.pct+'%</span>'+
     '<button class="budget-open-btn" data-act="openbudget">'+budgetLabel+'</button>'+
-    '<button class="delay-open-btn" data-act="opendelays">Delays '+dst.open+'</button>';
+    '<button class="delay-open-btn" data-act="opendelays">Delays '+dst.open+'</button>'+
+    (BOARD_AREA==='tc'
+      ? '<span class="loan-wrap"><span class="loan-lbl">Loan status</span><select class="loan-select '+(p.loanStatus||'')+'" data-act="loanstatus" title="Loan status for this file">'+
+          '<option value=""'+(!p.loanStatus?' selected':'')+'>On track</option>'+
+          '<option value="bottleneck"'+(p.loanStatus==='bottleneck'?' selected':'')+'>Potential bottleneck</option>'+
+          '<option value="problem"'+(p.loanStatus==='problem'?' selected':'')+'>Potential problem</option></select></span>'
+      : '');
   card.appendChild(dash);
 
   var track=document.createElement('div'); track.className='card-meta dashboard-meta';
@@ -3703,6 +3726,15 @@ document.getElementById('projectList').addEventListener('blur',function(e){
 
 /* phase select */
 document.getElementById('projectList').addEventListener('change',function(e){
+  if(e.target.dataset.act==='loanstatus'){
+    var cardL=e.target.closest('.card'), pL=cardL&&projById(cardL.dataset.pid);
+    if(pL){
+      pL.loanStatus=e.target.value; pL.loanStatusAt=new Date().toISOString();
+      logDailyActivity(pL,{type:'project',toStatus:'loanstatus',note:'Loan status: '+(pL.loanStatus==='problem'?'potential problem':(pL.loanStatus==='bottleneck'?'potential bottleneck':'on track'))});
+      queueSave(); render();
+    }
+    return;
+  }
   if(e.target.dataset.act==='daytask-toggle'){
     var cardDt=e.target.closest('.card,.daytask-panel'); var pDt=cardDt&&projById(cardDt.dataset.pid);
     var liDt=e.target.closest('.daytask'); var idDt=liDt&&liDt.dataset.dtid;
@@ -3955,6 +3987,14 @@ document.getElementById('removeRender').addEventListener('click',function(){
     document.getElementById('renderOvl').classList.remove('show');
     queueSave(); render(); toast('Render removed');
   }
+});
+
+/* TC dashboard tiles double as filters: Possible Problem / Bottleneck show only those files. */
+var tcFilter='';
+document.querySelector('.stats').addEventListener('click',function(e){
+  if(BOARD_AREA!=='tc') return;
+  var t=e.target.closest('.stat'); if(!t) return;
+  var f=t.dataset.tcf||''; tcFilter=(f && f!==tcFilter)?f:''; render();
 });
 
 /* ============ Toolbar ============ */
