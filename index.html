@@ -161,6 +161,27 @@
   .stat.done .num{color:var(--green);}
   body.tc-area .stat{cursor:pointer;} body.tc-area .stat.on{box-shadow:0 0 0 2px var(--navy),var(--shadow);}
   body.tc-area .stat.done::before{background:var(--amber);} body.tc-area .stat.done .num{color:#B07400;}
+  #tcTools,#tcSummary{display:none;} body.tc-area #tcTools{display:flex;} body.tc-area #tcSummary{display:flex;}
+  .tc-tools{gap:10px;align-items:center;flex-wrap:wrap;margin:-4px 0 14px;}
+  .tc-stages{display:flex;gap:6px;flex-wrap:wrap;flex:1;}
+  .tc-stage{border:1px solid var(--line);background:#fff;color:var(--navy);border-radius:99px;padding:6px 12px;font-weight:700;font-size:.78rem;cursor:pointer;display:inline-flex;gap:6px;align-items:center;}
+  .tc-stage b{font-family:'Barlow Condensed',sans-serif;font-size:1rem;} .tc-stage.on{background:var(--navy);border-color:var(--navy);color:#fff;} .tc-stage.zero{opacity:.55;}
+  .tc-sort{display:flex;align-items:center;gap:6px;font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;}
+  .tc-sort select{font-family:'Barlow',sans-serif;font-weight:700;font-size:.82rem;border:1px solid var(--line);border-radius:9px;padding:7px 10px;background:#fff;color:var(--navy);text-transform:none;letter-spacing:0;}
+  @media(max-width:700px){
+    .tc-tools{flex-direction:column;align-items:stretch;gap:8px;}
+    .tc-stages{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none;} .tc-stages::-webkit-scrollbar{display:none;}
+    .tc-stage{flex:none;white-space:nowrap;}
+    .tc-tools>*{min-width:0;max-width:100%;} .tc-sort{justify-content:space-between;} .tc-sort select{flex:1;min-width:0;width:100%;}
+    .tc-loan-row .loan-chip.low{white-space:normal;}
+  }
+  .tc-loan-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  select.stage-select{font-family:'Barlow',sans-serif;font-weight:700;font-size:.82rem;border:1px solid var(--line);border-radius:9px;padding:7px 10px;background:#fff;color:var(--navy);cursor:pointer;}
+  input.loan-reason{flex:1 1 220px;min-width:160px;font-family:'Barlow',sans-serif;font-size:.86rem;border:1px solid var(--line);border-radius:9px;padding:7px 10px;background:#fff;color:var(--ink);outline:none;}
+  input.loan-reason:focus{border-color:var(--navy);}
+  .loan-chip{border-radius:99px;padding:4px 10px;font-size:.72rem;font-weight:800;white-space:nowrap;}
+  .loan-chip.age{background:#EEF1F7;color:var(--navy);} .loan-chip.age.problem{background:#FDEAE7;color:var(--red-dark);} .loan-chip.age.bottleneck{background:#FFF0D5;color:#8a5a00;}
+  .loan-chip.low{background:#FFF0D5;color:#8a5a00;border:1px solid #E8A21C;}
   .loan-wrap{display:inline-flex;align-items:center;gap:7px;margin-left:auto;}
   .loan-lbl{font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;white-space:nowrap;}
   select.loan-select{font-family:'Barlow',sans-serif;font-weight:700;font-size:.82rem;border:1px solid var(--line);border-radius:9px;padding:7px 10px;background:#fff;color:var(--navy);cursor:pointer;}
@@ -919,6 +940,7 @@
     <button class="tbtn" id="openSubs"><span class="ic">👷</span> Subcontractors</button>
     <button class="tbtn" id="openLessons"><span class="ic">📘</span> Lessons Learned</button>
     <button class="tbtn" id="openHistory"><span class="ic">🗂</span> Completed Houses</button>
+    <button class="tbtn go" id="tcSummary"><span class="ic">📊</span> Summary</button>
     <button class="tbtn" id="openBackup"><span class="ic">💾</span> Backup</button>
     <button class="tbtn" id="openChangeOrders"><span class="ic">🧾</span> Change Orders</button>
     <button class="tbtn" id="openOrders"><span class="ic">🛒</span> Orders</button>
@@ -928,6 +950,11 @@
     <div class="stat" id="stat1" data-tcf=""><div class="num" id="stProjects">0</div><div class="lbl" id="stProjectsLbl">Active Projects</div></div>
     <div class="stat open" id="stat2" data-tcf="problem"><div class="num" id="stOpen">0</div><div class="lbl" id="stOpenLbl">Open Delays</div></div>
     <div class="stat done" id="stat3" data-tcf="bottleneck"><div class="num" id="stDone">0</div><div class="lbl" id="stDoneLbl">Marked Today</div></div>
+  </div>
+
+  <div class="tc-tools" id="tcTools">
+    <div class="tc-stages" id="tcStages"></div>
+    <label class="tc-sort"><span>Order</span><select id="tcSort"><option value="priority">Flagged longest first</option><option value="name">Name A–Z</option><option value="newest">Newest first</option></select></label>
   </div>
 
   <div class="ops-layout">
@@ -1175,6 +1202,18 @@
       <div id="tcSendWarn" class="empty" style="text-align:left;display:none;"></div>
       <div id="tcSendErr" style="color:#BE2C1D;font-weight:600;margin:8px 0;display:none;"></div>
       <button class="tbtn go" id="tcSendGo" disabled style="width:100%;margin-top:6px;background:var(--green);border-color:var(--green);">Send to Construction</button>
+    </div>
+  </div>
+</div>
+<div class="ovl" id="tcSumOvl">
+  <div class="sheet">
+    <div class="sheet-head"><h2>TC Summary</h2><button class="close" data-close>✕</button></div>
+    <div class="sheet-body">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+        <button class="tbtn primary" id="tcSumCopy" style="flex:0 0 auto;">Copy text</button>
+        <button class="tbtn" id="tcSumPrint" style="flex:0 0 auto;">Print / save PDF</button>
+      </div>
+      <pre id="tcSumText" style="white-space:pre-wrap;font-family:'Barlow',sans-serif;font-size:.95rem;line-height:1.5;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;"></pre>
     </div>
   </div>
 </div>
@@ -1801,6 +1840,9 @@ function stbMergeProject(mineP,baseP){
     if(Object.keys(rm).length) mineP.loomsRemoved=rm;
   })();
   if((baseP.loanStatusAt||'')>(mineP.loanStatusAt||'')){ mineP.loanStatus=baseP.loanStatus||''; mineP.loanStatusAt=baseP.loanStatusAt; }
+  if((baseP.loanStageAt||'')>(mineP.loanStageAt||'')){ mineP.loanStage=baseP.loanStage||''; mineP.loanStageAt=baseP.loanStageAt; }
+  if((baseP.loanReasonAt||'')>(mineP.loanReasonAt||'')){ mineP.loanReason=baseP.loanReason||''; mineP.loanReasonAt=baseP.loanReasonAt; }
+  if(!mineP.tcAt && baseP.tcAt) mineP.tcAt=baseP.tcAt;
   /* Hand-set permit date (owner): the most recent change wins, so a stale device can't undo it. */
   if((baseP.buildStartSetAt||'')>(mineP.buildStartSetAt||'')){ mineP.buildStartDay=baseP.buildStartDay||''; mineP.buildStartSetAt=baseP.buildStartSetAt; }
   try{ if(!mineP.permitDoneDay && !mineP.buildStartDay && baseP.permitDoneDay && permitIsChecked(mineP)){ mineP.permitDoneDay=baseP.permitDoneDay; if(baseP.permitDoneAuto) mineP.permitDoneAuto=true; } }catch(e){}
@@ -2465,7 +2507,7 @@ function canCompleteProject(p){
 }
 function overallProgress(p){
   var total=0,done=0;
-  PHASES.forEach(function(ph){
+  (BOARD_AREA==='tc'?[TC_PHASE]:PHASES).forEach(function(ph){
     visiblePhaseTasks(p,ph).forEach(function(txt){
       total++;
       if(phaseItemState(p,ph,txt).done){ done++; }
@@ -2914,11 +2956,13 @@ function render(){
 
   var shown=board.projects.filter(function(p){
     if(BOARD_AREA==='tc' && tcFilter && p.loanStatus!==tcFilter) return false;
+    if(BOARD_AREA==='tc' && tcStageFilter && (tcStageFilter==='none' ? !!p.loanStage : p.loanStage!==tcStageFilter)) return false;
     if(pf && p.phase!==pf) return false;
     if(q && (p.name+' '+p.code).toLowerCase().indexOf(q)<0) return false;
     return true;
   });
 
+  if(BOARD_AREA==='tc'){ shown=tcOrder(shown); renderTcTools(); }
   if(!shown.length){
     list.innerHTML='<div class="empty"><div class="big">No projects to show</div>'+
       (board.projects.length? 'Try clearing the search or phase filter.' :
@@ -3247,9 +3291,19 @@ function projectCard(p){
       ? '<span class="loan-wrap"><span class="loan-lbl">Loan status</span><select class="loan-select '+(p.loanStatus||'')+'" data-act="loanstatus" title="Loan status for this file">'+
           '<option value=""'+(!p.loanStatus?' selected':'')+'>On track</option>'+
           '<option value="bottleneck"'+(p.loanStatus==='bottleneck'?' selected':'')+'>Potential bottleneck</option>'+
-          '<option value="problem"'+(p.loanStatus==='problem'?' selected':'')+'>Potential problem</option></select></span>'
+          '<option value="problem"'+(p.loanStatus==='problem'?' selected':'')+'>Potential problem</option></select>'+
+          (p.loanStatus?'<span class="loan-chip age '+p.loanStatus+'" title="Days since this status was set">'+esc(loanAgeText(p))+'</span>':'')+'</span>'
       : '');
   card.appendChild(dash);
+  if(BOARD_AREA==='tc'){            /* second row: loan stage, a short reason, and the low-progress hint */
+    var lr=document.createElement('div'); lr.className='card-meta tc-loan-row';
+    var low=lowProgress(p);
+    lr.innerHTML='<span class="loan-lbl">Loan stage</span><select class="stage-select" data-act="loanstage"><option value="">Not set</option>'+
+      LOAN_STAGES.map(function(x){ return '<option value="'+x[0]+'"'+(p.loanStage===x[0]?' selected':'')+'>'+esc(x[1])+'</option>'; }).join('')+'</select>'+
+      '<input class="loan-reason" data-act="loanreason" type="text" maxlength="160" placeholder="Why? (short note, e.g. waiting on appraisal)" value="'+attr(p.loanReason||'')+'">'+
+      (low?'<span class="loan-chip low" title="Suggestion only: few documents collected for how long this file has been in TC">\u26A0 Low progress: '+low.done+' of '+low.total+' docs after '+low.days+' days</span>':'');
+    card.appendChild(lr);
+  }
 
   var track=document.createElement('div'); track.className='card-meta dashboard-meta';
   var activeView=viewPhase(p);
@@ -3726,6 +3780,15 @@ document.getElementById('projectList').addEventListener('blur',function(e){
 
 /* phase select */
 document.getElementById('projectList').addEventListener('change',function(e){
+  if(e.target.dataset.act==='loanstage' || e.target.dataset.act==='loanreason'){
+    var cardS=e.target.closest('.card'), pS=cardS&&projById(cardS.dataset.pid);
+    if(pS){
+      var nowS=new Date().toISOString();
+      if(e.target.dataset.act==='loanstage'){ pS.loanStage=e.target.value; pS.loanStageAt=nowS; logDailyActivity(pS,{type:'project',toStatus:'loanstage',note:'Loan stage: '+(loanStageLabel(pS.loanStage)||'not set')}); queueSave(); render(); }
+      else { pS.loanReason=String(e.target.value||'').trim(); pS.loanReasonAt=nowS; queueSave(); renderTcTools(); }
+    }
+    return;
+  }
   if(e.target.dataset.act==='loanstatus'){
     var cardL=e.target.closest('.card'), pL=cardL&&projById(cardL.dataset.pid);
     if(pL){
@@ -3989,17 +4052,99 @@ document.getElementById('removeRender').addEventListener('click',function(){
   }
 });
 
+document.getElementById('projectList').addEventListener('keydown',function(e){ if(e.key==='Enter' && e.target.dataset && e.target.dataset.act==='loanreason'){ e.preventDefault(); e.target.blur(); } });
 /* TC dashboard tiles double as filters: Possible Problem / Bottleneck show only those files. */
-var tcFilter='';
+var tcFilter='', tcStageFilter='', tcSort=(function(){ try{ return localStorage.getItem('stb_tc_sort_v1')||'priority'; }catch(e){ return 'priority'; } })();
+var LOAN_STAGES=[['docs','Docs collecting'],['submitted','Submitted to lender'],['appraisal','Appraisal'],['underwriting','Underwriting'],['clear','Clear to close']];
+var LOW_PROGRESS_DAYS=14, LOW_PROGRESS_PCT=40;
+function loanStageLabel(v){ for(var i=0;i<LOAN_STAGES.length;i++){ if(LOAN_STAGES[i][0]===v) return LOAN_STAGES[i][1]; } return ''; }
+function loanAgeDays(p){ if(!p.loanStatus || !p.loanStatusAt) return null; return Math.max(0,daysBetween(isoFromDateTime(p.loanStatusAt),isoToday())); }
+function loanAgeText(p){ var d=loanAgeDays(p); if(d===null) return ''; return (p.loanStatus==='problem'?'Problem':'Bottleneck')+' \u00B7 '+(d===0?'flagged today':d+(d===1?' day':' days')); }
+function tcDocCounts(p){ var t=visiblePhaseTasks(p,TC_PHASE), d=0; t.forEach(function(x){ if(phaseItemState(p,TC_PHASE,x).done) d++; }); return {done:d,total:t.length}; }
+function tcDaysIn(p){
+  var first=p.tcAt||'';
+  if(!first){ var rows=projectTaskLogs(p); if(rows.length) first=rows[0].at||''; }
+  return first?Math.max(0,daysBetween(isoFromDateTime(first),isoToday())):null;
+}
+function lowProgress(p){
+  var d=tcDaysIn(p); if(d===null || d<LOW_PROGRESS_DAYS) return null;
+  var c=tcDocCounts(p); if(!c.total || 100*c.done/c.total>=LOW_PROGRESS_PCT) return null;
+  return {done:c.done,total:c.total,days:d};
+}
+function tcOrder(list){
+  var a=list.slice();
+  if(tcSort==='name'){ a.sort(function(x,y){ return String(x.name||'').toLowerCase().localeCompare(String(y.name||'').toLowerCase()); }); }
+  else if(tcSort==='newest'){ a.reverse(); }
+  else {   /* flagged longest first: problems, then bottlenecks, oldest flag first; everything else keeps its order */
+    var rank={problem:0,bottleneck:1};
+    a=a.map(function(p,i){ return {p:p,i:i}; }).sort(function(x,y){
+      var rx=rank[x.p.loanStatus], ry=rank[y.p.loanStatus]; rx=rx===undefined?2:rx; ry=ry===undefined?2:ry;
+      if(rx!==ry) return rx-ry;
+      if(rx<2){ var ax=x.p.loanStatusAt||'', ay=y.p.loanStatusAt||''; if(ax!==ay) return ax<ay?-1:1; }
+      return x.i-y.i;
+    }).map(function(o){ return o.p; });
+  }
+  return a;
+}
+function renderTcTools(){
+  var box=document.getElementById('tcStages'); if(!box) return;
+  var counts={}, none=0; board.projects.forEach(function(p){ if(p.loanStage) counts[p.loanStage]=(counts[p.loanStage]||0)+1; else none++; });
+  var html=LOAN_STAGES.map(function(st){ var n=counts[st[0]]||0; return '<button class="tc-stage'+(tcStageFilter===st[0]?' on':'')+(n?'':' zero')+'" data-stage="'+st[0]+'">'+esc(st[1])+' <b>'+n+'</b></button>'; }).join('');
+  if(none) html+='<button class="tc-stage'+(tcStageFilter==='none'?' on':'')+'" data-stage="none">No stage set <b>'+none+'</b></button>';
+  box.innerHTML=html;
+  var sel=document.getElementById('tcSort'); if(sel) sel.value=tcSort;
+}
+function tcSummaryText(){
+  var L=[], today=isoToday(), P=board.projects;
+  var prob=P.filter(function(p){ return p.loanStatus==='problem'; }), bott=P.filter(function(p){ return p.loanStatus==='bottleneck'; });
+  var label=function(p){ return (p.name||'Unnamed')+(p.code?' #'+p.code:''); };
+  var line=function(icon,p){ var bits=[]; if(p.loanStage) bits.push(loanStageLabel(p.loanStage)); var d=loanAgeDays(p); if(d!==null) bits.push(d===0?'flagged today':d+(d===1?' day':' days')+' flagged'); var c=tcDocCounts(p); bits.push(c.done+'/'+c.total+' docs');
+    return icon+' '+label(p)+' \u2014 '+bits.join(' \u00B7 ')+(p.loanReason?'\n     \u201C'+p.loanReason+'\u201D':''); };
+  L.push('TC SUMMARY \u2014 '+fmtDateLong(today));
+  L.push('Total files: '+P.length+'  \u00B7  Possible problem: '+prob.length+'  \u00B7  Bottleneck: '+bott.length+'  \u00B7  On track: '+(P.length-prob.length-bott.length));
+  var st=LOAN_STAGES.map(function(x){ var n=P.filter(function(p){ return p.loanStage===x[0]; }).length; return n?x[1]+' '+n:''; }).filter(Boolean);
+  var ns=P.filter(function(p){ return !p.loanStage; }).length; if(ns) st.push('No stage '+ns);
+  L.push('By loan stage: '+(st.join(', ')||'\u2014'));
+  if(prob.length||bott.length){ L.push('','NEEDS ATTENTION'); prob.slice().sort(function(a,b){ return (a.loanStatusAt||'')<(b.loanStatusAt||'')?-1:1; }).concat(bott.slice().sort(function(a,b){ return (a.loanStatusAt||'')<(b.loanStatusAt||'')?-1:1; })).forEach(function(p){ L.push(line(p.loanStatus==='problem'?'\uD83D\uDD34':'\uD83D\uDFE0',p)); }); }
+  var recent=P.filter(function(p){ var d=loanAgeDays(p); return d!==null && d<=1; });
+  if(recent.length){ L.push('','NEWLY FLAGGED (last 2 days)'); recent.forEach(function(p){ L.push('\u2022 '+label(p)+' \u2014 '+(p.loanStatus==='problem'?'possible problem':'bottleneck')); }); }
+  var stuck=P.filter(function(p){ var d=loanAgeDays(p); return d!==null && d>7; });
+  if(stuck.length){ L.push('','STUCK MORE THAN A WEEK'); stuck.forEach(function(p){ L.push('\u2022 '+label(p)+' \u2014 '+loanAgeDays(p)+' days ('+(p.loanStatus==='problem'?'problem':'bottleneck')+')'); }); }
+  var low=P.map(function(p){ return {p:p,l:lowProgress(p)}; }).filter(function(x){ return x.l; });
+  if(low.length){ L.push('','LOW DOCUMENT PROGRESS'); low.forEach(function(x){ L.push('\u2022 '+label(x.p)+' \u2014 '+x.l.done+' of '+x.l.total+' docs after '+x.l.days+' days'); }); }
+  if(!prob.length && !bott.length && !low.length) L.push('','All files are on track.');
+  return L.join('\n');
+}
 document.querySelector('.stats').addEventListener('click',function(e){
   if(BOARD_AREA!=='tc') return;
   var t=e.target.closest('.stat'); if(!t) return;
   var f=t.dataset.tcf||''; tcFilter=(f && f!==tcFilter)?f:''; render();
 });
 
+document.getElementById('tcStages').addEventListener('click',function(e){
+  var b=e.target.closest('[data-stage]'); if(!b) return;
+  var v=b.dataset.stage; tcStageFilter=(tcStageFilter===v)?'':v; render();
+});
+document.getElementById('tcSort').addEventListener('change',function(){ tcSort=this.value; try{ localStorage.setItem('stb_tc_sort_v1',tcSort); }catch(e){} render(); });
+document.getElementById('tcSummary').addEventListener('click',function(){
+  document.getElementById('tcSumText').textContent=tcSummaryText(); document.getElementById('tcSumOvl').classList.add('show');
+});
+document.getElementById('tcSumCopy').addEventListener('click',function(){
+  var t=document.getElementById('tcSumText').textContent;
+  var done=function(){ toast('Summary copied'); };
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(done,function(){ toast('Could not copy: select the text and copy it'); }); }
+  else { var ta=document.createElement('textarea'); ta.value=t; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); done(); }catch(e){ toast('Could not copy: select the text and copy it'); } ta.remove(); }
+});
+document.getElementById('tcSumPrint').addEventListener('click',function(){
+  var w=window.open('','_blank'); if(!w){ toast('Allow pop-ups to print'); return; }
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>TC Summary</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{color:#16294D;border-bottom:4px solid #E23B2A;padding-bottom:8px}pre{white-space:pre-wrap;font-family:Arial,sans-serif;font-size:13pt;line-height:1.5}</style></head><body><h1>South Texas Builders \u00B7 TC Summary</h1><pre>'+esc(document.getElementById('tcSumText').textContent)+'</pre></body></html>');
+  w.document.close(); w.focus(); setTimeout(function(){ w.print(); },300);
+});
+
 /* ============ Toolbar ============ */
 document.getElementById('addProject').addEventListener('click',function(){
   var p={id:uid(),name:'New Project',code:'',phase:(BOARD_AREA==='tc'?TC_PHASE:'Pre Phase'),startDate:'',goalDate:'',phaseTasks:[],progress:[],scheduled:[]};
+  if(BOARD_AREA==='tc'){ p.tcAt=new Date().toISOString(); }
   addPhaseTasks(p);
   saveCurrentPhaseWork(p);
   board.projects.push(p);

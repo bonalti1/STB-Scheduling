@@ -255,3 +255,10 @@ Two connected web apps for South Texas Builders (STB):
 - **TC board only.** The stats row at the top now reads **Total Files / Possible Problem / Bottleneck** (`#stat1..3`, relabelled in `render` when `BOARD_AREA==='tc'`); tapping a tile filters the list to those files (tap again to clear, `tcFilter`).
 - Each TC house has a **Loan status** dropdown in its progress row (where Budget/Delays sit on other boards): *On track / Potential bottleneck / Potential problem* (`p.loanStatus` = '' | 'bottleneck' | 'problem', `p.loanStatusAt`). The card's left edge turns amber/red with it; changes are logged in the activity log.
 - Merge: latest `loanStatusAt` wins (a stale device can't undo it). Main/Alice boards are unchanged (normal stats, no loan dropdown). The field travels with the house when it is sent to construction but is not shown there.
+- **TC "even better" round (Nov 2026), TC board only:**
+  1. **Reason box** per file (`p.loanReason`, `loanReasonAt`), shown on the card (also collapsed); Enter/blur saves.
+  2. **Days flagged:** chip `Problem · 6 days` / `Bottleneck · 12 days` from `loanStatusAt`; default order = **Flagged longest first** (problems, then bottlenecks, oldest flag first), also Name A–Z / Newest (`#tcSort`, remembered per device).
+  3. **Loan stage** dropdown per file (`p.loanStage`: docs / submitted / appraisal / underwriting / clear — list `LOAN_STAGES`, edit there) with count chips under the tiles that double as filters.
+  4. **Low-progress hint** (suggestion only): a file in TC 14+ days with under 40% of the 29 docs gets `⚠ Low progress: 3 of 29 docs after 20 days` (`LOW_PROGRESS_DAYS`, `LOW_PROGRESS_PCT`). Days in TC come from `p.tcAt` (set when the file is added; older files fall back to the first activity-log entry). The card % on TC now counts the TC checklist only.
+  6. **Summary** button: totals, by stage, needs attention (with reasons), newly flagged, stuck >7 days, low progress — Copy text / Print.
+  Not built (by request): the alert when a file turns red. Merge: latest `loanStageAt` / `loanReasonAt` wins.
