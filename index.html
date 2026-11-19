@@ -182,6 +182,10 @@
   .loan-chip{border-radius:99px;padding:4px 10px;font-size:.72rem;font-weight:800;white-space:nowrap;}
   .loan-chip.age{background:#EEF1F7;color:var(--navy);} .loan-chip.age.problem{background:#FDEAE7;color:var(--red-dark);} .loan-chip.age.bottleneck{background:#FFF0D5;color:#8a5a00;}
   .loan-chip.low{background:#FFF0D5;color:#8a5a00;border:1px solid #E8A21C;}
+  .build-timer.tc-clock.ok{--bt-bg:#EEF2F8;--bt-line:#CFD9EC;--bt-ink:#16294D;--bt-fill:#16294D;}
+  .tc-clock.need{min-height:0;} .tc-clock .bt-last{margin-top:0;font-size:.64rem;}
+  input.dep-input{font-family:'Barlow',sans-serif;font-size:.72rem;font-weight:700;border:1px solid var(--bt-line,#DDE3EF);border-radius:6px;padding:2px 4px;background:#fff;color:var(--navy);width:100%;box-sizing:border-box;margin-top:2px;}
+  .tc-took{background:#EEF2F8;border-color:#CFD9EC;color:var(--navy);font-weight:700;}
   .loan-wrap{display:inline-flex;align-items:center;gap:7px;margin-left:auto;}
   .loan-lbl{font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;white-space:nowrap;}
   select.loan-select{font-family:'Barlow',sans-serif;font-weight:700;font-size:.82rem;border:1px solid var(--line);border-radius:9px;padding:7px 10px;background:#fff;color:var(--navy);cursor:pointer;}
@@ -954,7 +958,7 @@
 
   <div class="tc-tools" id="tcTools">
     <div class="tc-stages" id="tcStages"></div>
-    <label class="tc-sort"><span>Order</span><select id="tcSort"><option value="priority">Flagged longest first</option><option value="name">Name A–Z</option><option value="newest">Newest first</option></select></label>
+    <label class="tc-sort"><span>Order</span><select id="tcSort"><option value="added">As added</option><option value="deposit">Oldest deposit first</option><option value="priority">Flagged longest first</option><option value="name">Name A–Z</option><option value="newest">Newest first</option></select></label>
   </div>
 
   <div class="ops-layout">
@@ -1843,6 +1847,8 @@ function stbMergeProject(mineP,baseP){
   if((baseP.loanStageAt||'')>(mineP.loanStageAt||'')){ mineP.loanStage=baseP.loanStage||''; mineP.loanStageAt=baseP.loanStageAt; }
   if((baseP.loanReasonAt||'')>(mineP.loanReasonAt||'')){ mineP.loanReason=baseP.loanReason||''; mineP.loanReasonAt=baseP.loanReasonAt; }
   if(!mineP.tcAt && baseP.tcAt) mineP.tcAt=baseP.tcAt;
+  if((baseP.depositDaySetAt||'')>(mineP.depositDaySetAt||'')){ mineP.depositDay=baseP.depositDay||''; mineP.depositDaySetAt=baseP.depositDaySetAt; }
+  if(!mineP.tcEndDay && baseP.tcEndDay) mineP.tcEndDay=baseP.tcEndDay;
   /* Hand-set permit date (owner): the most recent change wins, so a stale device can't undo it. */
   if((baseP.buildStartSetAt||'')>(mineP.buildStartSetAt||'')){ mineP.buildStartDay=baseP.buildStartDay||''; mineP.buildStartSetAt=baseP.buildStartSetAt; }
   try{ if(!mineP.permitDoneDay && !mineP.buildStartDay && baseP.permitDoneDay && permitIsChecked(mineP)){ mineP.permitDoneDay=baseP.permitDoneDay; if(baseP.permitDoneAuto) mineP.permitDoneAuto=true; } }catch(e){}
@@ -3196,7 +3202,7 @@ function buildInfo(p){
   return {start:start,end:end,now:now,frozen:!!p.buildEndDay,inDays:daysBetween(start,now),left:daysBetween(now,end),total:daysBetween(start,end)};
 }
 function buildTimerHtml(p){
-  if(BOARD_AREA==='tc') return '';
+  if(BOARD_AREA==='tc') return tcTimerHtml(p);
   var b=buildInfo(p), owner=isOwnerSession();
   if(!b){ return '<div class="build-timer idle" title="The 4-month clock starts when Obtain Building Permits is checked"><span class="bt-label">⏱ Build clock</span><span class="bt-line">Starts at permits</span></div>'; }
   if(b.needStart){ return '<div class="build-timer need"><span class="bt-label">⏱ Build clock</span>'+(owner?'<button class="bt-set" data-act="setbuildstart">Set permit date</button>':'<span class="bt-line">Permit date not set</span>')+'</div>'; }
@@ -3262,6 +3268,7 @@ function projectCard(p){
             '<button class="sqft-edit sqft-remove" data-act="removedoc" data-kind="blueprint" title="Remove the blueprint PDF from this project">Remove</button>'
           : '<button class="sqft-edit" data-act="chooseblueprint">📄 Add blueprint</button>')+
         loomChips(p)+
+        (BOARD_AREA!=='tc' && p.depositDay && p.tcEndDay ? '<span class="addr-chip tc-took" title="Deposit '+attr(buildShort(p.depositDay))+' \u2192 sent to construction '+attr(buildShort(p.tcEndDay))+'">\uD83D\uDCCB TC took '+spanMD(p.depositDay,p.tcEndDay)+'</span>' : '')+
         Object.keys(DOC_KINDS).map(function(kind){
           var k=DOC_KINDS[kind];
           return '<input class="doc-file" type="file" accept="application/pdf,.pdf" data-act="uploaddoc" data-kind="'+kind+'" style="display:none;" />'+
@@ -3780,6 +3787,16 @@ document.getElementById('projectList').addEventListener('blur',function(e){
 
 /* phase select */
 document.getElementById('projectList').addEventListener('change',function(e){
+  if(e.target.dataset.act==='depositdate'){
+    var cardD=e.target.closest('.card'), pD=cardD&&projById(cardD.dataset.pid), vD=String(e.target.value||'').trim();
+    if(pD){
+      if(vD && (!/^\d{4}-\d{2}-\d{2}$/.test(vD) || vD>isoToday())){ toast('Pick a deposit date that is today or earlier'); render(); return; }
+      pD.depositDay=vD; pD.depositDaySetAt=new Date().toISOString();
+      logDailyActivity(pD,{type:'project',toStatus:'depositdate',note:vD?'Deposit date set to '+vD:'Deposit date cleared'});
+      queueSave(); render();
+    }
+    return;
+  }
   if(e.target.dataset.act==='loanstage' || e.target.dataset.act==='loanreason'){
     var cardS=e.target.closest('.card'), pS=cardS&&projById(cardS.dataset.pid);
     if(pS){
@@ -4054,14 +4071,33 @@ document.getElementById('removeRender').addEventListener('click',function(){
 
 document.getElementById('projectList').addEventListener('keydown',function(e){ if(e.key==='Enter' && e.target.dataset && e.target.dataset.act==='loanreason'){ e.preventDefault(); e.target.blur(); } });
 /* TC dashboard tiles double as filters: Possible Problem / Bottleneck show only those files. */
-var tcFilter='', tcStageFilter='', tcSort=(function(){ try{ return localStorage.getItem('stb_tc_sort_v1')||'priority'; }catch(e){ return 'priority'; } })();
+var tcFilter='', tcStageFilter='', tcSort=(function(){ try{ return localStorage.getItem('stb_tc_sort_v2')||'added'; }catch(e){ return 'added'; } })();
 var LOAN_STAGES=[['docs','Docs collecting'],['submitted','Submitted to lender'],['appraisal','Appraisal'],['underwriting','Underwriting'],['clear','Clear to close']];
 var LOW_PROGRESS_DAYS=14, LOW_PROGRESS_PCT=40;
 function loanStageLabel(v){ for(var i=0;i<LOAN_STAGES.length;i++){ if(LOAN_STAGES[i][0]===v) return LOAN_STAGES[i][1]; } return ''; }
 function loanAgeDays(p){ if(!p.loanStatus || !p.loanStatusAt) return null; return Math.max(0,daysBetween(isoFromDateTime(p.loanStatusAt),isoToday())); }
 function loanAgeText(p){ var d=loanAgeDays(p); if(d===null) return ''; return (p.loanStatus==='problem'?'Problem':'Bottleneck')+' \u00B7 '+(d===0?'flagged today':d+(d===1?' day':' days')); }
+/* TC file clock: runs from the day the deposit was given until the file is sent to construction. */
+function depositInfo(p){
+  if(!p.depositDay) return null;
+  var end=p.tcEndDay||isoToday(); if(end<p.depositDay) end=p.depositDay;
+  return {start:p.depositDay,end:end,frozen:!!p.tcEndDay,days:daysBetween(p.depositDay,end)};
+}
+function tcTimerHtml(p){
+  var d=depositInfo(p), today=isoToday();
+  if(!d){
+    return '<div class="build-timer need tc-clock"><span class="bt-label">\u23F1 File clock</span><span class="bt-line">Deposit date?</span>'+
+      '<input type="date" class="dep-input" data-act="depositdate" max="'+today+'" title="Day the deposit was given"></div>';
+  }
+  return '<div class="build-timer '+(d.frozen?'done':'ok')+' tc-clock" title="Deposit '+attr(buildShort(d.start))+(d.frozen?' \u2192 sent to construction '+attr(buildShort(d.end)):' \u2192 today')+' ('+d.days+' days)">'+
+    '<span class="bt-label">\u23F1 File clock</span>'+
+    '<span class="bt-main"><span class="bt-num">'+spanMD(d.start,d.end)+'</span> <span class="bt-unit">'+(d.frozen?'on this file':'in TC')+'</span></span>'+
+    '<span class="bt-line">deposit <b>'+buildShort(d.start)+'</b></span>'+
+    '<span class="bt-line bt-last">'+(d.frozen?'sent '+buildShort(d.end):'<input type="date" class="dep-input" data-act="depositdate" value="'+attr(d.start)+'" max="'+today+'" title="Change the deposit date">')+'</span></div>';
+}
 function tcDocCounts(p){ var t=visiblePhaseTasks(p,TC_PHASE), d=0; t.forEach(function(x){ if(phaseItemState(p,TC_PHASE,x).done) d++; }); return {done:d,total:t.length}; }
 function tcDaysIn(p){
+  if(p.depositDay) return Math.max(0,daysBetween(p.depositDay,isoToday()));
   var first=p.tcAt||'';
   if(!first){ var rows=projectTaskLogs(p); if(rows.length) first=rows[0].at||''; }
   return first?Math.max(0,daysBetween(isoFromDateTime(first),isoToday())):null;
@@ -4073,6 +4109,8 @@ function lowProgress(p){
 }
 function tcOrder(list){
   var a=list.slice();
+  if(tcSort==='added'){ return a; }
+  if(tcSort==='deposit'){ return a.map(function(p,i){ return {p:p,i:i}; }).sort(function(x,y){ var dx=x.p.depositDay||'9999', dy=y.p.depositDay||'9999'; return dx!==dy?(dx<dy?-1:1):x.i-y.i; }).map(function(o){ return o.p; }); }
   if(tcSort==='name'){ a.sort(function(x,y){ return String(x.name||'').toLowerCase().localeCompare(String(y.name||'').toLowerCase()); }); }
   else if(tcSort==='newest'){ a.reverse(); }
   else {   /* flagged longest first: problems, then bottlenecks, oldest flag first; everything else keeps its order */
@@ -4098,7 +4136,7 @@ function tcSummaryText(){
   var L=[], today=isoToday(), P=board.projects;
   var prob=P.filter(function(p){ return p.loanStatus==='problem'; }), bott=P.filter(function(p){ return p.loanStatus==='bottleneck'; });
   var label=function(p){ return (p.name||'Unnamed')+(p.code?' #'+p.code:''); };
-  var line=function(icon,p){ var bits=[]; if(p.loanStage) bits.push(loanStageLabel(p.loanStage)); var d=loanAgeDays(p); if(d!==null) bits.push(d===0?'flagged today':d+(d===1?' day':' days')+' flagged'); var c=tcDocCounts(p); bits.push(c.done+'/'+c.total+' docs');
+  var line=function(icon,p){ var bits=[]; if(p.loanStage) bits.push(loanStageLabel(p.loanStage)); var d=loanAgeDays(p); if(d!==null) bits.push(d===0?'flagged today':d+(d===1?' day':' days')+' flagged'); var c=tcDocCounts(p); bits.push(c.done+'/'+c.total+' docs'); var di=depositInfo(p); if(di) bits.push('deposit '+buildShort(di.start)+', '+spanMD(di.start,di.end)+' in TC');
     return icon+' '+label(p)+' \u2014 '+bits.join(' \u00B7 ')+(p.loanReason?'\n     \u201C'+p.loanReason+'\u201D':''); };
   L.push('TC SUMMARY \u2014 '+fmtDateLong(today));
   L.push('Total files: '+P.length+'  \u00B7  Possible problem: '+prob.length+'  \u00B7  Bottleneck: '+bott.length+'  \u00B7  On track: '+(P.length-prob.length-bott.length));
@@ -4125,7 +4163,7 @@ document.getElementById('tcStages').addEventListener('click',function(e){
   var b=e.target.closest('[data-stage]'); if(!b) return;
   var v=b.dataset.stage; tcStageFilter=(tcStageFilter===v)?'':v; render();
 });
-document.getElementById('tcSort').addEventListener('change',function(){ tcSort=this.value; try{ localStorage.setItem('stb_tc_sort_v1',tcSort); }catch(e){} render(); });
+document.getElementById('tcSort').addEventListener('change',function(){ tcSort=this.value; try{ localStorage.setItem('stb_tc_sort_v2',tcSort); }catch(e){} render(); });
 document.getElementById('tcSummary').addEventListener('click',function(){
   document.getElementById('tcSumText').textContent=tcSummaryText(); document.getElementById('tcSumOvl').classList.add('show');
 });
@@ -4892,6 +4930,7 @@ document.getElementById('tcSendGo').addEventListener('click',async function(){
   var go=this, err=document.getElementById('tcSendErr'); go.disabled=true; go.textContent='Sending...'; err.style.display='none';
   try{
     saveCurrentPhaseState(p); saveCurrentPhaseWork(p);
+    if(p.depositDay && !p.tcEndDay){ p.tcEndDay=isoToday(); }      // freeze the file clock
     var proj=JSON.parse(JSON.stringify(p));
     proj.phase='Pre Phase'; proj.phaseTasks=[]; proj.tcSentAt=new Date().toISOString(); proj.tcSentBy=currentUserName()||''; proj.tcArea=tcSendArea;
     await tcPushToBoard(proj,tcSendArea);
